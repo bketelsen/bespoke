@@ -102,6 +102,9 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - Internal services, built on demand per the
   [catalog](../design/internal-services.md) (ADR-0012): more LLM helpers
   (Summarize/Extract), files/blobs, notifications, search — never up front.
+- Lemonade backend (local inference on selfie): embeddings, image
+  generation, private/local completions behind the existing `pkg/llm` seam —
+  ADR when first wired ([catalog](../design/internal-services.md#backends)).
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.

@@ -36,6 +36,13 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   message deltas; add a `/llm/stream` SSE endpoint then).
 - **Model selection** is gateway config: `BESPOKE_LLM_MODEL` env on platformd
   (empty = CLI default). Apps never specify a model.
+- **Second backend (candidate):** a [Lemonade](https://lemonade-server.ai/)
+  server runs locally on selfie (OpenAI-compatible; embeddings, image gen,
+  speech, lighter chat). When a capability adopts it, the gateway grows
+  routes backed by Lemonade behind the same `pkg/llm` seam — apps never know
+  which backend served them, except via an explicit privacy option (e.g.
+  `WithLocal()`) for prompts that must not leave the house. See the
+  [internal services catalog](internal-services.md#backends).
 - **Usage logging:** one line per call — app, prompt/output bytes, duration,
   error — the observability point for all LLM traffic.
 

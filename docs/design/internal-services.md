@@ -28,7 +28,27 @@ app ──pkg/* helper────────► (no network at all — compose
 | Files/blobs | 2 | candidate | future `pkg/files` | When two apps first share uploads (ADR-0006) |
 | Notifications | 1 or 2 | candidate | future `pkg/notify` | Tier depends on delivery mechanism |
 | Scheduled jobs | — | candidate | systemd timers per app first | Escalate only if cross-app coordination appears |
-| Search / embeddings | 2 | candidate | future `pkg/search` | Heavy runtime + shared index → clearly tier 2 |
+| Embeddings | 2 | candidate | future `llm.Embed` | Backend: Lemonade on selfie (see Backends) |
+| Search | 2 | candidate | future `pkg/search` | Shared index; pairs with embeddings |
+| Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
+| Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
+| Speech / transcription | 2 | candidate | future `llm` helpers | Lemonade exposes both |
+
+## Backends
+
+The gateway pattern (ADR-0009/0012) means backends are invisible to apps —
+`pkg/llm` is the seam. Two are available:
+
+- **GitHub Copilot** (live): frontier models via the Copilot CLI.
+  Cloud inference; ~1.5s/call ([llm-gateway.md](llm-gateway.md)).
+- **[Lemonade](https://lemonade-server.ai/)** (available on selfie, not yet
+  wired): local, OpenAI-compatible server — chat, vision, image, speech,
+  transcription, embeddings. Not frontier-strength for text, but ideal for
+  embeddings, image generation, lighter-weight inference, and
+  **privacy-sensitive prompts that should never leave the house**. Zero
+  marginal cost. Wiring it in = new gateway routes on the 4001 plane backed
+  by Lemonade's endpoint + `pkg/llm` helpers; record an ADR when the first
+  capability adopts it.
 
 ## Adding a capability (decision tree)
 
