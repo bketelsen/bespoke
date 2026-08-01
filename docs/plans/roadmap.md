@@ -132,6 +132,19 @@ apps deploy to `selfie`, builds happen on the dev machine)
   set `BESPOKE_LEMONADE_URL` (+ optionally `BESPOKE_AUDIO_MODEL`) in
   platformd's env and validate the OpenAI-compatible request shape against
   the live server. `Speak` stays planned until its first consumer.
+- **Builder app (idea, 2026-08-01): the app that builds new apps.** A
+  Bespoke app on the dashboard where you type "build me a…" and watch it
+  ship: the [design-app](../../.agents/skills/design-app/SKILL.md) interview
+  as a chat UI (Datastar SSE), then an agentic session executing the
+  new-app skill ON selfie against a repo clone, `bespoke deploy` from there,
+  live progress streamed, new app appears on the dashboard. What it touches:
+  builds move dev-machine → selfie (refines
+  [ADR-0011](../adr/0011-split-host-deployment.md); selfie gains a Go
+  toolchain), the LLM gateway grows the opt-in *agentic* session type
+  ADR-0009 deferred (tools/file access enabled — needs guardrails: dedicated
+  workdir, branch-only commits, deploy gated on `just check`), and the
+  Copilot runtime already living on selfie does the heavy lifting. Big; park
+  until the one-shot log hits 3/3 and the skills are proven boring.
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.
