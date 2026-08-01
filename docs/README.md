@@ -27,6 +27,7 @@ Docs are split by the question they answer:
 - [0012 — Internal shared services: helpers first, services on demand](adr/0012-internal-services-two-tier.md)
 - [0013 — Agent-portable instruction surface](adr/0013-agent-portable-instruction-surface.md)
 - [0014 — Audio service: transcription, stub-first](adr/0014-audio-service-transcription.md)
+- [0015 — AppShell platform chrome: app switcher and in-app chat](adr/0015-appshell-platform-chrome.md)
 
 ### Design
 

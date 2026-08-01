@@ -60,6 +60,10 @@ them rather than improvising, whichever agent you are:
   provider or the Copilot SDK from an app. Expect ~1.5s per call — design
   features accordingly. Local dev needs platformd running (`just dev`) and
   the `copilot` CLI authenticated.
+- The AppShell provides platform chrome automatically (ADR-0015): the app
+  switcher needs nothing from you; in-app LLM chat is one call —
+  `web.EnableChat(mux, slug, provider)` where provider returns the user's
+  recent app data as text. Add chat to any app whose data invites questions.
 - Voice input: `ui.VoiceButton("/your/endpoint")` in the view +
   `audio.New(slug).Transcribe` in the handler ([ADR-0014](docs/adr/0014-audio-service-transcription.md));
   never touch MediaRecorder or a speech backend directly. Currently

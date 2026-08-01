@@ -42,7 +42,11 @@ config, stop: you're off the path (see AGENTS.md).
    building any capability into the app. LLM: `llm.New(slug)` →
    `Complete`/`CompleteJSON`/`Classify` (~1.5s per call — background it or
    design the UX for it; requires platformd running). Live updates:
-   `web.NewSSE` (Datastar is already loaded by AppShell).
+   `web.NewSSE` (Datastar is already loaded by AppShell). If the app's data
+   invites questions ("is X trending?"), add in-app chat:
+   `web.EnableChat(mux, slug, provider)` with a provider returning the
+   user's recent data as text (see apps/journal for the reference). The app
+   switcher is automatic — never build navigation between apps.
 7. **Regenerate.** After any `.templ` change: `just ui`, and commit the
    generated `*_templ.go` + `pkg/ui/assets/styles.css` alongside your
    sources.

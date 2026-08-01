@@ -114,6 +114,10 @@ Single Go module monorepo — one dependency graph
   no Node anywhere.
 - Apps compose `pkg/ui`; Tailwind utilities for layout only, theme tokens
   only, no custom CSS files.
+- The AppShell is platform chrome
+  ([ADR-0015](../adr/0015-appshell-platform-chrome.md)): app switcher fed
+  from the registry via request context (zero app code), and an in-app LLM
+  chat panel when the app opts in with `web.EnableChat`.
 
 ## Deploy loop
 

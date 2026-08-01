@@ -32,6 +32,8 @@ app ──pkg/* helper────────► (no network at all — compose
 | Search | 2 | candidate | future `pkg/search` | Shared index; pairs with embeddings |
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
+| In-app chat | 1 | **live** | `web.EnableChat(mux, slug, provider)` | ADR-0015; context-stuffing v1, upgrades to MCP tools later |
+| App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
 | Transcription | 2 | **live (stub backend)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` | ADR-0014; real transcription flips on with `BESPOKE_LEMONADE_URL` |
 | Speech synthesis | 2 | planned (first-class) | future `audio.New(slug).Speak` | See Audio below |
 | MCP surface | 2 | candidate | external LLM clients via `https://<apex>/mcp` | One aggregated MCP server on platformd; apps opt tools in via `web.Tool`, namespaced `<slug>_<tool>` (see roadmap idea) |

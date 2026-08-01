@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -35,6 +36,10 @@ func main() {
 	voice := audio.New("journal")
 
 	web.Run("journal", func(mux *http.ServeMux) {
+		web.EnableChat(mux, "journal", func(ctx context.Context, user auth.User) (string, error) {
+			return chatContext(ctx, sqldb, user.Login)
+		})
+
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			days, err := loadDays(sqldb, user.Login)
@@ -105,6 +110,47 @@ func main() {
 			http.Redirect(w, r, "/week", http.StatusSeeOther)
 		})
 	})
+}
+
+// chatContext feeds the in-app chat (ADR-0015): the last 30 days of entries
+// plus the latest weekly summary — enough for mood/productivity questions.
+func chatContext(ctx context.Context, sqldb *sql.DB, login string) (string, error) {
+	rows, err := sqldb.QueryContext(ctx,
+		"SELECT created_at, body FROM entries WHERE login = ? AND created_at >= datetime('now', '-30 days') ORDER BY created_at",
+		login)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var b strings.Builder
+	b.WriteString("Journal entries, last 30 days (timestamps UTC):\n")
+	n := 0
+	for rows.Next() {
+		var created, body string
+		if err := rows.Scan(&created, &body); err != nil {
+			return "", err
+		}
+		fmt.Fprintf(&b, "[%s] %s\n", created, body)
+		n++
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+	if n == 0 {
+		b.WriteString("(no entries yet)\n")
+	}
+
+	var summary, created string
+	err = sqldb.QueryRowContext(ctx,
+		"SELECT body, created_at FROM summaries WHERE login = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+		login).Scan(&summary, &created)
+	if err == nil {
+		fmt.Fprintf(&b, "\nLatest weekly summary (generated %s):\n%s\n", created, summary)
+	} else if err != sql.ErrNoRows {
+		return "", err
+	}
+	return b.String(), nil
 }
 
 func loadDays(sqldb *sql.DB, login string) ([]views.Day, error) {

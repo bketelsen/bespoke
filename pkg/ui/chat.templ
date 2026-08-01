@@ -1,0 +1,56 @@
+// In-app chat (ADR-0015): rendered by AppShell when the app called
+// web.EnableChat. The panel posts to /_chat; history lives in the DOM.
+package ui
+
+import "github.com/bketelsen/bespoke/pkg/ui/components/icon"
+
+templ chatButton() {
+	<button
+		type="button"
+		data-chat-toggle
+		title="ask about this app's data"
+		class="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+	>
+		@icon.MessageCircle(icon.Props{Class: "size-4"})
+	</button>
+}
+
+templ chatPanel(appTitle string) {
+	<div id="bespoke-chat" class="fixed bottom-4 right-4 z-50 hidden w-96 max-w-[calc(100vw-2rem)]">
+		<div class="flex h-[28rem] flex-col rounded-lg border bg-card text-card-foreground shadow-lg">
+			<div class="flex items-center justify-between border-b px-4 py-2">
+				<span class="text-sm font-medium">Ask { appTitle }</span>
+				<button type="button" data-chat-toggle class="text-muted-foreground hover:text-foreground">
+					@icon.X(icon.Props{Class: "size-4"})
+				</button>
+			</div>
+			<div id="bespoke-chat-log" class="flex-1 space-y-3 overflow-y-auto p-4">
+				<p class="text-sm text-muted-foreground">
+					Answers come from this app's recent data — takes a couple of
+					seconds per question.
+				</p>
+			</div>
+			<form id="bespoke-chat-form" class="border-t p-3">
+				<div class="flex items-end gap-2">
+					<textarea
+						name="message"
+						rows="1"
+						placeholder="ask something…"
+						class="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+					></textarea>
+					<button type="submit" class="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+						@icon.SendHorizontal(icon.Props{Class: "size-4"})
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+	// Bubble markup lives here (not in JS) so Tailwind scans the classes.
+	<template id="bespoke-chat-user">
+		<div class="ml-8 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground" data-role="user"></div>
+	</template>
+	<template id="bespoke-chat-ai">
+		<div class="mr-8 whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm" data-role="assistant"></div>
+	</template>
+	<script type="module" src="/_bespoke/js/chat.js"></script>
+}

@@ -53,7 +53,7 @@ func Serve(slug string, defaultPort int, register func(mux *http.ServeMux)) {
 	// Design system assets (compiled CSS + component/datastar JS), embedded
 	// in every binary; static, so outside auth like /healthz.
 	outer.Handle("GET /_bespoke/", ui.Handler())
-	outer.Handle("/", auth.Middleware(logRequests(slug, mux)))
+	outer.Handle("/", auth.Middleware(logRequests(slug, withShellData(slug, mux))))
 
 	srv := &http.Server{Addr: *listen, Handler: outer}
 	go func() {

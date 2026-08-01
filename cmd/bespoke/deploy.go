@@ -91,7 +91,7 @@ func cmdDeploy(args []string) error {
 		return err
 	}
 	if err := run("ssh", cfg.SelfieSSH,
-		fmt.Sprintf("test -f ~/bespoke/env || printf 'BESPOKE_BIND_IP=%%s\\nBESPOKE_DOMAIN=%%s\\nBESPOKE_LLM_URL=http://%%s:4001\\n' '%s' '%s' '%s' > ~/bespoke/env", cfg.SelfieTSIP, cfg.Domain, cfg.SelfieTSIP)); err != nil {
+		fmt.Sprintf("test -f ~/bespoke/env || printf 'BESPOKE_BIND_IP=%%s\\nBESPOKE_DOMAIN=%%s\\nBESPOKE_LLM_URL=http://%%s:4001\\nBESPOKE_ROOT=%%s/bespoke\\n' '%s' '%s' '%s' \"$HOME\" > ~/bespoke/env", cfg.SelfieTSIP, cfg.Domain, cfg.SelfieTSIP)); err != nil {
 		return err
 	}
 
