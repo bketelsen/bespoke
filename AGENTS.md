@@ -19,6 +19,8 @@ this file as the code enforcing them lands.
 Step-by-step procedures live in [.agents/skills/](.agents/skills/); follow
 them rather than improvising, whichever agent you are:
 
+- **Turning a thin app idea into a spec** (run this first for one-line
+  requests) → [.agents/skills/design-app/SKILL.md](.agents/skills/design-app/SKILL.md)
 - **Building a new app** → [.agents/skills/new-app/SKILL.md](.agents/skills/new-app/SKILL.md)
 - **Adding/adjusting UI components or the theme** → [.agents/skills/new-component/SKILL.md](.agents/skills/new-component/SKILL.md)
 

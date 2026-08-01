@@ -12,6 +12,11 @@ config, stop: you're off the path (see AGENTS.md).
 
 ## Steps
 
+0. **Thin prompt? Design first.** If the request is a bare noun or one
+   sentence ("build me a journal") and the user hasn't said "just build it",
+   run [design-app](../design-app/SKILL.md) first and build from its spec.
+   If a spec exists, put it at `apps/<slug>/README.md` and treat it as the
+   contract.
 1. **Scaffold.** `just new <slug>` (slug: `[a-z0-9-]{1,32}`). This assigns
    the port, writes the manifest, and generates a compiling app. Never pick
    ports or create `apps/<slug>/` by hand.

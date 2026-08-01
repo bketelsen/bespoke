@@ -40,6 +40,11 @@ around:
 
 `.agents/skills/` (symlinked as `.claude/skills/`):
 
+- **[design-app](../../.agents/skills/design-app/SKILL.md)** — the front
+  half of the one-shot: a 5–8 question interview (one question at a time,
+  options over essays) that turns a bare "build me a journal" into a
+  half-page spec at `apps/<slug>/README.md` — usage moment, record shape,
+  views, service leverage, confirmed non-goals, parked ideas.
 - **[new-app](../../.agents/skills/new-app/SKILL.md)** — one-line description
   → `just new`, schema, handlers, views on `pkg/ui`, shared-capability check
   against the [internal services catalog](internal-services.md), full local
