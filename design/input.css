@@ -15,6 +15,7 @@
 
 @import "tailwindcss";
 @import "./tw-animate.css"; /* vendored; templUI components use animate-in/out */
+@plugin "@tailwindcss/typography"; /* `prose` styles for ui.Markdown output */
 
 @source "../pkg/ui/**/*.templ";
 @source "../pkg/ui/**/*_templ.go";

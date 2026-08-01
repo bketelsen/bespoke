@@ -122,7 +122,9 @@ templ Stream(user auth.User, days []Day) {
 				for _, e := range d.Entries {
 					<div class="group flex gap-3 rounded-lg border bg-card px-4 py-3">
 						<span class="pt-0.5 text-xs tabular-nums text-muted-foreground">{ e.Time }</span>
-						<p class="min-w-0 flex-1 whitespace-pre-wrap">{ e.Body }</p>
+						<div class="min-w-0 flex-1">
+							@ui.Markdown(e.Body)
+						</div>
 						<form
 							method="post"
 							action={ templ.SafeURL(fmt.Sprintf("/entries/%d/delete", e.ID)) }

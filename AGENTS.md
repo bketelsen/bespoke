@@ -55,6 +55,9 @@ them rather than improvising, whichever agent you are:
   toolchain.
 - Live UI updates use `web.NewSSE` (Datastar); the AppShell already loads
   `datastar.js`.
+- Render user- or LLM-authored markdown with `ui.Markdown(text)` (GFM,
+  `prose`-styled, raw HTML omitted by goldmark — never enable unsafe HTML);
+  never store HTML or roll your own renderer.
 - LLM inference only via `llm.New(slug)` → `Complete`/`CompleteJSON`/
   `Classify` ([design](docs/design/llm-gateway.md)); never call a model
   provider or the Copilot SDK from an app. Expect ~1.5s per call — design

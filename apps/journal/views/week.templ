@@ -23,7 +23,7 @@ templ Week(user auth.User, sum *Summary, count int) {
 				}
 				@card.Content() {
 					if sum != nil {
-						<p class="whitespace-pre-wrap">{ sum.Body }</p>
+						@ui.Markdown(sum.Body)
 						<p class="mt-4 text-xs text-muted-foreground">
 							{ sum.RangeStart } – { sum.RangeEnd } · generated { sum.Generated }
 						</p>
