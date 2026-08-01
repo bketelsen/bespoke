@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/bketelsen/bespoke/apps/journal/views"
+	"github.com/bketelsen/bespoke/pkg/audio"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/db"
 	"github.com/bketelsen/bespoke/pkg/llm"
@@ -31,6 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 	ai := llm.New("journal")
+	voice := audio.New("journal")
 
 	web.Run("journal", func(mux *http.ServeMux) {
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +55,26 @@ func main() {
 				}
 			}
 			http.Redirect(w, r, "/", http.StatusSeeOther)
+		})
+
+		mux.HandleFunc("POST /entries/voice", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			text, err := voice.Transcribe(r.Context(),
+				http.MaxBytesReader(w, r.Body, 25<<20),
+				audio.WithMIME(r.Header.Get("Content-Type")))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadGateway)
+				return
+			}
+			if text = strings.TrimSpace(text); text == "" {
+				http.Error(w, "empty transcription", http.StatusUnprocessableEntity)
+				return
+			}
+			if _, err := sqldb.Exec("INSERT INTO entries (login, body) VALUES (?, ?)", user.Login, text); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent) // recorder.js reloads the page
 		})
 
 		mux.HandleFunc("POST /entries/{id}/delete", func(w http.ResponseWriter, r *http.Request) {

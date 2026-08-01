@@ -26,9 +26,10 @@ func main() {
 
 	gw := newLLMGateway()
 	go gw.start()
+	agw := newAudioGateway()
 
 	web.Serve("platformd", 4000, func(mux *http.ServeMux) {
-		go gw.serveLLM(*internal) // after flag.Parse (inside Serve)
+		go serveInternal(*internal, gw, agw) // after flag.Parse (inside Serve)
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			apps, warnings, err := manifest.LoadAll(root)
@@ -37,6 +38,9 @@ func main() {
 				return
 			}
 			if s := gw.warning(); s != "" {
+				warnings = append(warnings, s)
+			}
+			if s := agw.warning(); s != "" {
 				warnings = append(warnings, s)
 			}
 			dev := os.Getenv("BESPOKE_DEV_USER") != ""

@@ -152,10 +152,19 @@ type completeRequest struct {
 	Prompt string `json:"prompt"`
 }
 
-// serveLLM mounts the gateway endpoints on the internal listener — never on
-// the edge-facing mux (the internal port is not routed by Caddy).
-func (g *llmGateway) serveLLM(addr string) {
+// serveInternal runs the internal-services listener (the 4001 plane,
+// ADR-0012) — never routed by Caddy.
+func serveInternal(addr string, llm *llmGateway, audio *audioGateway) {
 	mux := http.NewServeMux()
+	llm.register(mux)
+	audio.register(mux)
+	log.Printf("internal services listening on %s", addr)
+	if err := http.ListenAndServe(addr, mux); err != nil {
+		llm.setStatus(fmt.Sprintf("internal listener down: %v", err))
+	}
+}
+
+func (g *llmGateway) register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /llm/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if s := g.warning(); s != "" {
 			http.Error(w, s, http.StatusServiceUnavailable)
@@ -181,9 +190,4 @@ func (g *llmGateway) serveLLM(addr string) {
 		}
 		json.NewEncoder(w).Encode(map[string]string{"text": text})
 	})
-
-	log.Printf("llm gateway listening on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		g.setStatus(fmt.Sprintf("LLM gateway down: %v", err))
-	}
 }

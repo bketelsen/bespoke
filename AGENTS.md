@@ -60,6 +60,10 @@ them rather than improvising, whichever agent you are:
   provider or the Copilot SDK from an app. Expect ~1.5s per call — design
   features accordingly. Local dev needs platformd running (`just dev`) and
   the `copilot` CLI authenticated.
+- Voice input: `ui.VoiceButton("/your/endpoint")` in the view +
+  `audio.New(slug).Transcribe` in the handler ([ADR-0014](docs/adr/0014-audio-service-transcription.md));
+  never touch MediaRecorder or a speech backend directly. Currently
+  stub-backed — transcriptions are placeholders until Lemonade is wired.
 - Before building a shared capability into an app, check the
   [internal services catalog](docs/design/internal-services.md) and follow
   its decision tree: `pkg/*` helper first, internal service on platformd's

@@ -126,12 +126,12 @@ apps deploy to `selfie`, builds happen on the dev machine)
     `0.0.0.0` (ADR-0011: nothing binds all interfaces), and note its port
     sits outside the edge-only 4000-4999 ACL — add a tailnet ACL entry for
     dev-machine → selfie:<lemonade port> rather than leaving it open.
-- **Audio (first-class, planned):** `pkg/audio` Transcribe/Speak via gateway
-  `/audio/*` routes, Lemonade-backed — contract pinned in the
-  [catalog](../design/internal-services.md#audio-planned-first-class-service);
-  build with its first consumer — **designated: the journal app's voice
-  capture** ([apps/journal/README.md](../../apps/journal/README.md)), gated
-  on the Lemonade ops backlog above.
+- **Audio:** transcription is LIVE stub-first with journal voice capture as
+  first consumer ([ADR-0014](../adr/0014-audio-service-transcription.md)) —
+  flipping to real transcription = clear the Lemonade backlog above, then
+  set `BESPOKE_LEMONADE_URL` (+ optionally `BESPOKE_AUDIO_MODEL`) in
+  platformd's env and validate the OpenAI-compatible request shape against
+  the live server. `Speak` stays planned until its first consumer.
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.

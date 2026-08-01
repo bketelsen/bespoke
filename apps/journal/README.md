@@ -20,11 +20,18 @@ evening reflections — opened whenever, written in seconds.
   button.
 - `POST /week/summarize` — generates via `llm.Complete` (~seconds, page
   action), saves, back to /week.
+- `POST /entries/voice` — mic button (`ui.VoiceButton`) records in the
+  browser; audio is transcribed via `audio.Transcribe` and saved as a normal
+  entry.
 
 ## Services
 
 - `pkg/llm` for the weekly summary — on demand, cached in `summaries`, never
   automatic.
+- `pkg/audio` for voice capture (first consumer, ADR-0014). **Stub-backed
+  until the Lemonade backlog clears** — entries arrive clearly marked as
+  stubs; flipping `BESPOKE_LEMONADE_URL` on platformd makes them real with
+  no app change.
 
 ## Non-goals (confirmed)
 
@@ -34,10 +41,6 @@ evening reflections — opened whenever, written in seconds.
 
 ## Later
 
-- **Voice capture — designated first consumer for the platform audio
-  service** (`audio.Transcribe`, [contract](../../docs/design/internal-services.md#audio-planned-first-class-service)):
-  mic button on the capture box → transcribed entry. Gated on the Lemonade
-  ops prerequisites in the roadmap backlog.
 - Writing prompt on empty days (LLM, cached per day).
 - Auto-mood tag via `llm.Classify` → mood glance view.
 - Search, kind filters if the stream ever feels unmanageable.

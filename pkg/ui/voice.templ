@@ -1,0 +1,24 @@
+// Voice input (ADR-0014): the shared recorder button. Click to record,
+// click to stop; the audio POSTs to action, which should transcribe (via
+// pkg/audio) and redirect/200. Renders its own script tag.
+package ui
+
+import (
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+)
+
+templ VoiceButton(action string) {
+	@button.Button(button.Props{
+		Type:    button.TypeButton,
+		Variant: button.VariantOutline,
+		Size:    button.SizeIcon,
+		Attributes: templ.Attributes{
+			"data-voice-post": action,
+			"title":           "record a voice entry",
+		},
+	}) {
+		@icon.Mic(icon.Props{Class: "size-4"})
+	}
+	<script type="module" src="/_bespoke/js/recorder.js"></script>
+}

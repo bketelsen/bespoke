@@ -41,9 +41,12 @@ templ Stream(user auth.User, days []Day) {
 					})
 					<div class="flex items-center justify-between">
 						<a href="/week" class="text-sm text-primary hover:underline">Weekly summary →</a>
-						@button.Button(button.Props{Type: button.TypeSubmit}) {
-							Save
-						}
+						<div class="flex items-center gap-2">
+							@ui.VoiceButton("/entries/voice")
+							@button.Button(button.Props{Type: button.TypeSubmit}) {
+								Save
+							}
+						</div>
 					</div>
 				}
 			}
