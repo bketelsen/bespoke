@@ -24,7 +24,8 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			views.Dashboard(auth.FromContext(r.Context()), domain, apps, warnings).Render(r.Context(), w)
+			dev := os.Getenv("BESPOKE_DEV_USER") != ""
+			views.Dashboard(auth.FromContext(r.Context()), dev, domain, apps, warnings).Render(r.Context(), w)
 		})
 	})
 }

@@ -1,7 +1,6 @@
 package views
 
 import (
-	"fmt"
 	"github.com/bketelsen/bespoke/internal/manifest"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/ui"
@@ -10,14 +9,14 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
 )
 
-templ Dashboard(user auth.User, domain string, apps []manifest.App, warnings []string) {
+templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, warnings []string) {
 	@ui.AppShell(ui.ShellProps{User: user}) {
 		if len(apps) == 0 {
 			<p class="text-muted-foreground">No apps yet.</p>
 		}
 		<div class="grid gap-4 sm:grid-cols-2">
 			for _, app := range apps {
-				<a href={ templ.SafeURL(fmt.Sprintf("https://%s.%s/", app.Slug, domain)) } class="group">
+				<a href={ appURL(dev, domain, app) } class="group">
 					@card.Card(card.Props{Class: "h-full transition-colors group-hover:border-primary"}) {
 						@card.Header() {
 							<div class="flex items-center gap-3">

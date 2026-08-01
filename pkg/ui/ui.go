@@ -46,6 +46,11 @@ func AppIcon(name, class string) templ.Component {
 }
 
 // homeURL is the dashboard address, shown as the brand link in every AppShell.
+// In dev mode (BESPOKE_DEV_USER set, no edge proxy) it points at platformd's
+// local port instead of the production domain.
 func homeURL() templ.SafeURL {
+	if os.Getenv("BESPOKE_DEV_USER") != "" {
+		return templ.SafeURL("http://localhost:4000/")
+	}
 	return templ.SafeURL("https://" + cmp.Or(os.Getenv("BESPOKE_DOMAIN"), "bespoke.example.com") + "/")
 }

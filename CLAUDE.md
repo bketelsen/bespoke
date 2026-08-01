@@ -21,8 +21,11 @@ this file as the code enforcing them lands.
   modernc.org/sqlite; deploys cross-compile with `CGO_ENABLED=0`, so no cgo
   dependencies anywhere.
 - Ports come from manifests ([spec](docs/specs/app-manifest.md)); never
-  hardcode a listen address. Local dev: run the binary directly with
-  `BESPOKE_DEV_USER=me@github`; it binds `127.0.0.1:<manifest port>`.
+  hardcode a listen address. Local dev: `just dev` runs platformd + all apps
+  on `127.0.0.1` with a fake identity (`BESPOKE_DEV_USER`, defaults to
+  `$(whoami)@local`); when that env var is set, dashboard and AppShell links
+  point at localhost ports instead of the production domain. New apps must be
+  added to the `dev` recipe in the [Justfile](Justfile).
 - Deploy only via `scripts/deploy.sh` (the `bespoke` CLI replaces it in
   Phase 4); new binaries must be added to its `BINS`/`SRCS` lists and get a
   systemd unit in `deploy/systemd/`.
@@ -36,8 +39,8 @@ this file as the code enforcing them lands.
   toolchain.
 - Live UI updates use `web.NewSSE` (Datastar); the AppShell already loads
   `datastar.js`.
-- Run `go vet ./... && go test ./...` and the `CGO_ENABLED=0 GOOS=linux`
-  build before calling any change done.
+- Run `just check` (vet + tests + the CGO-free linux cross-compile) before
+  calling any change done.
 
 ## Documentation rules (enforced)
 
