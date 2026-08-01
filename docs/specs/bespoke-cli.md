@@ -18,12 +18,18 @@ Exit non-zero without side effects on any validation failure.
 
 ### `bespoke deploy <slug>`
 
-1. `go build -o bin/apps/<slug> ./apps/<slug>` — abort on compile error.
-2. Restart `bespoke-<slug>.service`; wait for a `200` from
-   `localhost:<port>/healthz` (provided by `pkg/web`) within 10s, else roll
+Runs on the dev machine; remote hosts per
+[ADR-0011](../adr/0011-split-host-deployment.md).
+
+1. `GOOS=linux go build -o bin/apps/<slug> ./apps/<slug>` — abort on compile
+   error.
+2. rsync the binary, manifest, and generated unit to the app host (`selfie`);
+   restart `bespoke-<slug>.service`; wait for a `200` from
+   `<selfie>:<port>/healthz` (provided by `pkg/web`) within 10s, else roll
    back to the previous binary and exit non-zero.
 3. Regenerate the Caddy route import and Litestream config from all manifests;
-   `caddy reload` via the admin API (no-op if unchanged).
+   push the route file to the edge host and `caddy reload` (no-op if
+   unchanged).
 
 ### `bespoke list`
 

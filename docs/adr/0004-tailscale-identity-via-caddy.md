@@ -1,6 +1,8 @@
 # 0004 — Tailscale identity via Caddy headers
 
-- **Status:** Accepted
+- **Status:** Accepted — refined by [ADR-0011](0011-split-host-deployment.md)
+  (Caddy and apps run on separate hosts: the loopback-only rule becomes
+  bind-to-tailscale-interface + ACL restricting app ports to the edge host)
 - **Date:** 2026-08-01
 
 ## Context

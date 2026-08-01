@@ -5,9 +5,16 @@ demonstrably working.
 
 ## Phase 1 — Prove the loop (weekend-sized)
 
-- Caddy wildcard cert (DNS challenge) + caddy-tailscale auth + header stripping.
+([ADR-0011](../adr/0011-split-host-deployment.md): edge host runs Caddy,
+apps deploy to `selfie`, builds happen on the dev machine)
+
+- Rebuild edge Caddy with `caddy-tailscale` + `caddy-dns/cloudflare`
+  (xcaddy); Cloudflare API token on the edge host; wildcard DNS record.
+- Tailscale ACL: only the edge host reaches `selfie:4000-4999`.
 - platformd v0: dashboard reading `apps/*/app.toml` manifests.
-- One hardcoded hello-world app behind the full route/auth path.
+- Hello-world app behind the full route/auth path.
+- `scripts/deploy.sh`: cross-compile → rsync to selfie → restart units →
+  push Caddy routes to edge. Runbook in `deploy/README.md`.
 - **Done when:** `hello.bespoke.example.com` renders my Tailscale login name.
 
 ## Phase 2 — Framework v0

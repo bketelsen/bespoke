@@ -23,6 +23,7 @@ Docs are split by the question they answer:
 - [0008 — Go + templ + Datastar frontend](adr/0008-go-templ-datastar-frontend.md)
 - [0009 — LLM inference via Copilot SDK gateway](adr/0009-copilot-sdk-llm-gateway.md)
 - [0010 — Build pkg/ui on vendored templUI components](adr/0010-templui-component-base.md)
+- [0011 — Split-host deployment: edge, app host, dev machine](adr/0011-split-host-deployment.md)
 
 ### Design
 

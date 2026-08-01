@@ -1,0 +1,43 @@
+# Bespoke routes — lives on the EDGE host, imported from its main Caddyfile:
+#     import /etc/caddy/bespoke.caddy
+#
+# Phase 1: hand-maintained. The bespoke CLI generates the route map from the
+# app manifests in Phase 4 (docs/specs/bespoke-cli.md).
+#
+# Requires Caddy built with (see deploy/README.md):
+#     xcaddy build \
+#       --with github.com/tailscale/caddy-tailscale \
+#       --with github.com/caddy-dns/cloudflare
+# and CLOUDFLARE_API_TOKEN in Caddy's environment.
+#
+# deploy.sh substitutes __DOMAIN__ and __SELFIE_TS_IP__ before pushing.
+
+*.__DOMAIN__, __DOMAIN__ {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	}
+
+	route {
+		# SECURITY (ADR-0004): never trust identity headers from the client.
+		request_header -Tailscale-User-Login
+		request_header -Tailscale-User-Name
+
+		# Authenticate the connection against the local tailscaled.
+		# Verify placeholder names against the plugin version you build:
+		# https://github.com/tailscale/caddy-tailscale
+		tailscale_auth
+
+		# hello.bespoke.example.com → {labels.3} is "hello".
+		# Adjust the label index to your domain's depth
+		# (labels count from the right: com=0, example=1, bespoke=2, app=3).
+		map {labels.3} {app_port} {
+			hello   4101
+			default 4000
+		}
+
+		reverse_proxy __SELFIE_TS_IP__:{app_port} {
+			header_up Tailscale-User-Login {http.auth.user.tailscale_login}
+			header_up Tailscale-User-Name  {http.auth.user.tailscale_name}
+		}
+	}
+}

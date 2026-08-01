@@ -5,24 +5,36 @@ Living document — kept current as the system evolves. Rationale lives in the
 
 ## Topology
 
+Three hosts, connected only over the tailnet
+([ADR-0011](../adr/0011-split-host-deployment.md)):
+
 ```
-                    tailnet only
-browser ──► Caddy (wildcard *.bespoke.example.com)
-              │  tailscale auth → sets Tailscale-User-* headers
-              │  (strips any inbound copies of those headers)
-              ├── bespoke.example.com         ──► platformd :4000  (dashboard/registry/LLM gateway)
-              ├── journal.bespoke.example.com ──► journal   :4101
-              ├── fitness.bespoke.example.com ──► fitness   :4102
-              └── ...one loopback port per app process
+browser (tailnet)
+   │
+   ▼
+EDGE HOST — existing Caddy + caddy-tailscale + caddy-dns/cloudflare
+   │  wildcard *.bespoke.example.com (Cloudflare DNS ACME challenge)
+   │  tailscale auth → strips inbound + sets Tailscale-User-* headers
+   │
+   │  tailnet; ACL: only edge may reach selfie:4000-4999
+   ├── bespoke.example.com       ──► selfie:4000  platformd (dashboard/registry/LLM gateway)
+   ├── hello.bespoke.example.com ──► selfie:4101
+   └── <slug>.bespoke.example.com ──► selfie:<port>
+
+APP HOST (`selfie`) — platformd + one process per app, systemd user units,
+   each bound to selfie's tailscale interface (never 0.0.0.0, never public)
+
+DEV MACHINE — builds (GOOS=linux), deploys via rsync/ssh to selfie,
+   pushes generated Caddy routes to the edge host
 ```
 
-- One Go process per app, each a systemd user unit on an assigned loopback
-  port ([ADR-0005](../adr/0005-process-per-app.md)).
-- Subdomain per app, wildcard cert via ACME DNS challenge
+- One Go process per app ([ADR-0005](../adr/0005-process-per-app.md));
+  subdomain per app, wildcard cert via Cloudflare DNS challenge
   ([ADR-0003](../adr/0003-subdomain-per-app-routing.md)).
 - platformd is deliberately thin: dashboard, registry (scans manifests),
-  generated Caddy route config, LLM gateway
-  ([llm-gateway.md](llm-gateway.md)).
+  generated Caddy route config, LLM gateway ([llm-gateway.md](llm-gateway.md)).
+- The Tailscale ACL restricting app ports to the edge host is a security
+  invariant, same standing as header stripping.
 
 ## Auth flow
 
@@ -33,7 +45,10 @@ browser ──► Caddy (wildcard *.bespoke.example.com)
    `Tailscale-User-Login` / `Tailscale-User-Name`.
 3. Caddy strips inbound copies of those headers first — **non-negotiable**.
 4. Apps use `pkg/auth` middleware only: reject if absent, else `auth.User(ctx)`.
-5. App processes listen on loopback only (enforced by `pkg/web`).
+5. App processes bind to selfie's tailscale interface; the ACL ensures only
+   the edge host can reach those ports
+   ([ADR-0011](../adr/0011-split-host-deployment.md)). Local dev binds
+   loopback and fakes the header.
 
 ## Repo layout
 
@@ -42,7 +57,8 @@ bespoke/
 ├── CLAUDE.md            # conventions the agent treats as law
 ├── .claude/skills/      # new-app, new-component, ...
 ├── bin/bespoke          # CLI (see specs/bespoke-cli.md)
-├── Caddyfile            # static part; app routes are a generated import
+├── deploy/              # caddy snippet, systemd units, runbook (ADR-0011)
+├── scripts/             # deploy.sh (until the bespoke CLI lands)
 ├── platform/            # platformd: dashboard + registry + LLM gateway
 ├── pkg/                 # auth, db, web, ui, llm, notify (ADR-0006)
 ├── design/              # input.css theme (ADR-0010) + design system docs
@@ -97,6 +113,11 @@ Single Go module monorepo — one dependency graph
 
 ## Deploy loop
 
-`bespoke deploy <slug>` → `go build` → restart systemd unit → regenerate Caddy
-routes from manifests → `caddy reload` via admin API. Seconds end to end.
-Details in the [CLI spec](../specs/bespoke-cli.md).
+([ADR-0011](../adr/0011-split-host-deployment.md))
+
+`bespoke deploy <slug>` from the dev machine → cross-compile
+(`GOOS=linux`) → rsync binary + manifest + unit to selfie → restart unit,
+await healthz → regenerate Caddy route import from manifests → push to the
+edge host → `caddy reload`. Selfie needs no Go toolchain; it only receives
+binaries. Details in the [CLI spec](../specs/bespoke-cli.md); Phase 1 uses
+`scripts/deploy.sh` until the CLI exists.
