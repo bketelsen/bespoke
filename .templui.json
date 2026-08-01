@@ -1,0 +1,7 @@
+{
+  "componentsDir": "pkg/ui/components",
+  "utilsDir": "pkg/ui/utils",
+  "moduleName": "github.com/bketelsen/bespoke",
+  "jsDir": "pkg/ui/assets/js",
+  "jsPublicPath": "/_bespoke/js"
+}

@@ -1,0 +1,53 @@
+package views
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/internal/manifest"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/alert"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+)
+
+templ Dashboard(user auth.User, domain string, apps []manifest.App, warnings []string) {
+	@ui.AppShell(ui.ShellProps{User: user}) {
+		if len(apps) == 0 {
+			<p class="text-muted-foreground">No apps yet.</p>
+		}
+		<div class="grid gap-4 sm:grid-cols-2">
+			for _, app := range apps {
+				<a href={ templ.SafeURL(fmt.Sprintf("https://%s.%s/", app.Slug, domain)) } class="group">
+					@card.Card(card.Props{Class: "h-full transition-colors group-hover:border-primary"}) {
+						@card.Header() {
+							<div class="flex items-center gap-3">
+								<span class="rounded-md bg-primary/10 p-2 text-primary">
+									@ui.AppIcon(app.Icon, "size-5")
+								</span>
+								@card.Title() {
+									{ app.Name }
+								}
+							</div>
+							@card.Description() {
+								{ app.Description }
+							}
+						}
+					}
+				</a>
+			}
+		</div>
+		for _, w := range warnings {
+			<div class="mt-4">
+				@alert.Alert(alert.Props{Variant: alert.VariantDestructive}) {
+					@icon.TriangleAlert(icon.Props{Class: "size-4"})
+					@alert.Title() {
+						Manifest problem
+					}
+					@alert.Description() {
+						{ w }
+					}
+				}
+			</div>
+		}
+	}
+}

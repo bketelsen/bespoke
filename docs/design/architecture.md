@@ -106,8 +106,11 @@ Single Go module monorepo — one dependency graph
 - `design/input.css`: the bespoke theme — CSS variables (oklch colors, radius,
   typography), light/dark. This file is the visual identity; change it and
   every app restyles.
-- CSS is compiled by the Tailwind v4 **standalone binary** during
-  `bespoke deploy` — still no Node toolchain.
+- CSS is compiled by the Tailwind v4 **standalone binary**
+  (`scripts/build-ui.sh`); the compiled stylesheet and generated templ code
+  are committed and embedded via go:embed, served by every app at
+  `/_bespoke/` — builds and deploys need no UI toolchain, and there is still
+  no Node anywhere.
 - Apps compose `pkg/ui`; Tailwind utilities for layout only, theme tokens
   only, no custom CSS files.
 

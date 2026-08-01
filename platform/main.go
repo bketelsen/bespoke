@@ -4,51 +4,14 @@ package main
 
 import (
 	"cmp"
-	"html/template"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/bketelsen/bespoke/internal/manifest"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/web"
+	"github.com/bketelsen/bespoke/platform/views"
 )
-
-var page = template.Must(template.New("dashboard").Parse(`<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bespoke</title>
-<style>
-  /* Phase 1 placeholder styling; replaced by the design system in Phase 3
-     (ADR-0010). */
-  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-  body { max-width: 42rem; margin: 3rem auto; padding: 0 1rem; }
-  header { display: flex; justify-content: space-between; align-items: baseline; }
-  ul { list-style: none; padding: 0; display: grid; gap: .75rem; }
-  li { border: 1px solid color-mix(in oklab, currentColor 25%, transparent);
-       border-radius: .5rem; padding: 1rem; }
-  li a { font-weight: 600; text-decoration: none; }
-  .desc { opacity: .75; margin-top: .25rem; }
-  .warn { color: #b45309; font-size: .875rem; }
-</style>
-</head>
-<body>
-<header><h1>Bespoke</h1><span>{{.User.Name}}</span></header>
-{{if not .Apps}}<p>No apps yet.</p>{{end}}
-<ul>
-{{range .Apps}}
-  <li>
-    <a href="https://{{.Slug}}.{{$.Domain}}/">{{.Name}}</a>
-    <div class="desc">{{.Description}}</div>
-  </li>
-{{end}}
-</ul>
-{{range .Warnings}}<p class="warn">⚠ {{.}}</p>{{end}}
-</body>
-</html>
-`))
 
 func main() {
 	domain := cmp.Or(os.Getenv("BESPOKE_DOMAIN"), "bespoke.example.com")
@@ -61,12 +24,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			if err := page.Execute(w, map[string]any{
-				"User": auth.FromContext(r.Context()), "Domain": domain,
-				"Apps": apps, "Warnings": warnings,
-			}); err != nil {
-				log.Printf("render: %v", err)
-			}
+			views.Dashboard(auth.FromContext(r.Context()), domain, apps, warnings).Render(r.Context(), w)
 		})
 	})
 }

@@ -19,6 +19,7 @@ import (
 
 	"github.com/bketelsen/bespoke/internal/manifest"
 	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
 )
 
 // Run serves the app named slug on the port from its manifest — the normal
@@ -49,6 +50,9 @@ func Serve(slug string, defaultPort int, register func(mux *http.ServeMux)) {
 	outer.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
+	// Design system assets (compiled CSS + component/datastar JS), embedded
+	// in every binary; static, so outside auth like /healthz.
+	outer.Handle("GET /_bespoke/", ui.Handler())
 	outer.Handle("/", auth.Middleware(logRequests(slug, mux)))
 
 	srv := &http.Server{Addr: *listen, Handler: outer}

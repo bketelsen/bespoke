@@ -26,6 +26,16 @@ this file as the code enforcing them lands.
 - Deploy only via `scripts/deploy.sh` (the `bespoke` CLI replaces it in
   Phase 4); new binaries must be added to its `BINS`/`SRCS` lists and get a
   systemd unit in `deploy/systemd/`.
+- UI: pages are templ views composing `pkg/ui` — `ui.AppShell` wraps every
+  page; vendored components live in `pkg/ui/components` and are NEVER
+  hand-edited (`./tools/templui add <name>` to vendor more; run
+  `scripts/setup-tools.sh` once first). The look lives only in
+  `design/input.css`. After changing any `.templ` file or the theme, run
+  `scripts/build-ui.sh` and COMMIT the generated `*_templ.go` and
+  `pkg/ui/assets/styles.css` — builds and deploys must not need the UI
+  toolchain.
+- Live UI updates use `web.NewSSE` (Datastar); the AppShell already loads
+  `datastar.js`.
 - Run `go vet ./... && go test ./...` and the `CGO_ENABLED=0 GOOS=linux`
   build before calling any change done.
 

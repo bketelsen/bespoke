@@ -49,6 +49,15 @@ apps deploy to `selfie`, builds happen on the dev machine)
   first UI that uses them).
 - Dashboard rebuilt on `pkg/ui`.
 - **Done when:** dashboard and hello-world are visually indistinguishable in style.
+- **Status (2026-08-01):** ✅ done. Nine components vendored (+icon with 1700
+  Lucide icons); theme is "tailor's chalk" (warm paper, teal primary, copper
+  accent) in `design/input.css`; `tw-animate-css` and `datastar.js` (v1.0.2)
+  vendored; `web.NewSSE` helper wired. Compiled CSS and generated
+  `*_templ.go` are COMMITTED and embedded, so builds/deploys need no UI
+  toolchain — `scripts/setup-tools.sh` + `scripts/build-ui.sh` are needed
+  only to change the design system. Dashboard and hello both render through
+  `ui.AppShell` with the same embedded stylesheet, verified locally.
+  In-browser visual pass still pending (headless environment).
 
 ## Phase 4 — Operations
 

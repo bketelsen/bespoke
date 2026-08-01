@@ -1,15 +1,14 @@
-// hello: the Phase 1 proof app, now on pkg/* (Phase 2: an app is only its
-// routes, views, and migrations — zero infrastructure code).
+// hello: the canonical app shape — manifest, main.go, views, migrations,
+// zero infrastructure code (CLAUDE.md).
 package main
 
 import (
 	"embed"
-	"fmt"
-	"html"
 	"io/fs"
 	"log"
 	"net/http"
 
+	"github.com/bketelsen/bespoke/apps/hello/views"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/db"
 	"github.com/bketelsen/bespoke/pkg/web"
@@ -37,9 +36,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			fmt.Fprintf(w, `<!doctype html><meta charset="utf-8"><title>Hello</title>
-<h1>Hello, %s 👋</h1><p>Authenticated as <code>%s</code> — visit #%d through the whole stack.</p>`,
-				html.EscapeString(user.Name), html.EscapeString(user.Login), visits)
+			views.Home(user, visits).Render(r.Context(), w)
 		})
 	})
 }

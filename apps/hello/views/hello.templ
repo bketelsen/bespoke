@@ -1,0 +1,29 @@
+package views
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/badge"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+)
+
+templ Home(user auth.User, visits int) {
+	@ui.AppShell(ui.ShellProps{Title: "Hello", User: user}) {
+		@card.Card() {
+			@card.Header() {
+				@card.Title() {
+					Hello, { user.Name } 👋
+				}
+				@card.Description() {
+					Authenticated as { user.Login } — rendered through the whole stack.
+				}
+			}
+			@card.Content() {
+				@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+					{ fmt.Sprintf("visit #%d", visits) }
+				}
+			}
+		}
+	}
+}
