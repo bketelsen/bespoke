@@ -4,11 +4,30 @@ A personal platform for one-off, just-for-me apps, designed to be built and
 maintained by LLM agents. Start at [docs/README.md](docs/README.md); the
 architecture lives in [docs/design/architecture.md](docs/design/architecture.md).
 
-No code exists yet — the docs are the project. Platform invariants (use
-`pkg/*`, no ad-hoc CSS, deploy only via the `bespoke` CLI, loopback-only
-listeners) are specified in
+Platform invariants are specified in
 [docs/design/agent-layer.md](docs/design/agent-layer.md) and graduate into
-this file as the code that enforces them lands.
+this file as the code enforcing them lands.
+
+## Code conventions (live — the code exists)
+
+- An app is `apps/<slug>/`: `app.toml` manifest, `main.go` calling
+  `web.Run(slug, register)`, handlers, `migrations/*.sql`. Nothing else. See
+  [apps/hello](apps/hello/main.go) for the canonical shape.
+- Identity only via `auth.FromContext` (handlers are already behind
+  `auth.Middleware`); never read `Tailscale-User-*` headers directly, never
+  add auth of any kind.
+- Storage only via `db.Open(slug, migrations)` — SQLite, embedded migrations
+  named `NNNN_description.sql`, applied in order. Driver stays
+  modernc.org/sqlite; deploys cross-compile with `CGO_ENABLED=0`, so no cgo
+  dependencies anywhere.
+- Ports come from manifests ([spec](docs/specs/app-manifest.md)); never
+  hardcode a listen address. Local dev: run the binary directly with
+  `BESPOKE_DEV_USER=me@github`; it binds `127.0.0.1:<manifest port>`.
+- Deploy only via `scripts/deploy.sh` (the `bespoke` CLI replaces it in
+  Phase 4); new binaries must be added to its `BINS`/`SRCS` lists and get a
+  systemd unit in `deploy/systemd/`.
+- Run `go vet ./... && go test ./...` and the `CGO_ENABLED=0 GOOS=linux`
+  build before calling any change done.
 
 ## Documentation rules (enforced)
 

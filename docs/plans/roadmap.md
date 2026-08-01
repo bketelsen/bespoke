@@ -16,13 +16,22 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - `scripts/deploy.sh`: cross-compile → rsync to selfie → restart units →
   push Caddy routes to edge. Runbook in `deploy/README.md`.
 - **Done when:** `hello.bespoke.example.com` renders my Tailscale login name.
+- **Status (2026-08-01):** code complete and smoke-tested locally (auth
+  gating, dashboard-from-manifests, hello). ⚠ **Remote steps UNVALIDATED** —
+  edge Caddy rebuild, Cloudflare DNS, Tailscale ACL, and the first real
+  deploy have not been executed; the runbook is written but untested. The
+  done-when remains open until then.
 
 ## Phase 2 — Framework v0
 
 - `pkg/auth`, `pkg/db` (migrations + WAL), `pkg/web` (scaffold, healthz,
-  loopback-only, Datastar helpers).
+  identity enforcement, logging, graceful shutdown).
 - Port hello-world onto `pkg/*`.
 - **Done when:** hello-world contains zero infrastructure code.
+- **Status (2026-08-01):** ✅ done. hello is routes + one migration; platformd
+  runs on `web.Serve`. SQLite driver is modernc.org/sqlite so deploys stay
+  CGO-free. Local dev bypass: `BESPOKE_DEV_USER=me@github`. Datastar SSE
+  helpers moved to Phase 3, where the first UI that needs them lands.
 
 ## Phase 3 — Design system
 
@@ -36,6 +45,8 @@ apps deploy to `selfie`, builds happen on the dev machine)
   with Claude.
 - Bespoke wrappers in `pkg/ui`: `AppShell` (nav, auth display, Datastar +
   component scripts), `Page`.
+- Datastar SSE helpers in `pkg/web` (moved from Phase 2 — built alongside the
+  first UI that uses them).
 - Dashboard rebuilt on `pkg/ui`.
 - **Done when:** dashboard and hello-world are visually indistinguishable in style.
 

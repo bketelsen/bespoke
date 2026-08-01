@@ -1,5 +1,10 @@
 # Deploy Runbook — Phase 1
 
+> ⚠ **UNVALIDATED** (2026-08-01): this runbook has not been executed
+> end-to-end yet. Expect rough edges on first run — in particular, verify the
+> caddy-tailscale placeholder names and the `map {labels.N}` index against
+> your domain and plugin version.
+
 Topology per [ADR-0011](../docs/adr/0011-split-host-deployment.md): **edge**
 (existing Caddy server) → **selfie** (app host) → built from the **dev
 machine**. Everything talks over the tailnet.

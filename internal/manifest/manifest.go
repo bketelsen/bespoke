@@ -41,6 +41,19 @@ func (a App) validate(dir string) error {
 	return nil
 }
 
+// Load reads and validates a single app's manifest from root/apps/<slug>/app.toml.
+func Load(root, slug string) (App, error) {
+	dir := filepath.Join(root, "apps", slug)
+	var app App
+	if _, err := toml.DecodeFile(filepath.Join(dir, "app.toml"), &app); err != nil {
+		return App{}, err
+	}
+	if err := app.validate(dir); err != nil {
+		return App{}, fmt.Errorf("%s: %w", dir, err)
+	}
+	return app, nil
+}
+
 // LoadAll scans root/apps/*/app.toml. Invalid or missing manifests never fail
 // the scan; they are reported as warnings so the dashboard can surface them.
 func LoadAll(root string) (apps []App, warnings []string, err error) {

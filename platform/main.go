@@ -4,13 +4,14 @@ package main
 
 import (
 	"cmp"
-	"flag"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/bketelsen/bespoke/internal/manifest"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/web"
 )
 
 var page = template.Must(template.New("dashboard").Parse(`<!doctype html>
@@ -34,7 +35,7 @@ var page = template.Must(template.New("dashboard").Parse(`<!doctype html>
 </style>
 </head>
 <body>
-<header><h1>Bespoke</h1><span>{{.User}}</span></header>
+<header><h1>Bespoke</h1><span>{{.User.Name}}</span></header>
 {{if not .Apps}}<p>No apps yet.</p>{{end}}
 <ul>
 {{range .Apps}}
@@ -50,32 +51,22 @@ var page = template.Must(template.New("dashboard").Parse(`<!doctype html>
 `))
 
 func main() {
-	listen := flag.String("listen", cmp.Or(os.Getenv("BESPOKE_LISTEN"), "127.0.0.1:4000"), "listen address")
-	flag.Parse()
 	domain := cmp.Or(os.Getenv("BESPOKE_DOMAIN"), "bespoke.example.com")
 	root := cmp.Or(os.Getenv("BESPOKE_ROOT"), ".")
 
-	http.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
+	web.Serve("platformd", 4000, func(mux *http.ServeMux) {
+		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+			apps, warnings, err := manifest.LoadAll(root)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := page.Execute(w, map[string]any{
+				"User": auth.FromContext(r.Context()), "Domain": domain,
+				"Apps": apps, "Warnings": warnings,
+			}); err != nil {
+				log.Printf("render: %v", err)
+			}
+		})
 	})
-	http.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		user := r.Header.Get("Tailscale-User-Login")
-		if user == "" {
-			http.Error(w, "no identity header; expected to be reached via the edge proxy", http.StatusUnauthorized)
-			return
-		}
-		apps, warnings, err := manifest.LoadAll(root)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if err := page.Execute(w, map[string]any{
-			"User": user, "Domain": domain, "Apps": apps, "Warnings": warnings,
-		}); err != nil {
-			log.Printf("render: %v", err)
-		}
-	})
-
-	log.Printf("platformd listening on %s (domain %s, root %s)", *listen, domain, root)
-	log.Fatal(http.ListenAndServe(*listen, nil))
 }
