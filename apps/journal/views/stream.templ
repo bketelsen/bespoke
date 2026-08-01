@@ -7,8 +7,26 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/button"
 	"github.com/bketelsen/bespoke/pkg/ui/components/card"
 	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+	"github.com/bketelsen/bespoke/pkg/ui/components/input"
+	"github.com/bketelsen/bespoke/pkg/ui/components/tabs"
 	"github.com/bketelsen/bespoke/pkg/ui/components/textarea"
 )
+
+// captureFooter is the shared save row; the voice button only makes sense
+// on the free-form Random tab.
+templ captureFooter(voice bool) {
+	<div class="flex items-center justify-between">
+		<a href="/week" class="text-sm text-primary hover:underline">Weekly summary →</a>
+		<div class="flex items-center gap-2">
+			if voice {
+				@ui.VoiceButton("/entries/voice")
+			}
+			@button.Button(button.Props{Type: button.TypeSubmit}) {
+				Save
+			}
+		</div>
+	</div>
+}
 
 type Entry struct {
 	ID   int64
@@ -30,27 +48,71 @@ type Summary struct {
 
 templ Stream(user auth.User, days []Day) {
 	@ui.AppShell(ui.ShellProps{Title: "Journal", User: user}) {
-		<form method="post" action="/entries">
-			@card.Card() {
-				@card.Content(card.ContentProps{Class: "space-y-3 pt-6"}) {
-					@textarea.Textarea(textarea.Props{
-						Name:        "body",
-						Placeholder: "write anything…",
-						Rows:        3,
-						AutoResize:  true,
-					})
-					<div class="flex items-center justify-between">
-						<a href="/week" class="text-sm text-primary hover:underline">Weekly summary →</a>
-						<div class="flex items-center gap-2">
-							@ui.VoiceButton("/entries/voice")
-							@button.Button(button.Props{Type: button.TypeSubmit}) {
-								Save
-							}
-						</div>
-					</div>
+		@card.Card() {
+			@card.Content(card.ContentProps{Class: "pt-6"}) {
+				@tabs.Tabs() {
+					@tabs.List(tabs.ListProps{Class: "mb-4"}) {
+						@tabs.Trigger(tabs.TriggerProps{Value: "random", IsActive: true}) {
+							Random
+						}
+						@tabs.Trigger(tabs.TriggerProps{Value: "work"}) {
+							Work Log
+						}
+						@tabs.Trigger(tabs.TriggerProps{Value: "reflection"}) {
+							Evening Reflection
+						}
+					}
+					@tabs.Content(tabs.ContentProps{Value: "random", IsActive: true}) {
+						<form method="post" action="/entries" class="space-y-3">
+							@textarea.Textarea(textarea.Props{
+								Name:        "body",
+								Placeholder: "write anything…",
+								Rows:        3,
+								AutoResize:  true,
+							})
+							@captureFooter(true)
+						</form>
+					}
+					@tabs.Content(tabs.ContentProps{Value: "work"}) {
+						<form method="post" action="/entries/work" class="space-y-3">
+							@input.Input(input.Props{Name: "project", Placeholder: "project"})
+							@textarea.Textarea(textarea.Props{
+								Name:        "task",
+								Placeholder: "what did you work on?",
+								Rows:        2,
+								AutoResize:  true,
+							})
+							@input.Input(input.Props{Name: "time", Placeholder: "time spent (e.g. 2h)"})
+							@captureFooter(false)
+						</form>
+					}
+					@tabs.Content(tabs.ContentProps{Value: "reflection"}) {
+						<form method="post" action="/entries/reflection" class="space-y-3">
+							@textarea.Textarea(textarea.Props{
+								Name:        "general",
+								Placeholder: "how was the day, generally?",
+								Rows:        2,
+								AutoResize:  true,
+							})
+							@textarea.Textarea(textarea.Props{
+								Name:        "work",
+								Placeholder: "and work?",
+								Rows:        2,
+								AutoResize:  true,
+							})
+							@textarea.Textarea(textarea.Props{
+								Name:        "family",
+								Placeholder: "and family?",
+								Rows:        2,
+								AutoResize:  true,
+							})
+							@captureFooter(false)
+						</form>
+					}
 				}
+				@tabs.Script()
 			}
-		</form>
+		}
 		if len(days) == 0 {
 			<p class="mt-8 text-muted-foreground">Nothing yet — first entry goes above.</p>
 		}

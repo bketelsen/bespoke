@@ -62,6 +62,30 @@ func main() {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 
+		mux.HandleFunc("POST /entries/work", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			body := workMarkdown(r.FormValue("project"), r.FormValue("task"), r.FormValue("time"))
+			if body != "" {
+				if _, err := sqldb.Exec("INSERT INTO entries (login, body) VALUES (?, ?)", user.Login, body); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+		})
+
+		mux.HandleFunc("POST /entries/reflection", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			body := reflectionMarkdown(r.FormValue("general"), r.FormValue("work"), r.FormValue("family"))
+			if body != "" {
+				if _, err := sqldb.Exec("INSERT INTO entries (login, body) VALUES (?, ?)", user.Login, body); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+		})
+
 		mux.HandleFunc("POST /entries/voice", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			text, err := voice.Transcribe(r.Context(),
@@ -110,6 +134,47 @@ func main() {
 			http.Redirect(w, r, "/week", http.StatusSeeOther)
 		})
 	})
+}
+
+// workMarkdown formats a work-log capture; empty fields are omitted, all
+// fields empty → "" (nothing saved).
+func workMarkdown(project, task, timeSpent string) string {
+	project, task, timeSpent = strings.TrimSpace(project), strings.TrimSpace(task), strings.TrimSpace(timeSpent)
+	if project == "" && task == "" && timeSpent == "" {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("### Work log\n")
+	if project != "" {
+		fmt.Fprintf(&b, "- **Project:** %s\n", project)
+	}
+	if task != "" {
+		fmt.Fprintf(&b, "- **Task:** %s\n", task)
+	}
+	if timeSpent != "" {
+		fmt.Fprintf(&b, "- **Time:** %s\n", timeSpent)
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+// reflectionMarkdown formats an evening reflection; same omit-empty rules.
+func reflectionMarkdown(general, work, family string) string {
+	general, work, family = strings.TrimSpace(general), strings.TrimSpace(work), strings.TrimSpace(family)
+	if general == "" && work == "" && family == "" {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("### Evening reflection\n")
+	if general != "" {
+		fmt.Fprintf(&b, "**General:** %s\n\n", general)
+	}
+	if work != "" {
+		fmt.Fprintf(&b, "**Work:** %s\n\n", work)
+	}
+	if family != "" {
+		fmt.Fprintf(&b, "**Family:** %s\n\n", family)
+	}
+	return strings.TrimRight(b.String(), "\n")
 }
 
 // chatContext feeds the in-app chat (ADR-0015): the last 30 days of entries

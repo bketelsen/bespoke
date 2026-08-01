@@ -12,9 +12,16 @@ evening reflections — opened whenever, written in seconds.
 
 ## Views
 
-- `GET /` — capture box (textarea) on top; entries below, newest first,
-  grouped by day (Today / Yesterday / date). Link to /week.
-- `POST /entries` — save an entry, back to `/`.
+- `GET /` — tabbed capture card on top (**Random** free-form box · **Work
+  Log**: project / task / time, all optional · **Evening Reflection**:
+  general / work / family); entries below, newest first, grouped by day
+  (Today / Yesterday / date). Link to /week.
+- `POST /entries` — save a free-form entry, back to `/`.
+- `POST /entries/work`, `POST /entries/reflection` — structured captures,
+  formatted to markdown at save (`### Work log` / `### Evening reflection`
+  with only the provided fields); an all-empty form saves nothing. The
+  stream stays one undifferentiated list — structure lives in the entry
+  text, not the schema (non-goal "no kinds" holds).
 - `POST /entries/{id}/delete` — accident hatch only (append-only journal).
 - `GET /week` — latest saved weekly summary + a "Summarize last 7 days"
   button.
