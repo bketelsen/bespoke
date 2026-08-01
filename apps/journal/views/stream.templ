@@ -1,0 +1,81 @@
+package views
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+	"github.com/bketelsen/bespoke/pkg/ui/components/textarea"
+)
+
+type Entry struct {
+	ID   int64
+	Time string // local HH:MM
+	Body string
+}
+
+type Day struct {
+	Label   string // Today / Yesterday / Mon, Jan 2 2006
+	Entries []Entry
+}
+
+type Summary struct {
+	Body       string
+	RangeStart string
+	RangeEnd   string
+	Generated  string
+}
+
+templ Stream(user auth.User, days []Day) {
+	@ui.AppShell(ui.ShellProps{Title: "Journal", User: user}) {
+		<form method="post" action="/entries">
+			@card.Card() {
+				@card.Content(card.ContentProps{Class: "space-y-3 pt-6"}) {
+					@textarea.Textarea(textarea.Props{
+						Name:        "body",
+						Placeholder: "write anything…",
+						Rows:        3,
+						AutoResize:  true,
+					})
+					<div class="flex items-center justify-between">
+						<a href="/week" class="text-sm text-primary hover:underline">Weekly summary →</a>
+						@button.Button(button.Props{Type: button.TypeSubmit}) {
+							Save
+						}
+					</div>
+				}
+			}
+		</form>
+		if len(days) == 0 {
+			<p class="mt-8 text-muted-foreground">Nothing yet — first entry goes above.</p>
+		}
+		for _, d := range days {
+			<h2 class="mt-8 mb-3 text-sm font-medium text-muted-foreground">{ d.Label }</h2>
+			<div class="space-y-2">
+				for _, e := range d.Entries {
+					<div class="group flex gap-3 rounded-lg border bg-card px-4 py-3">
+						<span class="pt-0.5 text-xs tabular-nums text-muted-foreground">{ e.Time }</span>
+						<p class="min-w-0 flex-1 whitespace-pre-wrap">{ e.Body }</p>
+						<form
+							method="post"
+							action={ templ.SafeURL(fmt.Sprintf("/entries/%d/delete", e.ID)) }
+							class="opacity-0 transition-opacity group-hover:opacity-100"
+						>
+							@button.Button(button.Props{
+								Type:    button.TypeSubmit,
+								Variant: button.VariantGhost,
+								Size:    button.SizeIcon,
+								Class:   "size-6 text-muted-foreground",
+							}) {
+								@icon.X(icon.Props{Class: "size-3.5"})
+							}
+						</form>
+					</div>
+				}
+			</div>
+		}
+		@textarea.Script()
+	}
+}

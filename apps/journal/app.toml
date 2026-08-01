@@ -1,0 +1,5 @@
+name        = "Journal"
+slug        = "journal"
+port        = 4102
+icon        = "notebook-pen"
+description = "One stream for everything — notes, work log, reflections"

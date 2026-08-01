@@ -102,7 +102,12 @@ apps deploy to `selfie`, builds happen on the dev machine)
   skills in `.agents/skills/` (symlinked for Claude). The done-when now
   depends on real usage: build the next three apps by one-shot prompt (any
   agent) and log every manual intervention here as a framework bug.
-  Suggested first: the voice-notes app, which also wires the audio service.
+  - **One-shot log (1/3): journal** (2026-08-01, "build me a journal") —
+    design-app interview (4 questions) → spec → built and verified live,
+    including an LLM weekly summary through the gateway. Interventions: none
+    outside the skills' own paths (textarea vendored via the new-component
+    route). Journal is also the designated first consumer for the audio
+    service (voice capture) once the Lemonade backlog clears.
 
 ## Later / ideas
 
@@ -124,9 +129,9 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - **Audio (first-class, planned):** `pkg/audio` Transcribe/Speak via gateway
   `/audio/*` routes, Lemonade-backed — contract pinned in the
   [catalog](../design/internal-services.md#audio-planned-first-class-service);
-  build with its first consumer. Suggested pairing: make the Phase 6 one-shot
-  test app a voice-notes app so the first consumer and the skill test are the
-  same exercise.
+  build with its first consumer — **designated: the journal app's voice
+  capture** ([apps/journal/README.md](../../apps/journal/README.md)), gated
+  on the Lemonade ops backlog above.
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.
