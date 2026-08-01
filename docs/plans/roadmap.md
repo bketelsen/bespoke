@@ -66,6 +66,14 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - Litestream config generation + restore drill.
 - **Done when:** `bespoke new` → `bespoke deploy` works end to end and a
   restored DB matches.
+- **Status (2026-08-01):** CLI implemented (`cmd/bespoke`; Justfile wraps it)
+  with `new`/`dev`/`gen`/`deploy`/`list`/`logs`/`rm`. Validated locally:
+  scaffold compiles immediately, `dev` runs everything from the manifests,
+  generated units/routes/litestream carry GENERATED headers, `rm` degrades
+  gracefully when the host is unreachable. ⚠ Remote paths (deploy with
+  rollback, logs, rm cleanup, litestream restore drill) are **UNVALIDATED**
+  until the Phase 1 runbook is executed — the done-when stays open.
+  scripts/deploy.sh and the static units/caddy files are retired.
 
 ## Phase 5 — LLM gateway
 

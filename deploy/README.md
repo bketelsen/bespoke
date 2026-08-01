@@ -69,22 +69,43 @@ mkdir -p ~/bespoke
 ```
 
 `~/bespoke/env` is created by the first deploy (bind IP + domain); units,
-binaries, and manifests are synced by the deploy script.
+binaries, manifests, and litestream config are synced by `bespoke deploy`.
+
+For backups (ADR-0007), install [Litestream](https://litestream.io) to
+`/usr/local/bin/litestream`, then append to `~/bespoke/env`:
+
+```sh
+BESPOKE_DATA_DIR=/home/<user>/bespoke/data
+BESPOKE_REPLICA_URL=s3://<bucket>/bespoke        # R2/B2/S3 endpoint
+# plus the store's credentials (e.g. LITESTREAM_ACCESS_KEY_ID/SECRET)
+```
+
+and `systemctl --user enable --now bespoke-litestream` after the first deploy.
 
 ### 5. Dev machine
 
 Edit [deploy.env](deploy.env): domain, ssh destinations, selfie's tailscale
-IP, arch. Requires `go`, `rsync`, `ssh`.
+IP, arch. Requires `go`, `rsync`, `ssh`, `just`.
 
 ## Deploying
 
 ```sh
-scripts/deploy.sh          # build + push apps to selfie, restart, health-check
-scripts/deploy.sh --edge   # also render + push Caddy routes, reload caddy
+just deploy        # bespoke deploy --all: build, ship, restart w/ rollback
+just deploy-edge   # also push generated Caddy routes + reload caddy
 ```
 
 `--edge` is needed on the first deploy and whenever an app is added/removed
-(the route map in [caddy/bespoke.caddy](caddy/bespoke.caddy) changes).
+(the generated route map in `dist/gen/bespoke.caddy` changes).
+
+## Restore drill (do this once before trusting backups)
+
+On selfie, restore one database to a scratch path and compare:
+
+```sh
+litestream restore -config ~/bespoke/litestream.yml -o /tmp/hello-restored.db \
+  "$BESPOKE_DATA_DIR/hello.db"
+sqlite3 /tmp/hello-restored.db 'SELECT count(*) FROM visits;'   # matches live?
+```
 
 ## Verify (Phase 1 "done when")
 

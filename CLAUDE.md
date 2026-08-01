@@ -21,14 +21,14 @@ this file as the code enforcing them lands.
   modernc.org/sqlite; deploys cross-compile with `CGO_ENABLED=0`, so no cgo
   dependencies anywhere.
 - Ports come from manifests ([spec](docs/specs/app-manifest.md)); never
-  hardcode a listen address. Local dev: `just dev` runs platformd + all apps
-  on `127.0.0.1` with a fake identity (`BESPOKE_DEV_USER`, defaults to
-  `$(whoami)@local`); when that env var is set, dashboard and AppShell links
-  point at localhost ports instead of the production domain. New apps must be
-  added to the `dev` recipe in the [Justfile](Justfile).
-- Deploy only via `scripts/deploy.sh` (the `bespoke` CLI replaces it in
-  Phase 4); new binaries must be added to its `BINS`/`SRCS` lists and get a
-  systemd unit in `deploy/systemd/`.
+  hardcode a listen address — `bespoke new` assigns them.
+- Create apps with `just new <slug>`; run everything locally with `just dev`
+  (platformd + every manifest app on `127.0.0.1`, fake identity via
+  `BESPOKE_DEV_USER`, dashboard links point at localhost ports). New apps
+  join `dev` automatically — the manifests are the registry.
+- Deploy/operate only via the `bespoke` CLI ([spec](docs/specs/bespoke-cli.md);
+  Justfile wraps it). Units, Caddy routes, and Litestream config are
+  GENERATED into `dist/gen/` — never write them by hand.
 - UI: pages are templ views composing `pkg/ui` — `ui.AppShell` wraps every
   page; vendored components live in `pkg/ui/components` and are NEVER
   hand-edited (`./tools/templui add <name>` to vendor more; run

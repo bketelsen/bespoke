@@ -57,8 +57,9 @@ bespoke/
 ├── CLAUDE.md            # conventions the agent treats as law
 ├── .claude/skills/      # new-app, new-component, ...
 ├── bin/bespoke          # CLI (see specs/bespoke-cli.md)
-├── deploy/              # caddy snippet, systemd units, runbook (ADR-0011)
-├── scripts/             # deploy.sh (until the bespoke CLI lands)
+├── cmd/bespoke/         # the platform CLI (specs/bespoke-cli.md)
+├── deploy/              # deploy.env + runbook (ADR-0011); artifacts are generated
+├── scripts/             # UI toolchain helpers (setup-tools.sh, build-ui.sh)
 ├── platform/            # platformd: dashboard + registry + LLM gateway
 ├── pkg/                 # auth, db, web, ui, llm, notify (ADR-0006)
 ├── design/              # input.css theme (ADR-0010) + design system docs
@@ -118,9 +119,9 @@ Single Go module monorepo — one dependency graph
 
 ([ADR-0011](../adr/0011-split-host-deployment.md))
 
-`bespoke deploy <slug>` from the dev machine → cross-compile
-(`GOOS=linux`) → rsync binary + manifest + unit to selfie → restart unit,
-await healthz → regenerate Caddy route import from manifests → push to the
-edge host → `caddy reload`. Selfie needs no Go toolchain; it only receives
-binaries. Details in the [CLI spec](../specs/bespoke-cli.md); Phase 1 uses
-`scripts/deploy.sh` until the CLI exists.
+`just deploy` (→ `bespoke deploy --all`) from the dev machine → regenerate
+units/routes/litestream from manifests → cross-compile (`CGO_ENABLED=0
+GOOS=linux`) → rsync to selfie (binaries staged, old kept as `.prev`) →
+restart units, await healthz, roll back on failure → `--edge` pushes the
+generated Caddy routes and reloads. Selfie needs no Go toolchain; it only
+receives binaries. Details in the [CLI spec](../specs/bespoke-cli.md).
