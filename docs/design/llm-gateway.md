@@ -29,6 +29,9 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
 - **`pkg/llm` interface (provider-neutral):** `llm.New(app)` →
   `Complete(ctx, prompt, ...opts)`, `CompleteJSON(ctx, prompt, &out, ...opts)`
   (JSON-only instruction + fence stripping), `Healthy(ctx)`, `WithSystem(s)`.
+  Higher-level capability helpers (`Classify`, future `Summarize`/`Extract`)
+  are tier-1 methods on the same client — see
+  [internal-services.md](internal-services.md).
   Streaming is deferred until the first app needs it (the SDK supports
   message deltas; add a `/llm/stream` SSE endpoint then).
 - **Model selection** is gateway config: `BESPOKE_LLM_MODEL` env on platformd

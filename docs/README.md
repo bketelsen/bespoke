@@ -24,12 +24,14 @@ Docs are split by the question they answer:
 - [0009 — LLM inference via Copilot SDK gateway](adr/0009-copilot-sdk-llm-gateway.md)
 - [0010 — Build pkg/ui on vendored templUI components](adr/0010-templui-component-base.md)
 - [0011 — Split-host deployment: edge, app host, dev machine](adr/0011-split-host-deployment.md)
+- [0012 — Internal shared services: helpers first, services on demand](adr/0012-internal-services-two-tier.md)
 
 ### Design
 
 - [Vision](design/vision.md) — the premise and prior art
 - [Architecture](design/architecture.md) — topology, auth flow, repo layout, data
 - [LLM gateway](design/llm-gateway.md) — Copilot SDK integration in platformd
+- [Internal services](design/internal-services.md) — catalog of shared capabilities + how to add one
 - [Agent layer](design/agent-layer.md) — conventions, skills, CLAUDE.md as law
 
 ### Specs

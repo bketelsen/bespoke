@@ -39,11 +39,16 @@ this file as the code enforcing them lands.
   toolchain.
 - Live UI updates use `web.NewSSE` (Datastar); the AppShell already loads
   `datastar.js`.
-- LLM inference only via `llm.New(slug)` → `Complete`/`CompleteJSON`
-  ([design](docs/design/llm-gateway.md)); never call a model provider or the
-  Copilot SDK from an app. Expect ~1.5s per call — design features
-  accordingly. Local dev needs platformd running (`just dev`) and the
-  `copilot` CLI authenticated.
+- LLM inference only via `llm.New(slug)` → `Complete`/`CompleteJSON`/
+  `Classify` ([design](docs/design/llm-gateway.md)); never call a model
+  provider or the Copilot SDK from an app. Expect ~1.5s per call — design
+  features accordingly. Local dev needs platformd running (`just dev`) and
+  the `copilot` CLI authenticated.
+- Before building a shared capability into an app, check the
+  [internal services catalog](docs/design/internal-services.md) and follow
+  its decision tree: `pkg/*` helper first, internal service on platformd's
+  4001 plane only for cross-app state or heavy runtimes (ADR-0012). Update
+  the catalog when you add one.
 - Run `just check` (vet + tests + the CGO-free linux cross-compile) before
   calling any change done.
 

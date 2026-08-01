@@ -99,6 +99,9 @@ apps deploy to `selfie`, builds happen on the dev machine)
 
 ## Later / ideas
 
+- Internal services, built on demand per the
+  [catalog](../design/internal-services.md) (ADR-0012): more LLM helpers
+  (Summarize/Extract), files/blobs, notifications, search — never up front.
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.
