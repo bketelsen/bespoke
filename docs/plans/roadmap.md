@@ -92,10 +92,17 @@ apps deploy to `selfie`, builds happen on the dev machine)
 
 ## Phase 6 — The agent layer (the point)
 
-- `CLAUDE.md` invariants + `.claude/skills/new-app` and `new-component`.
+- `AGENTS.md` invariants + `.agents/skills/new-app` and `new-component`,
+  portable across agents ([ADR-0013](../adr/0013-agent-portable-instruction-surface.md)).
 - Build the next real app by prompt only; every manual intervention is filed
   as a framework bug and fixed.
 - **Done when:** three consecutive apps ship as one-shot prompts.
+- **Status (2026-08-01):** skills + cross-agent surface implemented —
+  AGENTS.md canonical with CLAUDE.md/GEMINI.md/copilot-instructions symlinks,
+  skills in `.agents/skills/` (symlinked for Claude). The done-when now
+  depends on real usage: build the next three apps by one-shot prompt (any
+  agent) and log every manual intervention here as a framework bug.
+  Suggested first: the voice-notes app, which also wires the audio service.
 
 ## Later / ideas
 

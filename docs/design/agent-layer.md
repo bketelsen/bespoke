@@ -4,7 +4,16 @@ The differentiator. Everything else in this system exists to make the one-shot
 "build me an app that X" prompt reliable
 ([ADR-0002](../adr/0002-optimize-for-one-shot-agent-reliability.md)).
 
-## CLAUDE.md — conventions as law
+## Cross-agent surface (implemented)
+
+Per [ADR-0013](../adr/0013-agent-portable-instruction-surface.md), the
+canonical files are `AGENTS.md` and `.agents/skills/<name>/SKILL.md`;
+`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`, and
+`.claude/skills` are symlinks. Any agent — Claude Code, Copilot CLI, Codex,
+Gemini — reads the same law and the same skills, which matters exactly when
+quota forces a mid-project switch.
+
+## AGENTS.md — conventions as law
 
 The repo-root `CLAUDE.md` states the invariants an agent may never route
 around:
@@ -27,17 +36,18 @@ around:
 - New significant decisions get an ADR
   ([ADR-0001](../adr/0001-record-architecture-decisions.md)).
 
-## Skills
+## Skills (implemented)
 
-`.claude/skills/`:
+`.agents/skills/` (symlinked as `.claude/skills/`):
 
-- **new-app** — from a one-line description: run `bespoke new <slug>`, model
-  the schema, write migrations + handlers + views composing `pkg/ui`, deploy
-  via `bespoke deploy`, verify with a request through the local port, confirm
-  it appears on the dashboard.
-- **new-component** — vendor an additional templUI component (`templui add`)
-  or add a Bespoke wrapper in `pkg/ui`; adjust the theme if needed; update the
-  design-system docs; never fork styling into an app.
+- **[new-app](../../.agents/skills/new-app/SKILL.md)** — one-line description
+  → `just new`, schema, handlers, views on `pkg/ui`, shared-capability check
+  against the [internal services catalog](internal-services.md), full local
+  verification (check + dev + curl + dashboard).
+- **[new-component](../../.agents/skills/new-component/SKILL.md)** — the
+  three cases: vendor from templUI, Bespoke wrapper in `pkg/ui`, or theme
+  tokens; always `build-ui` + commit generated output; never fork styling
+  into an app.
 
 Planned: a resident maintenance agent on a schedule (dependency bumps, backup
 verification, log triage) — stolen from the

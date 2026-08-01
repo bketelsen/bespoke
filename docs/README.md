@@ -25,6 +25,7 @@ Docs are split by the question they answer:
 - [0010 — Build pkg/ui on vendored templUI components](adr/0010-templui-component-base.md)
 - [0011 — Split-host deployment: edge, app host, dev machine](adr/0011-split-host-deployment.md)
 - [0012 — Internal shared services: helpers first, services on demand](adr/0012-internal-services-two-tier.md)
+- [0013 — Agent-portable instruction surface](adr/0013-agent-portable-instruction-surface.md)
 
 ### Design
 
@@ -51,5 +52,6 @@ Docs are split by the question they answer:
 - Design docs are updated in place to always reflect reality.
 - Specs change only alongside the code that implements them.
 - Cross-links between categories are mandatory in both directions — see the
-  documentation rules in [CLAUDE.md](../CLAUDE.md).
+  documentation rules in [AGENTS.md](../AGENTS.md) (CLAUDE.md/GEMINI.md are
+  symlinks to it, ADR-0013).
 - Adding a doc means adding it to the index above.
