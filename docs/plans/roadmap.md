@@ -105,6 +105,12 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - Lemonade backend (local inference on selfie): embeddings, image
   generation, private/local completions behind the existing `pkg/llm` seam —
   ADR when first wired ([catalog](../design/internal-services.md#backends)).
+- **Audio (first-class, planned):** `pkg/audio` Transcribe/Speak via gateway
+  `/audio/*` routes, Lemonade-backed — contract pinned in the
+  [catalog](../design/internal-services.md#audio-planned-first-class-service);
+  build with its first consumer. Suggested pairing: make the Phase 6 one-shot
+  test app a voice-notes app so the first consumer and the skill test are the
+  same exercise.
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.

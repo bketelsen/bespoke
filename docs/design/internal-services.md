@@ -32,7 +32,31 @@ app ──pkg/* helper────────► (no network at all — compose
 | Search | 2 | candidate | future `pkg/search` | Shared index; pairs with embeddings |
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
-| Speech / transcription | 2 | candidate | future `llm` helpers | Lemonade exposes both |
+| Transcription | 2 | **planned (first-class)** | `audio.New(slug).Transcribe` | See Audio below |
+| Speech synthesis | 2 | **planned (first-class)** | `audio.New(slug).Speak` | See Audio below |
+
+## Audio (planned first-class service)
+
+Speech is a platform capability every app should be able to assume, like
+auth and storage — voice notes, dictation into any form, spoken summaries.
+Promoted from candidate on 2026-08-01; **built with its first consumer app**
+(per ADR-0012's no-speculative-builds rule), at which point it gets its ADR.
+
+Contract (fixed now so apps and skills can plan against it):
+
+- Gateway routes on the 4001 plane, Lemonade-backed:
+  `POST /audio/transcribe` (audio bytes → text) and
+  `POST /audio/speak` (text + voice → audio bytes).
+- App client: `pkg/audio` — `audio.New(slug)` →
+  `Transcribe(ctx, r io.Reader, opts...) (string, error)`,
+  `Speak(ctx, text string, opts...) (io.ReadCloser, error)`.
+  Same shape as `pkg/llm`: apps never see the backend, calls are
+  usage-logged, `/audio/healthz` reports Lemonade reachability.
+- Browser side, when needed: a `pkg/ui` recorder component (MediaRecorder →
+  POST to the app, app calls `Transcribe`) so every app gets voice input the
+  same way.
+- Likely first consumer: a voice-notes app — also a strong candidate for the
+  Phase 6 one-shot skill test ([roadmap](../plans/roadmap.md)).
 
 ## Backends
 
