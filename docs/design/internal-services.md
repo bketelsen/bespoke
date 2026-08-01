@@ -34,6 +34,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
 | Transcription | 2 | **live (stub backend)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` | ADR-0014; real transcription flips on with `BESPOKE_LEMONADE_URL` |
 | Speech synthesis | 2 | planned (first-class) | future `audio.New(slug).Speak` | See Audio below |
+| MCP surface | 2 | candidate | external LLM clients via `https://<apex>/mcp` | One aggregated MCP server on platformd; apps opt tools in via `web.Tool`, namespaced `<slug>_<tool>` (see roadmap idea) |
 
 ## Audio (first-class service — transcription live, stub-backed)
 

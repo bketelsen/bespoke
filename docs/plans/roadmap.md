@@ -145,6 +145,22 @@ apps deploy to `selfie`, builds happen on the dev machine)
   workdir, branch-only commits, deploy gated on `just check`), and the
   Copilot runtime already living on selfie does the heavy lifting. Big; park
   until the one-shot log hits 3/3 and the skills are proven boring.
+- **MCP surface (idea, 2026-08-01): every app's actions available to any
+  LLM.** One aggregate MCP server on platformd (official Go SDK, Streamable
+  HTTP) at the apex `/mcp`, routed by Caddy like any page. Apps opt
+  functions in with a one-line `web.Tool("get_entries", desc, schema, fn)`
+  next to their routes; pkg/web serves a tool manifest at a well-known
+  path; platformd aggregates via the registry and namespaces as
+  `<slug>_get_entries` (MCP names forbid dots). Identity flows through
+  free: tailnet client → Caddy stamps Tailscale headers → platformd proxies
+  tool calls to apps as that user — same auth model as the browser, no
+  tokens. Add the server once per MCP client; every future app's tools
+  appear automatically (and the new-app skill gains an "expose your core
+  actions" step). The LLM gateway's future agentic sessions can consume the
+  same surface (Copilot SDK takes MCP configs) — apps calling apps through
+  the front door. Guardrail to decide at build time: write-capable tools
+  opt-in/flagged, read-only the default. Builds on ADR-0012's plane; gets
+  its ADR when adopted.
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.
