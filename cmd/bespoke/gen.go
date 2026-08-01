@@ -53,7 +53,9 @@ After=network-online.target
 [Service]
 EnvironmentFile=%h/bespoke/env
 {{if .Platform}}Environment=BESPOKE_ROOT=%h/bespoke
-{{end}}ExecStart=%h/bespoke/bin/{{.Slug}} -listen ${BESPOKE_BIND_IP}:{{.Port}}
+ExecStart=%h/bespoke/bin/{{.Slug}} -listen ${BESPOKE_BIND_IP}:{{.Port}} -internal ${BESPOKE_BIND_IP}:4001
+{{else}}ExecStart=%h/bespoke/bin/{{.Slug}} -listen ${BESPOKE_BIND_IP}:{{.Port}}
+{{end}}
 Restart=on-failure
 RestartSec=2
 

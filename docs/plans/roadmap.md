@@ -82,6 +82,13 @@ apps deploy to `selfie`, builds happen on the dev machine)
   on the dashboard.
 - Latency measurement (see open questions).
 - **Done when:** an app calls `llm.Complete` with no Copilot-specific code.
+- **Status (2026-08-01):** ✅ done, validated LIVE: `llm.Complete` and
+  `llm.CompleteJSON` returned real completions through pkg/llm → gateway
+  (internal port 4001) → Copilot CLI, ~1.3–1.8s per call, usage-logged.
+  Sessions are inference-locked (no tools/skills/discovery, permissions
+  denied, scratch working dir, deleted after use). Auth health checked every
+  5 min with a dashboard warning banner. Streaming deferred until the first
+  app needs it.
 
 ## Phase 6 — The agent layer (the point)
 
@@ -102,5 +109,6 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - **Domain:** which one? Cosmetic; decide by Phase 1.
 - **Copilot terms:** skim before building anything high-frequency on the
   subscription (e.g. a 5-minute cron summarizer).
-- **Copilot latency:** measure through the CLI runtime in Phase 5 before
-  betting interactive features on it.
+- ~~**Copilot latency**~~ resolved 2026-08-01: ≈1.3–1.8s per simple
+  completion locally — fine for summaries/classification, not keystroke-level
+  interactivity (see [llm-gateway.md](../design/llm-gateway.md)).

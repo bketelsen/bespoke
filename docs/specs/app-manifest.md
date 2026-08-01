@@ -41,7 +41,8 @@ description = "Daily notes with LLM weekly summaries"
   Renaming an app is: new app, migrate data, retire old.
 - A directory under `apps/` without a valid `app.toml` is ignored by platformd
   and flagged as a warning on the dashboard.
-- Reserved: port `4000` and the apex subdomain (platformd itself).
+- Reserved: port `4000` and the apex subdomain (platformd), and port `4001`
+  (platformd's internal LLM gateway listener — never routed by Caddy).
 - The manifest deliberately does not record language/runtime: the contract is
   only "HTTP on `port`, honor the auth header"
   ([ADR-0005](../adr/0005-process-per-app.md)).

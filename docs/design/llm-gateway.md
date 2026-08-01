@@ -9,32 +9,42 @@ Inference rides the author's existing GitHub Copilot subscription via the
 **Copilot CLI** — a Node-based local agent runtime that must be installed on
 the host and authenticated with GitHub.
 
-## Design
+## Design (implemented — platform/llm.go, pkg/llm)
 
 ```
-app ──pkg/llm──► platformd /llm (loopback) ──Copilot SDK──► copilot CLI ──► Copilot backend
+app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► copilot CLI ──► Copilot backend
 ```
 
-- **Single client.** platformd owns the one SDK client / CLI session pool.
-  Apps never talk to the SDK directly; GitHub auth lives in one place.
-- **`pkg/llm` interface (provider-neutral):**
-  - `Complete(ctx, prompt, opts) (string, error)`
-  - `CompleteJSON(ctx, prompt, schema, out) error` — validated structured output
-  - `Stream(ctx, prompt, opts) (iter.Seq[string], error)`
-- **Inference mode by default:** sessions run with tool invocation and file
-  access disabled — plain completions only. An opt-in agentic session type can
-  be added later if an app genuinely needs one.
-- **Model selection** is gateway config (Copilot fronts multiple models,
-  including Claude models). Apps never specify a model.
-- **Usage logging:** the gateway logs app, prompt size, latency per call —
-  the observability point for all LLM traffic.
+- **Single client, internal listener.** platformd owns the one SDK client and
+  serves `/llm/complete` + `/llm/healthz` on a **separate internal port
+  (4001)** that Caddy never routes — reachable on-host and inside the
+  ACL-blocked port range only ([ADR-0011](../adr/0011-split-host-deployment.md)).
+  Apps find it via `BESPOKE_LLM_URL` (written to the env file at deploy;
+  defaults to `http://127.0.0.1:4001` in dev).
+- **Session per request, inference-locked:** every call creates a fresh SDK
+  session with tools, skills, config discovery, file hooks, git context, the
+  session store, and embedding retrieval all disabled, permission requests
+  denied, and a scratch working directory so repo instructions never leak
+  into app inference. The session is deleted after the response.
+- **`pkg/llm` interface (provider-neutral):** `llm.New(app)` →
+  `Complete(ctx, prompt, ...opts)`, `CompleteJSON(ctx, prompt, &out, ...opts)`
+  (JSON-only instruction + fence stripping), `Healthy(ctx)`, `WithSystem(s)`.
+  Streaming is deferred until the first app needs it (the SDK supports
+  message deltas; add a `/llm/stream` SSE endpoint then).
+- **Model selection** is gateway config: `BESPOKE_LLM_MODEL` env on platformd
+  (empty = CLI default). Apps never specify a model.
+- **Usage logging:** one line per call — app, prompt/output bytes, duration,
+  error — the observability point for all LLM traffic.
 
 ## Operational notes
 
-- Bootstrap dependency: `copilot` CLI on PATH for the platformd unit, logged in
-  as the platform user.
-- platformd health-checks the CLI on a timer and surfaces a dashboard warning
-  when auth expires — otherwise every app's LLM features fail at once, silently.
-- **Open:** measure end-to-end latency through the CLI runtime before building
-  interactive-latency features; skim Copilot terms before high-frequency
-  automated use (see [roadmap open questions](../plans/roadmap.md#open-questions)).
+- Bootstrap dependency: `copilot` CLI on PATH for the platformd unit, logged
+  in as the platform user (`copilot`, then sign in).
+- platformd checks `GetAuthStatus` at startup and every 5 minutes; failures
+  surface as a dashboard warning banner, and `/llm/healthz` returns 503.
+  The gateway starting/down never blocks the dashboard.
+- **Measured (2026-08-01, local):** simple completions ≈ **1.3–1.8s**
+  end-to-end through the CLI runtime — fine for summaries/classification,
+  not for keystroke-level interactivity.
+- Copilot terms: still worth a skim before high-frequency automated use
+  (see [roadmap open questions](../plans/roadmap.md#open-questions)).

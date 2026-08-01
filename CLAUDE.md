@@ -39,6 +39,11 @@ this file as the code enforcing them lands.
   toolchain.
 - Live UI updates use `web.NewSSE` (Datastar); the AppShell already loads
   `datastar.js`.
+- LLM inference only via `llm.New(slug)` → `Complete`/`CompleteJSON`
+  ([design](docs/design/llm-gateway.md)); never call a model provider or the
+  Copilot SDK from an app. Expect ~1.5s per call — design features
+  accordingly. Local dev needs platformd running (`just dev`) and the
+  `copilot` CLI authenticated.
 - Run `just check` (vet + tests + the CGO-free linux cross-compile) before
   calling any change done.
 
