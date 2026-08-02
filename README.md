@@ -19,10 +19,17 @@ and cross-app intents — highlight text in the journal and "Create Todo" just
 appears.
 
 This repo went from [an idea file](docs/design/vision.md) to a deployed
-platform with eighteen architecture decision records and three running apps
+platform with nineteen architecture decision records and three running apps
 in a single day — and two of those apps were built by describing them, not
 by writing them. Steal the idea before you steal the code: the whole point
 is that yours should be bespoke too.
+
+> **A thing nobody built:** Bespoke turned out to be multi-user. Identity
+> comes from the tailnet at the edge, and every app was born asking "whose
+> data?" — so the day I invite my wife, she gets her own journal, her own
+> todos, her own AI brief, at the same URLs, with zero code changes. No one
+> wrote that feature. The conventions did. That's the entire thesis of this
+> repo in one accident.
 
 ## Start here
 
