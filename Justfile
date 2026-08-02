@@ -42,6 +42,14 @@ deploy-edge:
 logs slug *args:
     go run ./cmd/bespoke logs {{ slug }} {{ args }}
 
+# Build the custom edge Caddy locally (xcaddy: tailscale + cloudflare-dns)
+caddy:
+    scripts/build-caddy.sh
+
+# Build the edge Caddy AND install it on the edge host (keeps caddy.bak)
+caddy-push:
+    scripts/build-caddy.sh --push
+
 # Remove local build output and app data
 clean:
     rm -rf dist data

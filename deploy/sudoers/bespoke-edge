@@ -1,0 +1,21 @@
+# Bespoke — passwordless sudo on the EDGE host, scoped to exactly what the
+# dev-machine tooling runs (scripts/build-caddy.sh --push and
+# `bespoke deploy --edge`). Nothing else.
+#
+# Install on the edge host (validate first — a bad sudoers locks you out):
+#   visudo -cf bespoke-edge && sudo install -m 0440 bespoke-edge /etc/sudoers.d/bespoke
+#
+# Adjust "bjk" if the ssh user differs, and the caddy route path if you
+# changed EDGE_CADDY_FILE in deploy/deploy.env.
+
+# Route pushes: bespoke deploy --edge
+bjk ALL=(root) NOPASSWD: /usr/bin/tee /etc/caddy/bespoke.caddy
+bjk ALL=(root) NOPASSWD: /usr/bin/systemctl reload caddy
+
+# Caddy binary swaps: scripts/build-caddy.sh --push (and its rollback)
+bjk ALL=(root) NOPASSWD: /usr/bin/cp /usr/bin/caddy /usr/bin/caddy.bak
+bjk ALL=(root) NOPASSWD: /usr/bin/install -m 755 /tmp/caddy.new /usr/bin/caddy
+bjk ALL=(root) NOPASSWD: /usr/bin/install -m 755 /usr/bin/caddy.bak /usr/bin/caddy
+bjk ALL=(root) NOPASSWD: /usr/bin/systemctl stop caddy
+bjk ALL=(root) NOPASSWD: /usr/bin/systemctl start caddy
+bjk ALL=(root) NOPASSWD: /usr/bin/systemctl restart caddy

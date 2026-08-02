@@ -1,0 +1,16 @@
+# Bespoke — passwordless sudo on SELFIE (the app host).
+#
+# Routine deploys need NO sudo at all: apps run as systemd USER units,
+# binaries/manifests/config land in ~/bespoke, and `bespoke deploy` never
+# escalates. This file covers only the rare one-time/maintenance bits.
+#
+# Install on selfie (validate first — a bad sudoers locks you out):
+#   visudo -cf bespoke-selfie && sudo install -m 0440 bespoke-selfie /etc/sudoers.d/bespoke
+#
+# Adjust "bjk" if the ssh user differs.
+
+# One-time: user units must run without a login session
+bjk ALL=(root) NOPASSWD: /usr/bin/loginctl enable-linger bjk
+
+# Litestream binary installs/updates (deploy/README.md backup setup)
+bjk ALL=(root) NOPASSWD: /usr/bin/install -m 755 /tmp/litestream /usr/local/bin/litestream

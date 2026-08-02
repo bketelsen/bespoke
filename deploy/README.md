@@ -11,18 +11,25 @@ machine**. Everything talks over the tailnet.
 
 ## One-time setup
 
-### 1. Edge host — rebuild Caddy with the two modules
+### 1. Edge host — custom Caddy, built on the DEV machine
+
+The edge host has no toolchain (same rule as selfie: hosts receive
+binaries). From the dev machine:
 
 ```sh
-xcaddy build \
-  --with github.com/tailscale/caddy-tailscale \
-  --with github.com/caddy-dns/cloudflare
+just caddy        # cross-compile dist/caddy with tailscale + cloudflare-dns
+just caddy-push   # …and install it on the edge host (old binary → caddy.bak)
 ```
 
-Replace the caddy binary (keep the old one around), and add to Caddy's
-environment (e.g. a systemd drop-in):
+Set `EDGE_GOARCH` in [deploy.env](deploy.env) if the edge isn't amd64. The
+push swaps `/usr/bin/caddy` under systemd (the stock unit already grants
+`CAP_NET_BIND_SERVICE`, so a plain binary works) and prints the rollback
+one-liner.
 
-```
+On the edge host itself, add to Caddy's environment (e.g. a systemd
+drop-in):
+
+```text
 CLOUDFLARE_API_TOKEN=<token with Zone:DNS:Edit for the domain>
 ```
 
@@ -84,10 +91,25 @@ BESPOKE_REPLICA_URL=s3://<bucket>/bespoke        # R2/B2/S3 endpoint
 
 and `systemctl --user enable --now bespoke-litestream` after the first deploy.
 
-### 5. Dev machine
+### 5. Passwordless sudo (both hosts)
+
+The tooling escalates only for a fixed set of commands; scoped sudoers
+files live in [sudoers/](sudoers/). On each host:
+
+```sh
+visudo -cf bespoke-edge   && sudo install -m 0440 bespoke-edge   /etc/sudoers.d/bespoke   # edge
+visudo -cf bespoke-selfie && sudo install -m 0440 bespoke-selfie /etc/sudoers.d/bespoke   # selfie
+```
+
+Edge covers route pushes + caddy binary swaps; selfie needs no sudo for
+routine deploys (user units) — its file only covers linger and litestream
+installs. Adjust the username inside if it isn't `bjk`.
+
+### 6. Dev machine
 
 Edit [deploy.env](deploy.env): domain, ssh destinations, selfie's tailscale
-IP, arch. Requires `go`, `rsync`, `ssh`, `just`.
+IP, arch (selfie `GOARCH`, edge `EDGE_GOARCH`). Requires `go`, `rsync`,
+`ssh`, `just`.
 
 ## Deploying
 
