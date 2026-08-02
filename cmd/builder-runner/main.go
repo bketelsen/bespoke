@@ -58,9 +58,10 @@ func main() {
 }
 
 func process(spool, path string) {
-	// Archive first so a crash can't retrigger the path unit forever.
+	// Archive first so a crash can't retrigger the path unit forever. The
+	// prefix keeps build and deploy archives of the same run apart.
 	data, err := os.ReadFile(path)
-	archived := filepath.Join(spool, "archive", filepath.Base(path))
+	archived := filepath.Join(spool, "archive", "build-"+filepath.Base(path))
 	_ = os.MkdirAll(filepath.Dir(archived), 0o770)
 	_ = os.Rename(path, archived)
 	if err != nil {

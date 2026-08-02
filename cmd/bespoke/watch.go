@@ -52,9 +52,10 @@ func cmdDeployWatch(args []string) error {
 
 func processDeploy(spool, path string) {
 	// Archive the request first: a crash mid-deploy must not retrigger the
-	// path unit forever. The result file is the durable outcome.
+	// path unit forever. The result file is the durable outcome. The prefix
+	// keeps build and deploy archives of the same run from clobbering.
 	data, err := os.ReadFile(path)
-	archived := filepath.Join(spool, "archive", filepath.Base(path))
+	archived := filepath.Join(spool, "archive", "deploy-"+filepath.Base(path))
 	_ = os.MkdirAll(filepath.Dir(archived), 0o770)
 	_ = os.Rename(path, archived)
 	if err != nil {
@@ -104,6 +105,23 @@ func processDeploy(spool, path string) {
 		if out, err := git("reset", "--hard", prev); err != nil {
 			logEvent("rollback failed: " + out)
 		}
+	}
+
+	// The runner clones fresh from origin, so its bundle's prerequisites can
+	// be ahead of this clone — sync before verifying.
+	logEvent("syncing clone with origin")
+	if out, err := git("fetch", "origin", "main"); err != nil {
+		fail("fetch origin: " + out)
+		return
+	}
+	if out, err := git("merge", "--ff-only", "origin/main"); err != nil {
+		fail("clone has diverged from origin: " + out)
+		return
+	}
+	prev, err = git("rev-parse", "HEAD")
+	if err != nil {
+		fail("rev-parse HEAD after sync: " + prev)
+		return
 	}
 
 	logEvent("verifying bundle for " + req.Slug)
