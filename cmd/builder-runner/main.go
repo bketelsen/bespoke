@@ -102,6 +102,12 @@ func process(spool, path string) {
 
 	home, _ := os.UserHomeDir()
 	workDir := filepath.Join(home, "runs", req.Run)
+	// A rerun of the same request must not trip over the previous attempt's
+	// clone — the workdir is this run's disposable scratch.
+	if err := os.RemoveAll(workDir); err != nil {
+		finish(false, "clear workdir: "+err.Error())
+		return
+	}
 	repoDir := filepath.Join(workDir, "repo")
 	events.write("status", "cloning repository")
 	if out, err := exec.Command("git", "clone", repoURL, repoDir).CombinedOutput(); err != nil {
