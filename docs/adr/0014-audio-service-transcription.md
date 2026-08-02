@@ -1,9 +1,9 @@
 # 0014 — Audio service: transcription, stub-first
 
-- **Status:** Accepted — request shape validated against the live Lemonade
-  server later the same day (endpoint/fields/response confirmed; WAV-only
-  input discovered → the pkg/ui recorder now encodes WAV client-side;
-  whisper backend itself pending a selfie-side fix, see roadmap backlog)
+- **Status:** Accepted — fully validated live later the same day: WAV-only
+  input discovered (the pkg/ui recorder now encodes WAV client-side) and a
+  real voice entry transcribed end to end via Whisper-Large-v3-Turbo on
+  Lemonade. Stub mode remains the no-config fallback.
 - **Date:** 2026-08-01
 
 ## Context

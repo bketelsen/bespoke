@@ -117,16 +117,13 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - Lemonade backend (local inference on selfie): embeddings, image
   generation, private/local completions behind the existing `pkg/llm` seam —
   ADR when first wired ([catalog](../design/internal-services.md#backends)).
-  Status 2026-08-01 (evening): server live at
-  `http://<app-host-ip>:13305/api/v1` and reachable from the dev machine —
-  listen-address item resolved. Models: `Whisper-Large-v3-Turbo` and
-  `kokoro-v1` (TTS verified working) and `nomic-embed-text-v2-moe-GGUF`
-  (embeddings) all downloaded. **Remaining ops item: the whisper backend
-  fails to load** (`whisper-server failed to start or become ready` on
-  every transcription) — likely the whisper.cpp backend needs
-  reinstalling after the server rebuild. Everything platform-side is
-  validated up to that point (see the audio catalog entry); voice entries
-  go live the moment whisper loads.
+  **Status 2026-08-01: RESOLVED — Lemonade fully operational** at
+  `http://<app-host-ip>:13305/api/v1`. Verified live: transcription
+  (Whisper-Large-v3-Turbo, first load was just slow), TTS (kokoro-v1),
+  embeddings model downloaded (nomic-embed-text-v2-moe). A real voice
+  entry went through journal → gateway → whisper end to end. Remaining
+  candidates (embeddings/image/private-completion helpers) build on
+  demand per the catalog.
 - **Audio:** transcription is LIVE stub-first with journal voice capture as
   first consumer ([ADR-0014](../adr/0014-audio-service-transcription.md)) —
   flipping to real transcription = clear the Lemonade backlog above, then

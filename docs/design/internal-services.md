@@ -35,7 +35,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | In-app chat | 1 | **live** | `web.EnableChat(mux, slug, provider)` | ADR-0015; context-stuffing v1, upgrades to MCP tools later |
 | Markdown rendering | 1 | **live** | `ui.Markdown(text)` | GFM via goldmark, `prose`-styled, raw HTML omitted (tested) |
 | App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
-| Transcription | 2 | **wired — blocked on selfie whisper backend** | `audio.New(slug).Transcribe` + `ui.VoiceButton` (WAV) | ADR-0014; full path validated live incl. error propagation; stub mode when `BESPOKE_LEMONADE_URL` unset |
+| Transcription | 2 | **LIVE (real)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` (WAV) | ADR-0014; whisper on Lemonade, validated end to end 2026-08-01; stub mode when `BESPOKE_LEMONADE_URL` unset |
 | Speech synthesis | 2 | planned (backend verified) | future `audio.New(slug).Speak` | kokoro-v1 works on Lemonade; build with first consumer |
 | MCP surface | 2 | candidate | external LLM clients via `https://<apex>/mcp` | One aggregated MCP server on platformd; apps opt tools in via `web.Tool`, namespaced `<slug>_<tool>` (see roadmap idea) |
 
@@ -73,13 +73,12 @@ The gateway pattern (ADR-0009/0012) means backends are invisible to apps —
   platformd in prod; the deploy-created env file sets
   `BESPOKE_LEMONADE_URL`). Ideal for embeddings, image generation,
   lighter-weight inference, and **privacy-sensitive prompts that never
-  leave the house**; zero marginal cost. Verified 2026-08-01: `/models`
-  live; **TTS works** (kokoro-v1 generated real audio); transcription
-  request shape validated but **whisper-server currently fails to load**
-  (selfie ops item in the roadmap backlog);
-  `nomic-embed-text-v2-moe-GGUF` downloaded for future `llm.Embed`.
-  Transcription accepts **WAV only** — the pkg/ui recorder encodes WAV
-  client-side for exactly this reason.
+  leave the house**; zero marginal cost. Verified 2026-08-01:
+  **transcription works** (Whisper-Large-v3-Turbo; the first call after
+  idle loads the model and is slow — budget for it), **TTS works**
+  (kokoro-v1 generated real audio), and `nomic-embed-text-v2-moe-GGUF` is
+  downloaded for future `llm.Embed`. Transcription accepts **WAV only** —
+  the pkg/ui recorder encodes WAV client-side for exactly this reason.
 
 ## Adding a capability (decision tree)
 
