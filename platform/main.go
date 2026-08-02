@@ -44,7 +44,8 @@ func main() {
 				warnings = append(warnings, s)
 			}
 			dev := os.Getenv("BESPOKE_DEV_USER") != ""
-			views.Dashboard(auth.FromContext(r.Context()), dev, domain, apps, warnings).Render(r.Context(), w)
+			cards := fetchCards(r, apps)
+			views.Dashboard(auth.FromContext(r.Context()), dev, domain, apps, cards, warnings).Render(r.Context(), w)
 		})
 	})
 }

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/bketelsen/bespoke/apps/journal/views"
 	"github.com/bketelsen/bespoke/pkg/audio"
 	"github.com/bketelsen/bespoke/pkg/auth"
@@ -38,6 +39,10 @@ func main() {
 	web.Run("journal", func(mux *http.ServeMux) {
 		web.EnableChat(mux, "journal", func(ctx context.Context, user auth.User) (string, error) {
 			return chatContext(ctx, sqldb, user.Login)
+		})
+
+		web.DashboardCard(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
+			return dashCard(ctx, sqldb, user.Login)
 		})
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
@@ -175,6 +180,35 @@ func reflectionMarkdown(general, work, family string) string {
 		fmt.Fprintf(&b, "**Family:** %s\n\n", family)
 	}
 	return strings.TrimRight(b.String(), "\n")
+}
+
+// dashCard backs the dashboard card (ADR-0017): cheap queries only.
+func dashCard(ctx context.Context, sqldb *sql.DB, login string) (templ.Component, error) {
+	var today int
+	if err := sqldb.QueryRowContext(ctx,
+		"SELECT count(*) FROM entries WHERE login = ? AND date(created_at, 'localtime') = date('now', 'localtime')",
+		login).Scan(&today); err != nil {
+		return nil, err
+	}
+	var body, created string
+	err := sqldb.QueryRowContext(ctx,
+		"SELECT body, created_at FROM entries WHERE login = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+		login).Scan(&body, &created)
+	latestTime, snippet := "", ""
+	switch {
+	case err == sql.ErrNoRows:
+	case err != nil:
+		return nil, err
+	default:
+		if t, perr := time.ParseInLocation(sqliteTime, created, time.UTC); perr == nil {
+			latestTime = t.Local().Format("15:04")
+		}
+		snippet = body
+		if len(snippet) > 120 {
+			snippet = snippet[:120] + "…"
+		}
+	}
+	return views.DashCard(today, latestTime, snippet), nil
 }
 
 // localStamp renders a stored UTC timestamp in local time for LLM

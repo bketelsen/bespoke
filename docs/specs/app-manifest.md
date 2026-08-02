@@ -46,3 +46,17 @@ description = "Daily notes with LLM weekly summaries"
 - The manifest deliberately does not record language/runtime: the contract is
   only "HTTP on `port`, honor the auth header"
   ([ADR-0005](../adr/0005-process-per-app.md)).
+
+## App HTTP contract
+
+Beyond the manifest, an app MUST/MAY serve these endpoints (all provided or
+mounted by `pkg/web` for Go apps):
+
+| Endpoint | Requirement | Purpose |
+| --- | --- | --- |
+| `GET /healthz` | MUST | Deploy gates and monitoring; 200 "ok" |
+| `GET /_bespoke/*` | MUST (automatic) | Design-system assets, embedded |
+| `GET /_card` | MAY | Per-user dashboard card fragment ([ADR-0017](../adr/0017-app-provided-dashboard-cards.md)); content-only HTML, cheap queries, no LLM calls; dashboard falls back to `description` when absent |
+| `POST /_chat`, `/_chat/speak` | MAY (via `web.EnableChat`) | In-app chat + TTS ([ADR-0015](../adr/0015-appshell-platform-chrome.md)) |
+
+The `_`-prefixed path namespace is reserved for the platform.

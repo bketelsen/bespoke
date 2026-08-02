@@ -79,6 +79,10 @@ them rather than improvising, whichever agent you are:
   Chat panels include a speak toggle (local TTS, persisted, autoplay) for
   free — never build your own TTS path; `audio.New(slug).Speak` exists for
   non-chat uses.
+- Give every app a live dashboard card: `web.DashboardCard(mux, provider)`
+  serving `GET /_card` (ADR-0017) — a content-only fragment with the user's
+  current state ("3 entries today"), cheap queries only, never LLM calls.
+  Without one the dashboard falls back to the manifest description.
 - Voice input: `ui.VoiceButton("/your/endpoint")` in the view +
   `audio.New(slug).Transcribe` in the handler ([ADR-0014](docs/adr/0014-audio-service-transcription.md));
   never touch MediaRecorder or a speech backend directly. Currently

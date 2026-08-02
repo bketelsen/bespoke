@@ -17,6 +17,7 @@ config, stop: you're off the path (see AGENTS.md).
    run [design-app](../design-app/SKILL.md) first and build from its spec.
    If a spec exists, put it at `apps/<slug>/README.md` and treat it as the
    contract.
+   Also plan the dashboard card (step 6a): what one glance should show.
 1. **Scaffold.** `just new <slug>` (slug: `[a-z0-9-]{1,32}`). This assigns
    the port, writes the manifest, and generates a compiling app. Never pick
    ports or create `apps/<slug>/` by hand.
@@ -47,6 +48,9 @@ config, stop: you're off the path (see AGENTS.md).
    `web.EnableChat(mux, slug, provider)` with a provider returning the
    user's recent data as text (see apps/journal for the reference). The app
    switcher is automatic — never build navigation between apps.
+   6a. **Dashboard card**: `web.DashboardCard(mux, provider)` returning a
+   small templ fragment of the user's live state (apps/journal `DashCard`
+   is the reference) — cheap queries only, no LLM calls, no AppShell.
 7. **Regenerate.** After any `.templ` change: `just ui`, and commit the
    generated `*_templ.go` + `pkg/ui/assets/styles.css` alongside your
    sources.

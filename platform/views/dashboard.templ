@@ -9,32 +9,35 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
 )
 
-templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, warnings []string) {
+templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, cards map[string]string, warnings []string) {
 	@ui.AppShell(ui.ShellProps{User: user}) {
 		if len(apps) == 0 {
 			<p class="text-muted-foreground">No apps yet.</p>
 		}
 		<div class="grid gap-4 sm:grid-cols-2">
 			for _, app := range apps {
-				<a href={ appURL(dev, domain, app) } class="group">
-					@card.Card(card.Props{Class: "h-full transition-colors group-hover:border-primary"}) {
-						// Header alone (no Content below), so restore the bottom
-						// padding its p-6 pb-0 default reserves for Content.
-						@card.Header(card.HeaderProps{Class: "pb-6"}) {
-							<div class="flex items-center gap-3">
-								<span class="rounded-md bg-primary/10 p-2 text-primary">
-									@ui.AppIcon(app.Icon, "size-5")
-								</span>
-								@card.Title() {
-									{ app.Name }
-								}
-							</div>
-							@card.Description() {
-								{ app.Description }
+				@card.Card(card.Props{Class: "h-full"}) {
+					@card.Header(card.HeaderProps{Class: "pb-3"}) {
+						<a href={ appURL(dev, domain, app) } class="group flex items-center gap-3">
+							<span class="rounded-md bg-primary/10 p-2 text-primary">
+								@ui.AppIcon(app.Icon, "size-5")
+							</span>
+							@card.Title(card.TitleProps{Class: "group-hover:text-primary transition-colors"}) {
+								{ app.Name }
 							}
+						</a>
+					}
+					@card.Content(card.ContentProps{Class: "pt-0"}) {
+						// App-provided live card (ADR-0017), else the manifest
+						// description. Fragments come from our own apps over the
+						// authenticated plane — trusted HTML.
+						if frag, ok := cards[app.Slug]; ok {
+							@templ.Raw(frag)
+						} else {
+							<p class="text-sm text-muted-foreground">{ app.Description }</p>
 						}
 					}
-				</a>
+				}
 			}
 		</div>
 		for _, w := range warnings {
