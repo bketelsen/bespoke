@@ -40,8 +40,8 @@ Ask the dashboard what matters — it reads every app and answers by name:
 
 ![Dashboard chat answering "What's on my plate today?"](docs/images/dashboard-chat.png)
 
-Or just tell it what to do. The task lands in the list *behind the panel,
-live over SSE* before the reply finishes settling:
+Or just tell it what to do. The task lands in the list _behind the panel,
+live over SSE_ before the reply finishes settling:
 
 ![Todo chat creating a task that appears live in the list](docs/images/todo-chat-live.png)
 
@@ -56,3 +56,7 @@ live over SSE* before the reply finishes settling:
 - **Forking?** Point your coding agent at
   [MAKE-IT-YOUR-OWN.md](MAKE-IT-YOUR-OWN.md) — it interviews you and swaps
   my apps, theme, and deployment for yours.
+
+## LLM Generated, Human Driven
+
+95% of this code was written by Claude Fable. All of the specifications, plans, visions and ADRs were written by a human. Your trust level should match this, or this isn't the repo for you.
