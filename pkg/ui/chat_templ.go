@@ -85,7 +85,15 @@ func chatPanel(appTitle string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> <button type=\"button\" data-chat-toggle class=\"text-muted-foreground hover:text-foreground\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span><div class=\"flex items-center gap-1\"><button type=\"button\" data-chat-speak-toggle title=\"speak replies aloud (local TTS)\" class=\"flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[on=1]:text-primary\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = icon.Volume2(icon.Props{Class: "size-4"}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</button> <button type=\"button\" data-chat-toggle class=\"flex size-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -93,7 +101,7 @@ func chatPanel(appTitle string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</button></div><div id=\"bespoke-chat-log\" class=\"flex-1 space-y-3 overflow-y-auto p-4\"><p class=\"text-sm text-muted-foreground\">Answers come from this app's recent data — takes a couple of seconds per question.</p></div><form id=\"bespoke-chat-form\" class=\"border-t p-3\"><div class=\"flex items-end gap-2\"><textarea name=\"message\" rows=\"1\" placeholder=\"ask something…\" class=\"flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring\"></textarea> <button type=\"submit\" class=\"flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</button></div></div><div id=\"bespoke-chat-log\" class=\"flex-1 space-y-3 overflow-y-auto p-4\"><p class=\"text-sm text-muted-foreground\">Answers come from this app's recent data — takes a couple of seconds per question.</p></div><form id=\"bespoke-chat-form\" class=\"border-t p-3\"><div class=\"flex items-end gap-2\"><textarea name=\"message\" rows=\"1\" placeholder=\"ask something…\" class=\"flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring\"></textarea> <button type=\"submit\" class=\"flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -101,7 +109,7 @@ func chatPanel(appTitle string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</button></div></form></div></div><template id=\"bespoke-chat-user\"><div class=\"ml-8 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground\" data-role=\"user\"></div></template><template id=\"bespoke-chat-ai\"><div class=\"mr-8 whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm\" data-role=\"assistant\"></div></template><script type=\"module\" src=\"/_bespoke/js/chat.js\"></script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</button></div></form></div></div><template id=\"bespoke-chat-user\"><div class=\"ml-8 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground\" data-role=\"user\"></div></template><template id=\"bespoke-chat-ai\"><div class=\"mr-8 whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm\" data-role=\"assistant\"></div></template><script type=\"module\" src=\"/_bespoke/js/chat.js\"></script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

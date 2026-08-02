@@ -20,9 +20,19 @@ templ chatPanel(appTitle string) {
 		<div class="flex h-[28rem] max-h-[calc(100dvh-5rem)] flex-col rounded-lg border bg-card text-card-foreground shadow-lg">
 			<div class="flex items-center justify-between border-b px-4 py-2">
 				<span class="text-sm font-medium">Ask { appTitle }</span>
-				<button type="button" data-chat-toggle class="text-muted-foreground hover:text-foreground">
-					@icon.X(icon.Props{Class: "size-4"})
-				</button>
+				<div class="flex items-center gap-1">
+					<button
+						type="button"
+						data-chat-speak-toggle
+						title="speak replies aloud (local TTS)"
+						class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[on=1]:text-primary"
+					>
+						@icon.Volume2(icon.Props{Class: "size-4"})
+					</button>
+					<button type="button" data-chat-toggle class="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground">
+						@icon.X(icon.Props{Class: "size-4"})
+					</button>
+				</div>
 			</div>
 			<div id="bespoke-chat-log" class="flex-1 space-y-3 overflow-y-auto p-4">
 				<p class="text-sm text-muted-foreground">

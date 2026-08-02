@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -127,6 +128,34 @@ func extFor(mime string) string {
 	}
 }
 
+// speak synthesizes speech via Lemonade's TTS (kokoro). No stub mode — TTS
+// is a nicety, so without a backend it just reports unavailable.
+func (g *audioGateway) speak(ctx context.Context, text string) (io.ReadCloser, string, error) {
+	if g.stub() {
+		return nil, "", fmt.Errorf("speech synthesis requires the Lemonade backend (BESPOKE_LEMONADE_URL unset)")
+	}
+	body, _ := json.Marshal(map[string]any{
+		"input":           text,
+		"model":           cmp.Or(os.Getenv("BESPOKE_TTS_MODEL"), "kokoro-v1"),
+		"response_format": "mp3",
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.base+"/audio/speech", bytes.NewReader(body))
+	if err != nil {
+		return nil, "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := g.hc.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("lemonade: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		return nil, "", fmt.Errorf("lemonade: %s: %s", resp.Status, strings.TrimSpace(string(msg)))
+	}
+	return resp.Body, cmp.Or(resp.Header.Get("Content-Type"), "audio/mpeg"), nil
+}
+
 func (g *audioGateway) register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /audio/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if g.stub() {
@@ -139,6 +168,28 @@ func (g *audioGateway) register(mux *http.ServeMux) {
 		}
 		w.Write([]byte("ok"))
 	})
+	mux.HandleFunc("POST /audio/speak", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			App  string `json:"app"`
+			Text string `json:"text"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil || strings.TrimSpace(req.Text) == "" {
+			http.Error(w, "bad request: need {app, text}", http.StatusBadRequest)
+			return
+		}
+		start := time.Now()
+		rc, ct, err := g.speak(r.Context(), req.Text)
+		if err != nil {
+			log.Printf("audio-speak app=%s in=%dB err=%v", cmp.Or(req.App, "unknown"), len(req.Text), err)
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		defer rc.Close()
+		w.Header().Set("Content-Type", ct)
+		n, _ := io.Copy(w, rc)
+		log.Printf("audio-speak app=%s in=%dB out=%dB dur=%s", cmp.Or(req.App, "unknown"), len(req.Text), n, time.Since(start).Round(time.Millisecond))
+	})
+
 	mux.HandleFunc("POST /audio/transcribe", func(w http.ResponseWriter, r *http.Request) {
 		app := cmp.Or(r.Header.Get("X-Bespoke-App"), "unknown")
 		start := time.Now()

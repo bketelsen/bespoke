@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/bketelsen/bespoke/pkg/audio"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/llm"
 )
@@ -34,6 +36,30 @@ type chatMessage struct {
 func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 	chatEnabled.Store(true)
 	ai := llm.New(slug)
+	voice := audio.New(slug)
+
+	// Speak toggle in the chat panel (ADR-0015 chrome): synthesize a reply
+	// via the audio service's local TTS. Degrades to an error the panel
+	// surfaces quietly when no TTS backend is configured.
+	mux.HandleFunc("POST /_chat/speak", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Text string `json:"text"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil || strings.TrimSpace(req.Text) == "" {
+			http.Error(w, "bad request: need {text}", http.StatusBadRequest)
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+		defer cancel()
+		rc, ct, err := voice.Speak(ctx, req.Text)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		defer rc.Close()
+		w.Header().Set("Content-Type", ct)
+		io.Copy(w, rc)
+	})
 
 	mux.HandleFunc("POST /_chat", func(w http.ResponseWriter, r *http.Request) {
 		user := auth.FromContext(r.Context())

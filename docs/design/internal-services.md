@@ -36,7 +36,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Markdown rendering | 1 | **live** | `ui.Markdown(text)` | GFM via goldmark, `prose`-styled, raw HTML omitted (tested) |
 | App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
 | Transcription | 2 | **LIVE (real)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` (WAV) | ADR-0014; whisper on Lemonade, validated end to end 2026-08-01; stub mode when `BESPOKE_LEMONADE_URL` unset |
-| Speech synthesis | 2 | planned (backend verified) | future `audio.New(slug).Speak` | kokoro-v1 works on Lemonade; build with first consumer |
+| Speech synthesis | 2 | **LIVE** | `audio.New(slug).Speak`; chat panels get a persisted speak-toggle for free | First consumer: the chat speak toggle (ADR-0015 chrome); kokoro-v1 via `/audio/speak`, validated in prod 2026-08-01 |
 | MCP surface | 2 | candidate | external LLM clients via `https://<apex>/mcp` | One aggregated MCP server on platformd; apps opt tools in via `web.Tool`, namespaced `<slug>_<tool>` (see roadmap idea) |
 
 ## Audio (first-class service — transcription live, stub-backed)
@@ -58,8 +58,13 @@ capture) per [ADR-0014](../adr/0014-audio-service-transcription.md):
 - **Browser:** `ui.VoiceButton(action)` renders the shared mic button +
   `recorder.js` (MediaRecorder toggle → POST blob → reload). Every app gets
   voice input the same way; journal's capture box is the reference use.
-- **`Speak` / `POST /audio/speak` remains planned** — built with its first
-  consumer, same rules.
+- **`Speak` / `POST /audio/speak` is live** (first consumer: the chat
+  panel's speak toggle, 2026-08-01): JSON `{app, text}` → kokoro-v1 via
+  Lemonade → mp3 stream. `pkg/audio.Speak(ctx, text)` returns the stream +
+  content type. No stub mode — without a Lemonade backend it reports
+  unavailable and chat stays silent. `BESPOKE_TTS_MODEL` overrides the
+  model. Every `EnableChat` app auto-mounts `POST /_chat/speak`; the shared
+  panel adds the toggle (localStorage-persisted) and autoplays replies.
 
 ## Backends
 

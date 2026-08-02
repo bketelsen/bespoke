@@ -5,6 +5,7 @@
 package audio
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"encoding/json"
@@ -41,6 +42,28 @@ type settings struct{ mime string }
 // pkg/ui recorder produces).
 func WithMIME(m string) Option {
 	return func(s *settings) { s.mime = m }
+}
+
+// Speak synthesizes text to speech (local TTS via the platform's audio
+// service). Returns the audio stream and its content type; the caller must
+// Close the reader. Errors when no local TTS backend is configured.
+func (c *Client) Speak(ctx context.Context, text string) (io.ReadCloser, string, error) {
+	body, _ := json.Marshal(map[string]string{"app": c.app, "text": text})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.base+"/audio/speak", bytes.NewReader(body))
+	if err != nil {
+		return nil, "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("audio service: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		return nil, "", fmt.Errorf("audio service: %s: %s", resp.Status, strings.TrimSpace(string(msg)))
+	}
+	return resp.Body, resp.Header.Get("Content-Type"), nil
 }
 
 // Transcribe converts spoken audio to text.

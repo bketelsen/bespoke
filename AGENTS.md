@@ -76,6 +76,9 @@ them rather than improvising, whichever agent you are:
   switcher needs nothing from you; in-app LLM chat is one call —
   `web.EnableChat(mux, slug, provider)` where provider returns the user's
   recent app data as text. Add chat to any app whose data invites questions.
+  Chat panels include a speak toggle (local TTS, persisted, autoplay) for
+  free — never build your own TTS path; `audio.New(slug).Speak` exists for
+  non-chat uses.
 - Voice input: `ui.VoiceButton("/your/endpoint")` in the view +
   `audio.New(slug).Transcribe` in the handler ([ADR-0014](docs/adr/0014-audio-service-transcription.md));
   never touch MediaRecorder or a speech backend directly. Currently
