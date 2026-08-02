@@ -161,12 +161,12 @@ apps deploy to `selfie`, builds happen on the dev machine)
   entry went through journal → gateway → whisper end to end. Remaining
   candidates (embeddings/image/private-completion helpers) build on
   demand per the catalog.
-- **Audio:** transcription is LIVE stub-first with journal voice capture as
-  first consumer ([ADR-0014](../adr/0014-audio-service-transcription.md)) —
-  flipping to real transcription = clear the Lemonade backlog above, then
-  set `BESPOKE_LEMONADE_URL` (+ optionally `BESPOKE_AUDIO_MODEL`) in
-  platformd's env and validate the OpenAI-compatible request shape against
-  the live server. `Speak` stays planned until its first consumer.
+- **Audio:** ✅ both directions LIVE and real
+  ([ADR-0014](../adr/0014-audio-service-transcription.md)): transcription
+  (journal voice capture + chat mic → Whisper via Lemonade, validated end
+  to end 2026-08-01) and `Speak` (first consumer: the chat panel's speak
+  toggle, kokoro-v1). Stub transcription remains only as the dev fallback
+  when `BESPOKE_LEMONADE_URL` is unset.
 - **Builder app (idea, 2026-08-01): the app that builds new apps.** A
   Bespoke app on the dashboard where you type "build me a…" and watch it
   ship: the [design-app](../../.agents/skills/design-app/SKILL.md) interview
@@ -196,7 +196,7 @@ apps deploy to `selfie`, builds happen on the dev machine)
   the front door. Guardrail to decide at build time: write-capable tools
   opt-in/flagged, read-only the default. Builds on ADR-0012's plane; gets
   its ADR when adopted. **Status 2026-08-01: RESOLVED — adopted as
-  [ADR-0021](../adr/0021-llm-tools-agentic-chat-mcp.md)**; full CRUD tools
+  [ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)**; full CRUD tools
   live on `/mcp`, chat is agentic, dashboard chat aggregates every app.
 - **Shared-data tailnet apps (idea, 2026-08-02): one dataset for the whole
   household.** Every app today is per-user (`WHERE login = ?` everywhere —
@@ -225,7 +225,8 @@ apps deploy to `selfie`, builds happen on the dev machine)
 
 ## Open questions
 
-- **Domain:** which one? Cosmetic; decide by Phase 1.
+- ~~**Domain**~~ resolved 2026-08-01: `bespoke.ketelsen.cloud` (+ wildcard),
+  live with certs.
 - **Copilot terms:** skim before building anything high-frequency on the
   subscription (e.g. a 5-minute cron summarizer).
 - ~~**Copilot latency**~~ resolved 2026-08-01: ≈1.3–1.8s per simple

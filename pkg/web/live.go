@@ -86,7 +86,7 @@ func jsonString(s string) string {
 // live region on every Changed(login) and patches it in place. Pages
 // subscribe from a stable wrapper element:
 //
-//	<div data-on-load="@get('/_live')">
+//	<div data-init="@get('/_live')">
 //	  <div id="<slug>-live">…initial render…</div>
 //	</div>
 //

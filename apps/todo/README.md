@@ -28,14 +28,30 @@ Tasks with optional due dates, priorities, and one level of subtasks.
   subtask. `POST /tasks/{id}/toggle` — complete/reopen with cascades.
   `GET`/`POST /tasks/{id}/edit` — edit description/due/priority (pencil on
   each row). `POST /tasks/{id}/delete` — delete (and subtasks).
-- `GET /_card` — dashboard card: **Due Today** (includes overdue), **Due
-  This Week** (next 7 days), **High Priority** — open tasks only,
-  deduplicated in that order, capped at 4 rows each with +N more counts.
+- Completing a task via the toggle redirects to `/?did=<description>` and
+  shows a done banner offering **"Journal it →"** — journal's `add-entry`
+  intent discovered live from the registry (`ui.IntentsFrom`, ADR-0018).
+
+## Platform surfaces
+
+- `GET /_card` — dashboard card (ADR-0017): **Due Today** (includes
+  overdue), **Due This Week** (next 7 days), **High Priority** — open
+  *top-level* tasks only (subtasks never appear), deduplicated in that
+  order, capped at 4 rows each with +N more counts.
+- `GET`/`POST /_intents/create-task` — the declared `[[intents]]`
+  (ADR-0018): highlight text anywhere, "Create Todo" appears.
+- `GET /_live` (ADR-0022) — every mutation (forms, edit, toggle, tools,
+  intent) calls `web.Changed(login)`; the task list patches on open pages.
+- Tools (`web.Tool`, ADR-0021) — full CRUD: `list_tasks`, `create_task`,
+  `update_task`, `set_task_done` (cascade-aware), `delete_task`; parent
+  validation enforces the one-level nesting rule on every face. Exposed to
+  in-app chat, dashboard chat, and MCP.
 
 ## Services
 
-- `pkg/llm` chat (`/_chat`): open tasks with dues/priorities as context —
-  "what should I do today?"
+- `pkg/llm` chat (`/_chat`): all tasks (completed included, subtasks
+  labeled) as context, and **agentic** over the tools above — "add milk to
+  the shopping list" mutates, not just answers.
 
 ## Non-goals
 

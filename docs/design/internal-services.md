@@ -32,7 +32,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Search | 2 | candidate | future `pkg/search` | Shared index; pairs with embeddings |
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
-| In-app chat | 1 | **live** | `web.EnableChat(mux, slug, provider)` | ADR-0015; context-stuffing v1, upgrades to MCP tools later |
+| In-app chat | 1 | **live** | `web.EnableChat(mux, slug, provider)` | ADR-0015; context-stuffed AND agentic — registered `web.Tool`s act automatically (ADR-0021) |
 | Dashboard chat (all apps) | 2 | **live** | chat button on the apex dashboard | ADR-0020; aggregates every chat-enabled app's `/_chat/context`, never their databases |
 | Markdown rendering | 1 | **live** | `ui.Markdown(text)` | GFM via goldmark, `prose`-styled, raw HTML omitted (tested) |
 | App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
@@ -44,25 +44,29 @@ app ──pkg/* helper────────► (no network at all — compose
 | Live updates | — | **LIVE** | `web.Changed(login)` after mutations + `web.Live(mux, fragment)` | ADR-0022; pages and dashboard cards patch over SSE from any face (forms, chat, MCP, intents) |
 | MCP surface | 2 | **LIVE** | `claude mcp add --transport http bespoke https://<apex>/mcp` | ADR-0021; per-request identity scoping, tools namespaced `<slug>_<name>` |
 
-## Audio (first-class service — transcription live, stub-backed)
+## Audio (first-class service — transcription and speech both live)
 
 Speech is a platform capability every app can assume, like auth and storage.
 Transcription shipped 2026-08-01 with its first consumer (journal voice
-capture) per [ADR-0014](../adr/0014-audio-service-transcription.md):
+capture) per [ADR-0014](../adr/0014-audio-service-transcription.md), and
+runs REAL (Whisper via Lemonade) in prod — validated end to end the same
+day:
 
 - **Gateway:** `POST /audio/transcribe` + `GET /audio/healthz` on the 4001
-  plane (`platform/audio.go`). The Lemonade call (OpenAI-compatible
-  multipart, `BESPOKE_LEMONADE_URL` + `BESPOKE_AUDIO_MODEL`) is implemented
-  but **stub mode is active while `BESPOKE_LEMONADE_URL` is unset** — audio
-  is accepted and a clearly-marked placeholder transcription returned.
-  Healthz reports the mode; in real mode an unreachable Lemonade becomes a
-  dashboard warning. The request shape needs validation against a live
-  Lemonade when the backend flips on.
+  plane (`platform/audio.go`). Real mode whenever `BESPOKE_LEMONADE_URL` is
+  set (the deploy-created env file sets it): OpenAI-compatible multipart to
+  Lemonade, model from `BESPOKE_AUDIO_MODEL`. Without the env var the
+  gateway falls back to **stub mode** — audio accepted, a clearly-marked
+  placeholder returned — so local dev without Lemonade still works. Healthz
+  reports the mode; in real mode an unreachable Lemonade becomes a
+  dashboard warning.
 - **App client:** `pkg/audio` — `audio.New(slug).Transcribe(ctx, r,
   audio.WithMIME(...))`. Same shape as `pkg/llm`; apps are mode-blind.
 - **Browser:** `ui.VoiceButton(action)` renders the shared mic button +
-  `recorder.js` (MediaRecorder toggle → POST blob → reload). Every app gets
-  voice input the same way; journal's capture box is the reference use.
+  `recorder.js`/`wav.js` (Web Audio capture encoded to WAV client-side —
+  Lemonade transcribes WAV only — POST → reload). Every app gets voice
+  input the same way; journal's capture box is the reference use, and the
+  chat panel's mic reuses the same `wav.js` path.
 - **`Speak` / `POST /audio/speak` is live** (first consumer: the chat
   panel's speak toggle, 2026-08-01): JSON `{app, text}` → kokoro-v1 via
   Lemonade → mp3 stream. `pkg/audio.Speak(ctx, text)` returns the stream +

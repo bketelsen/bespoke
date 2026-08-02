@@ -48,6 +48,6 @@ overlays, and never touch the unlayered 16px-input rule in
 `design/input.css`.
 
 Commit generated output (`*_templ.go`, `pkg/ui/assets/styles.css`) with your
-change, and add a row to the design-system notes in
+change, and add a bullet to the "Design system" section of
 `docs/design/architecture.md` only if you added a wrapper with non-obvious
 usage.

@@ -57,7 +57,7 @@ them rather than improvising, whichever agent you are:
 - Live UI updates (ADR-0022): call `web.Changed(user.Login)` after EVERY
   mutation (handlers, tools, intents — no exceptions), expose the page's
   dynamic region as an id-stable fragment, and mount it with
-  `web.Live(mux, fragment)` plus a `data-on-load="@get('/_live')"` wrapper
+  `web.Live(mux, fragment)` plus a `data-init="@get('/_live')"` wrapper
   (see journal's StreamLive). Lower-level SSE via `web.NewSSE` (Datastar)
   when a page needs custom streams.
 - Render user- or LLM-authored markdown with `ui.Markdown(text)` (GFM,
@@ -107,8 +107,10 @@ them rather than improvising, whichever agent you are:
   Wire the natural ones; note rejected ones in the app README's Non-goals.
 - Voice input: `ui.VoiceButton("/your/endpoint")` in the view +
   `audio.New(slug).Transcribe` in the handler ([ADR-0014](docs/adr/0014-audio-service-transcription.md));
-  never touch MediaRecorder or a speech backend directly. Currently
-  stub-backed — transcriptions are placeholders until Lemonade is wired.
+  never touch the microphone APIs or a speech backend directly.
+  Transcription is real (Whisper via Lemonade) wherever
+  `BESPOKE_LEMONADE_URL` is set — prod has it; without it the gateway
+  falls back to clearly-marked stub transcriptions so dev still works.
 - Timestamps are stored UTC (`datetime('now')`) but ALWAYS convert to local
   time before showing users or feeding LLM contexts/prompts (see journal's
   `localStamp`) — raw UTC makes chat narrate evening entries as "after

@@ -9,7 +9,9 @@ You forked a *personal* platform — most of what's here is the platform
 (keep it) wearing Brian's specifics (replace them). This skill walks an
 agent through the swap. Agent: work top to bottom, one phase per commit,
 `just check` between phases. Interview the new owner where marked — never
-guess their domain, hosts, or taste.
+guess their domain, hosts, or taste. (All paths in this file are relative
+to the **repo root** — the canonical file is `MAKE-IT-YOUR-OWN.md` there;
+`.agents/skills/make-it-your-own/SKILL.md` is a symlink to it.)
 
 **Keep untouched:** `pkg/*` (the framework), `pkg/ui/components` + `utils`
 (vendored — never hand-edited), `cmd/bespoke`, `platform/`, the docs
@@ -24,13 +26,19 @@ Go 1.26+, `just`, `rsync`, ssh; a Tailscale tailnet; a domain on Cloudflare
 already running Caddy; one app host (systemd, linger-capable). Optional but
 worth it: GitHub Copilot subscription + CLI (LLM features; everything
 degrades gracefully without), a [Lemonade](https://lemonade-server.ai)
-server (local voice/TTS; stub mode without).
+server (speech both ways: real Whisper transcription in, kokoro TTS out —
+without it, voice input degrades to clearly-marked stub transcriptions and
+TTS is simply unavailable).
 
 ## 1. Identity
 
 - **ASK:** their GitHub handle/module path. Replace the module everywhere:
   `go.mod` + every import: `grep -rl github.com/bketelsen/bespoke --include='*.go' --include='*.templ'`,
   sed to `github.com/THEM/bespoke`, then `just ui && just check`.
+- Non-Go references the grep misses — fix each: `.templui.json`
+  (`moduleName` — stale, it silently breaks the imports `templui add`
+  writes), `README.md` (CI badge URL), `SECURITY.md` (advisory URL),
+  `.github/ISSUE_TEMPLATE/config.yml` (MAKE-IT-YOUR-OWN link).
 - Point `git remote` at their repo.
 
 ## 2. Deployment config
@@ -40,7 +48,7 @@ server (local voice/TTS; stub mode without).
   [deploy/deploy.env.example](deploy/deploy.env.example) to
   `deploy/deploy.env` (gitignored) and fill in their values.
 - Replace the username (`bjk`) in both [deploy/sudoers/](deploy/sudoers/)
-  files.
+  files (it also appears in [deploy/README.md](deploy/README.md)'s prose).
 - Walk [deploy/README.md](deploy/README.md) with them: custom Caddy build
   (`just caddy-push`), Cloudflare token drop-in, `import` line, wildcard
   DNS to THEIR edge tailscale IP, the tailnet ACL, linger on the app host.
@@ -96,16 +104,24 @@ from this one file.
 - Rewrite [README.md](README.md)'s pitch and
   [docs/design/vision.md](docs/design/vision.md) in their voice — Brian's
   are personal.
+- The community files are Brian-specific too: [CONTRIBUTING.md](CONTRIBUTING.md)
+  ("the apps in this repo are mine"), [SECURITY.md](SECURITY.md) (advisory
+  URL), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) (contact email), and the
+  issue templates under `.github/ISSUE_TEMPLATE/`. Rewrite or remove —
+  don't ship a fork that routes security reports to Brian.
 - [docs/plans/roadmap.md](docs/plans/roadmap.md): reset the status notes
   and one-shot log; their history starts now.
-- **Leave the ADRs** (0001–0022): they explain why the code is shaped this
+- **Leave the ADRs**: they explain why the code is shaped this
   way. They're inherited history — immutable as always; new decisions get
   the next numbers. An ADR "Forked from bketelsen/bespoke" makes a clean
   first marker (and the inference-provider choice from §3 belongs in one).
 
 ## 7. Verify it's theirs
 
-- `just check` passes; `just dev` up; dashboard shows THEIR identity via
-  `BESPOKE_DEV_USER`, THEIR theme, THEIR apps.
+- `just check` passes locally AND CI is green on their remote (the
+  inherited workflow runs the identical recipe — a red fork badge means
+  the swap isn't done).
+- `just dev` up; dashboard shows THEIR identity via `BESPOKE_DEV_USER`,
+  THEIR theme, THEIR apps.
 - Deploy per the runbook; done when `https://hello.<their-domain>` renders
   THEIR Tailscale name — the same done-when this repo started with.

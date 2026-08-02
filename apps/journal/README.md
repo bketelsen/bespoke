@@ -31,10 +31,27 @@ evening reflections — opened whenever, written in seconds.
   browser; audio is transcribed via `audio.Transcribe` and saved as a normal
   entry.
 
+## Platform surfaces
+
+- `GET /_card` — dashboard card (ADR-0017): today's entry count, latest
+  entry time and a 120-char snippet. Cheap queries only.
+- `GET`/`POST /_intents/add-entry` — the declared `[[intents]]` (ADR-0018):
+  any app can feed selected text into the journal; todo's "Journal it →"
+  done-banner is the reference caller.
+- `GET /_live` (ADR-0022) — every mutation (forms, voice, intent, tools)
+  calls `web.Changed(login)`; the stream region patches on open pages.
+- Chat (`web.EnableChat`, ADR-0015/0020/0021) — context is the last 30 days
+  of entries plus the latest weekly summary; mic input and speak toggle
+  come with the panel.
+- Tools (`web.Tool`, ADR-0021) — `add_entry`, `list_entries`,
+  `delete_entry`; exposed to in-app chat, dashboard chat, and MCP.
+  **Deliberately no update tool** — the append-only non-goal binds every
+  face of the app, not just the forms.
+
 ## Services
 
 - `pkg/llm` for the weekly summary — on demand, cached in `summaries`, never
-  automatic.
+  automatic — and behind the chat panel (agentic over the tools above).
 - `pkg/audio` for voice capture (first consumer, ADR-0014): WAV recorder →
   Whisper-Large-v3-Turbo on Lemonade, **validated live end to end
   2026-08-01**. Requires `BESPOKE_LEMONADE_URL` on platformd (set in dev

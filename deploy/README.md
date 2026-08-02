@@ -1,9 +1,11 @@
 # Deploy Runbook — Phase 1
 
-> ⚠ **UNVALIDATED** (2026-08-01): this runbook has not been executed
-> end-to-end yet. Expect rough edges on first run — in particular, verify the
-> caddy-tailscale placeholder names and the `map {labels.N}` index against
-> your domain and plugin version.
+> ✅ **VALIDATED** (2026-08-01): executed end-to-end for the reference
+> deployment (`bespoke.ketelsen.cloud`) — custom Caddy pushed, wildcard
+> cert issued, three apps live through the full tailscale-auth path. The
+> caddy-tailscale placeholder names and the `map {labels.N}` index both
+> proved out. Two items remain open below: the tailnet ACL (§3) and
+> Litestream (§4's backup half).
 
 Topology per [ADR-0011](../docs/adr/0011-split-host-deployment.md): **edge**
 (existing Caddy server) → **selfie** (app host) → built from the **dev
@@ -21,7 +23,9 @@ just caddy        # cross-compile dist/caddy with tailscale + cloudflare-dns
 just caddy-push   # …and install it on the edge host (old binary → caddy.bak)
 ```
 
-Set `EDGE_GOARCH` in [deploy.env](deploy.env) if the edge isn't amd64. The
+Set `EDGE_GOARCH` in your `deploy/deploy.env` (created from
+[deploy.env.example](deploy.env.example), gitignored) if the edge isn't
+amd64. The
 push swaps `/usr/bin/caddy` under systemd (the stock unit already grants
 `CAP_NET_BIND_SERVICE`, so a plain binary works) and prints the rollback
 one-liner.
@@ -31,6 +35,13 @@ drop-in):
 
 ```text
 CLOUDFLARE_API_TOKEN=<token with Zone:DNS:Edit for the domain>
+```
+
+And add one line to the main Caddyfile so the generated route file is
+actually read (its own header says the same):
+
+```text
+import /etc/caddy/bespoke.caddy
 ```
 
 The edge host must be on the tailnet with tailscaled running (the
@@ -76,9 +87,15 @@ mkdir -p ~/bespoke
 ```
 
 `~/bespoke/env` is created by the first deploy (bind IP, domain, LLM plane
-URL, and `BESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1` for the audio
-backend — adjust if Lemonade's port differs); units, binaries, manifests,
-and litestream config are synced by `bespoke deploy`.
+URL, `BESPOKE_ROOT`, and `BESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1`
+for the audio backend — adjust if Lemonade's port differs); units,
+binaries, manifests, and litestream config are synced by `bespoke deploy`.
+
+For the LLM gateway, install the **`copilot` CLI into `~/.local/bin`** on
+selfie and sign it in (`copilot`, then authenticate) — the generated
+platformd unit puts `~/.local/bin` on PATH for exactly this. Without it
+everything else works but chat/summaries are degraded, with a dashboard
+warning banner explaining why.
 
 For backups (ADR-0007), install [Litestream](https://litestream.io) to
 `/usr/local/bin/litestream`, then append to `~/bespoke/env`:
@@ -97,9 +114,18 @@ The tooling escalates only for a fixed set of commands; scoped sudoers
 files live in [sudoers/](sudoers/). On each host:
 
 ```sh
+# from the dev machine
+scp deploy/sudoers/bespoke-edge   <edge>:
+scp deploy/sudoers/bespoke-selfie <selfie>:
+
+# then on each host
 visudo -cf bespoke-edge   && sudo install -m 0440 bespoke-edge   /etc/sudoers.d/bespoke   # edge
 visudo -cf bespoke-selfie && sudo install -m 0440 bespoke-selfie /etc/sudoers.d/bespoke   # selfie
 ```
+
+If `visudo` is missing (minimal hosts), skip the check and install anyway —
+the files are static and were validated elsewhere; a broken sudoers.d file
+is ignored by modern sudo rather than locking you out.
 
 Edge covers route pushes + caddy binary swaps; selfie needs no sudo for
 routine deploys (user units) — its file only covers linger and litestream
@@ -132,10 +158,12 @@ litestream restore -config ~/bespoke/litestream.yml -o /tmp/hello-restored.db \
 sqlite3 /tmp/hello-restored.db 'SELECT count(*) FROM visits;'   # matches live?
 ```
 
-## Verify (Phase 1 "done when")
+## Verify (Phase 1 "done when" — closed 2026-08-01)
 
 From any tailnet device: `https://hello.<domain>` renders your Tailscale
 login name, and `https://<domain>` shows the dashboard with the Hello app.
+(Verified live at `hello.bespoke.ketelsen.cloud`; re-run after any Caddy or
+edge change.)
 
 ## Troubleshooting
 

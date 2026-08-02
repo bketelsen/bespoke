@@ -10,10 +10,9 @@ import (
 	"github.com/bketelsen/bespoke/internal/manifest"
 )
 
-// cmdDeploy builds and ships per docs/specs/bespoke-cli.md: cross-compile →
-// rsync → restart unit → healthz with rollback → regenerate artifacts →
-// (--edge) push Caddy routes. ⚠ Remote paths are UNVALIDATED until the
-// Phase 1 runbook has been executed (docs/plans/roadmap.md).
+// cmdDeploy builds and ships per docs/specs/bespoke-cli.md: regenerate
+// artifacts → cross-compile → rsync → restart unit → healthz with
+// rollback → (--edge) push Caddy routes.
 func cmdDeploy(args []string) error {
 	all := slices.Contains(args, "--all")
 	edge := slices.Contains(args, "--edge")

@@ -32,9 +32,11 @@ any point, write the spec from what you have and move on.
 3. **The first screen** — what renders at `GET /`; what the 2–3 views are.
 4. **Leverage** — anything from the
    [internal services catalog](../../../docs/design/internal-services.md)?
-   (LLM summarize/classify at ~1.5s/call, future audio/voice input,
-   privacy-sensitive → note the Lemonade/local candidate.) Don't invent
-   service needs the user didn't imply.
+   (LLM summarize/classify at ~1.5s/call; voice input and TTS are LIVE —
+   `ui.VoiceButton` + `audio.Transcribe`, `audio.Speak` — offer voice
+   capture as a real option for capture-heavy apps; privacy-sensitive text
+   completion → note the Lemonade/local candidate.) Don't invent service
+   needs the user didn't imply.
 5. **Lifecycle** — edit/delete? retention? does old data ever resurface
    (weekly summary, on-this-day)?
 6. **Integrations** — check other apps' `[[intents]]` and this app's
@@ -42,7 +44,7 @@ any point, write the spec from what you have and move on.
    offers journaling it"). One question, options from the actual registry.
 7. **Non-goals** — name 2–3 things it deliberately won't do (sharing,
    mobile app, export…), confirmed with the user.
-7. **Identity** — display name, slug, Lucide icon, one-line dashboard
+8. **Identity** — display name, slug, Lucide icon, one-line dashboard
    description.
 
 ## Output: the spec
@@ -62,8 +64,13 @@ new-app step 1 if building immediately):
 - `GET /` — <first screen>
 - <other routes>
 
+## Platform surfaces
+<Dashboard card: what one glance shows. Intents declared/consumed (from
+angle 6). Tools the chat/MCP get — and any deliberately withheld.>
+
 ## Services
-<pkg/llm, future audio, or "none". Note latency-driven UX choices.>
+<pkg/llm, pkg/audio (voice in / TTS), or "none". Note latency-driven UX
+choices.>
 
 ## Non-goals
 <The 2–3 confirmed exclusions.>

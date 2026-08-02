@@ -1,15 +1,18 @@
 # 0014 — Audio service: transcription, stub-first
 
 - **Status:** Accepted — fully validated live later the same day: WAV-only
-  input discovered (the pkg/ui recorder now encodes WAV client-side) and a
-  real voice entry transcribed end to end via Whisper-Large-v3-Turbo on
-  Lemonade. Stub mode remains the no-config fallback.
+  input discovered (the pkg/ui recorder now encodes WAV client-side via Web
+  Audio, superseding the MediaRecorder mention below) and a real voice
+  entry transcribed end to end via Whisper-Large-v3-Turbo on Lemonade. Stub
+  mode remains the no-config fallback. `Speak` (declared unbuilt below)
+  also shipped 2026-08-01 with its first consumer, the chat speak toggle —
+  see the [catalog](../design/internal-services.md#audio-first-class-service--transcription-and-speech-both-live).
 - **Date:** 2026-08-01
 
 ## Context
 
 The audio contract was pinned in the
-[internal services catalog](../design/internal-services.md#audio-planned-first-class-service)
+[internal services catalog](../design/internal-services.md#audio-first-class-service--transcription-and-speech-both-live)
 with a build-with-first-consumer rule (ADR-0012). The journal app now wants
 voice capture — the designated first consumer — but the Lemonade backend on
 selfie isn't ready (models not re-downloaded, loopback-only; see the roadmap

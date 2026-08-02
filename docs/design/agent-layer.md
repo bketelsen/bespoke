@@ -15,11 +15,11 @@ quota forces a mid-project switch.
 
 ## AGENTS.md — conventions as law
 
-The repo-root `CLAUDE.md` states the invariants an agent may never route
-around:
+The repo-root `AGENTS.md` (which `CLAUDE.md` symlinks) states the
+invariants an agent may never route around:
 
-- Use `pkg/*` for auth, db, web scaffold, UI, LLM, notifications — never
-  hand-roll any of them.
+- Use `pkg/*` for auth, db, web scaffold, UI, LLM, audio (speech in and
+  out) — never hand-roll any of them.
 - Never write ad-hoc CSS; compose `pkg/ui` components. Tailwind utilities for
   layout only, theme tokens only
   ([ADR-0008](../adr/0008-go-templ-datastar-frontend.md),
@@ -28,8 +28,17 @@ around:
   the theme (`design/input.css`) or wrapper components.
 - Apps listen on loopback only, on the port assigned in their manifest.
 - Deploy exclusively via the `bespoke` CLI
-  ([spec](../specs/bespoke-cli.md)); never hand-edit Caddy config or systemd
-  units.
+  ([spec](../specs/bespoke-cli.md)); never hand-edit Caddy config, systemd
+  units, or anything in `dist/gen/` — they are generated.
+- Wire the app contract, not just pages: `web.Tool` for every meaningful
+  action ([ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)),
+  `web.DashboardCard` ([ADR-0017](../adr/0017-app-provided-dashboard-cards.md)),
+  intents where other apps might feed this one
+  ([ADR-0018](../adr/0018-cross-app-intents.md)), and `web.Changed` after
+  every mutation with a `web.Live` fragment
+  ([ADR-0022](../adr/0022-live-updates.md)).
+- `just check` before calling anything done; CI runs the identical recipe,
+  so a local pass is the merge gate.
 - The manifest schema is the [app-manifest spec](../specs/app-manifest.md).
 - Security rules from [ADR-0004](../adr/0004-tailscale-identity-via-caddy.md)
   are non-negotiable.
@@ -53,6 +62,9 @@ around:
   three cases: vendor from templUI, Bespoke wrapper in `pkg/ui`, or theme
   tokens; always `build-ui` + commit generated output; never fork styling
   into an app.
+- **[make-it-your-own](../../.agents/skills/make-it-your-own/SKILL.md)**
+  (canonical file: root `MAKE-IT-YOUR-OWN.md`) — the forking interview:
+  swap the owner's apps, theme, domain, and deployment for a new owner's.
 
 Planned: a resident maintenance agent on a schedule (dependency bumps, backup
 verification, log triage) — stolen from the

@@ -12,12 +12,16 @@ building nine apps; I'm building the thing that makes the tenth app a prompt.
 ## Shape
 
 - Everything lives on the tailnet behind Caddy at `*.bespoke.example.com`
-  (domain TBD — plenty available).
-- A dashboard at the apex lists every app (name, icon, description) from a
-  per-app manifest.
+  (the docs' placeholder; the reference deployment is
+  `bespoke.ketelsen.cloud`).
+- A dashboard at the apex shows every app from its per-app manifest — grown
+  since into live per-user cards, cross-app chat, and an MCP endpoint
+  ([architecture.md](architecture.md) has the current shape).
 - One shared framework (`pkg/*`), one design system, one deploy path, one
   storage pattern. Apps are small and boring by design.
-- LLM inference rides my existing Copilot subscription.
+- Text inference rides the Copilot SDK behind a provider-neutral gateway;
+  speech (both directions) runs on a local Lemonade server — words never
+  leave the house.
 
 See [architecture.md](architecture.md) for the concrete design.
 

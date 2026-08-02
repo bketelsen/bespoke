@@ -42,15 +42,26 @@ config, stop: you're off the path (see AGENTS.md).
 6. **Shared capabilities.** Check `docs/design/internal-services.md` BEFORE
    building any capability into the app. LLM: `llm.New(slug)` →
    `Complete`/`CompleteJSON`/`Classify` (~1.5s per call — background it or
-   design the UX for it; requires platformd running). Live updates:
-   `web.NewSSE` (Datastar is already loaded by AppShell). If the app's data
-   invites questions ("is X trending?"), add in-app chat:
-   `web.EnableChat(mux, slug, provider)` with a provider returning the
-   user's recent data as text (see apps/journal for the reference). The app
-   switcher is automatic — never build navigation between apps.
+   design the UX for it; requires platformd running); render LLM or user
+   markdown only with `ui.Markdown(text)`. Voice: `ui.VoiceButton(action)`
+   in the view + `audio.New(slug).Transcribe` in the handler — real Whisper
+   transcription, one line each (journal `/entries/voice` is the
+   reference); `audio.Speak` exists for TTS beyond the chat panel's
+   built-in toggle. If the app's data invites questions ("is X
+   trending?"), add in-app chat: `web.EnableChat(mux, slug, provider)`
+   with a provider returning the user's recent data as text (see
+   apps/journal for the reference). The app switcher is automatic — never
+   build navigation between apps. (`web.NewSSE` is the low-level escape
+   hatch for custom streams; for keeping pages fresh use 6-live below.)
+   6-tools. **Tools (ADR-0021)**: expose every meaningful action as
+   `web.Tool(mux, def)` in a `tools.go` — user-scoped handler, JSON
+   schema, honest description (destructive ones say "only on an explicit
+   user request"). Register tools BEFORE `EnableChat` so chat sees them;
+   they also join dashboard chat and MCP automatically. Respect the spec:
+   an append-only app gets no update tool.
    6-live. **Live region (ADR-0022)**: render the dynamic part of the page
    as an id-stable fragment, mount `web.Live(mux, fragment)`, wrap with
-   `data-on-load="@get('/_live')"`, and call `web.Changed(user.Login)`
+   `data-init="@get('/_live')"`, and call `web.Changed(user.Login)`
    after EVERY mutation — handlers, tools, and intents (journal/todo are
    references). A page that goes stale after a chat action is a bug.
    6a. **Dashboard card**: `web.DashboardCard(mux, provider)` returning a
@@ -65,7 +76,8 @@ config, stop: you're off the path (see AGENTS.md).
    generated `*_templ.go` + `pkg/ui/assets/styles.css` alongside your
    sources.
 8. **Verify — all of these, not a subset:**
-   - `just check` passes (vet, tests, CGO-free linux cross-compile).
+   - `just check` passes (vet, tests, golangci-lint, `go mod tidy -diff`,
+     CGO-free linux cross-compile — CI runs the identical recipe).
    - `just dev`, then: app responds at `http://localhost:<port>` and renders
      through AppShell; the dashboard at `http://localhost:4000` lists it;
      `curl http://localhost:<port>/healthz` says ok. Exercise each route you

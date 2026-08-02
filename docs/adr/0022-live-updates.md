@@ -20,7 +20,9 @@ would fix staleness but destroy the DOM-held chat history.
 - **`web.Live(mux, fragment)`** mounts `GET /_live`: a Datastar SSE stream
   that re-renders the app's live region on each change and patches it in
   place (`PatchElementTempl`). Pages subscribe from a stable wrapper
-  (`data-on-load="@get('/_live')"`) around an id-stable fragment — only
+  (`data-init="@get('/_live')"` — erratum: originally written as
+  `data-on-load`, a pre-1.0 Datastar attribute that silently no-ops in
+  v1) around an id-stable fragment — only
   the region morphs, so chat panels, forms, and focus survive.
 - Apps expose their dynamic region as a named fragment (journal
   `StreamLive`, todo `TasksLive`); the dashboard's `CardGrid` re-fetches

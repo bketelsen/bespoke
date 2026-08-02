@@ -11,18 +11,26 @@ scanning `apps/*/app.toml`. There is no separate registration step or database.
 | --- | --- | --- | --- |
 | `name` | string | yes | Display name for the dashboard |
 | `slug` | string | yes | `[a-z0-9-]{1,32}`; equals the directory name, the subdomain, the binary name, and the SQLite filename |
-| `port` | integer | yes | Loopback port; unique across apps; assigned sequentially from 4101 by `bespoke new`; never hand-picked |
+| `port` | integer | yes | Loopback port in `4101–4999` (validation rejects outside the range); unique across apps — a duplicate is warned and the later app dropped from the registry; assigned sequentially by `bespoke new`; never hand-picked |
 | `icon` | string | yes | Iconify icon name, or a path to a PNG inside the app directory |
 | `description` | string | yes | One line, shown on the dashboard |
+| `[[intents]]` | table array | no | Cross-app actions this app accepts — see [Intents](#intents-intents) below |
 
 ## Example
+
+The live journal manifest, verbatim:
 
 ```toml
 name        = "Journal"
 slug        = "journal"
-port        = 4101
-icon        = "notebook"
-description = "Daily notes with LLM weekly summaries"
+port        = 4102
+icon        = "notebook-pen"
+description = "One stream for everything — notes, work log, reflections"
+
+[[intents]]
+name    = "add-entry"
+title   = "Add to Journal"
+accepts = "text"
 ```
 
 ## Derived artifacts
@@ -57,7 +65,7 @@ mounted by `pkg/web` for Go apps):
 | `GET /healthz` | MUST | Deploy gates and monitoring; 200 "ok" |
 | `GET /_bespoke/*` | MUST (automatic) | Design-system assets, embedded |
 | `GET /_card` | MAY | Per-user dashboard card fragment ([ADR-0017](../adr/0017-app-provided-dashboard-cards.md)); content-only HTML, cheap queries, no LLM calls; dashboard falls back to `description` when absent |
-| `POST /_chat`, `/_chat/speak`, `GET /_chat/context` | MAY (via `web.EnableChat`, all three together) | In-app chat + TTS ([ADR-0015](../adr/0015-appshell-platform-chrome.md)); context feeds the dashboard's all-apps chat ([ADR-0020](../adr/0020-dashboard-chat-aggregated-context.md)) |
+| `POST /_chat`, `/_chat/speak`, `/_chat/transcribe`, `GET /_chat/context` | MAY (via `web.EnableChat`, all four together) | In-app chat + TTS + mic input ([ADR-0015](../adr/0015-appshell-platform-chrome.md), [ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)); context feeds the dashboard's all-apps chat ([ADR-0020](../adr/0020-dashboard-chat-aggregated-context.md)) |
 | `GET`+`POST /_intents/<name>` | MUST for each declared `[[intents]]` (via `web.Intent`) | Cross-app intent confirm + execute ([ADR-0018](../adr/0018-cross-app-intents.md)) |
 | `GET /_tools`, `POST /_tools/<name>` | MAY (via `web.Tool`) | User-scoped LLM actions: agentic chat + the platform MCP surface ([ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)) |
 | `GET /_live` | SHOULD (via `web.Live`) | Datastar SSE patching the app's live region on `web.Changed(login)` ([ADR-0022](../adr/0022-live-updates.md)); mutations MUST call `web.Changed` |
