@@ -204,9 +204,16 @@ apps deploy to `selfie`, builds happen on the dev machine)
   app (interview → spec gate → autonomous build/test/deploy), the runner,
   `bespoke deploywatch`, the `/llm/activity` quiesce endpoint (every
   deploy now waits for in-flight completions), and selfie's toolchain
-  (Go/just/golangci-lint via brew). Remaining to go live: the one-time
-  root bootstrap (`deploy/bootstrap-builder.sh`), builder's Copilot login,
-  and selfie's pubkey on GitHub for the watcher's push.
+  (Go/just/golangci-lint via brew). **VALIDATED LIVE the same day:** the
+  plane's first run shipped **family-walks** (`f922cc5`) end to end —
+  interview → approved spec → agent build + sandbox test as `builder` →
+  bundle → platform-side `just check` → push → quiesce → deploy — zero
+  human steps past the spec gate. The shakedown surfaced and fixed four
+  real bugs (app units missing `BESPOKE_SPOOL`; `ApproveOnce` vs
+  `Approved` permission replies; stale rerun workdirs; watcher not
+  syncing with origin before bundle verify) plus one operational rule:
+  never push to main while a run is in flight — the fast-forward gate
+  correctly rejects the resulting bundle.
 - **MCP surface (idea, 2026-08-01): every app's actions available to any
   LLM.** One aggregate MCP server on platformd (official Go SDK, Streamable
   HTTP) at the apex `/mcp`, routed by Caddy like any page. Apps opt
