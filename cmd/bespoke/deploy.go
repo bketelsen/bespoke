@@ -104,10 +104,13 @@ func cmdDeploy(args []string) error {
 
 	// Builder-plane binaries land in the shared bin dir when the host is
 	// bootstrapped (deploy/bootstrap-builder.sh); the path unit gets enabled
-	// idempotently. A host without the bootstrap skips this silently.
+	// idempotently, and the shared env file learns the spool path so the
+	// builder APP writes requests where the runner watches. A host without
+	// the bootstrap skips this silently.
 	if err := run("ssh", cfg.SelfieSSH, `if [ -d /var/lib/bespoke/bin ]; then
   mv -f ~/bespoke/bin.new/bespoke /var/lib/bespoke/bin/bespoke
   mv -f ~/bespoke/bin.new/builder-runner /var/lib/bespoke/bin/builder-runner
+  grep -q '^BESPOKE_SPOOL=' ~/bespoke/env || echo 'BESPOKE_SPOOL=/var/lib/bespoke/spool' >> ~/bespoke/env
   systemctl --user daemon-reload
   systemctl --user enable --now bespoke-deploywatch.path >/dev/null 2>&1 || true
 fi`); err != nil {
