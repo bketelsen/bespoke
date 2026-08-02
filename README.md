@@ -31,6 +31,17 @@ is that yours should be bespoke too.
 > wrote that feature. The conventions did. That's the entire thesis of this
 > repo in one accident.
 
+## What it looks like
+
+Ask the dashboard what matters — it reads every app and answers by name:
+
+![Dashboard chat answering "What's on my plate today?"](docs/images/dashboard-chat.png)
+
+Or just tell it what to do. The task lands in the list *behind the panel,
+live over SSE* before the reply finishes settling:
+
+![Todo chat creating a task that appears live in the list](docs/images/todo-chat-live.png)
+
 ## Start here
 
 - **The docs:** [docs/README.md](docs/README.md) — every decision (ADRs),

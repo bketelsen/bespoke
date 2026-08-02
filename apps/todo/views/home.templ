@@ -63,7 +63,7 @@ templ Home(user auth.User, tasks []Task, hideCompleted bool, justDid string) {
 				<a href="/?completed=hidden" class="text-sm text-primary hover:underline">hide completed</a>
 			}
 		</div>
-		<div data-on-load="@get('/_live')">
+		<div data-init="@get('/_live')">
 			@TasksLive(tasks)
 		</div>
 	}

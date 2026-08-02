@@ -45,7 +45,7 @@ templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, ca
 		if len(apps) == 0 {
 			<p class="text-muted-foreground">No apps yet.</p>
 		}
-		<div data-on-load="@get('/_live')">
+		<div data-init="@get('/_live')">
 			@CardGrid(dev, domain, apps, cards)
 		</div>
 		<p class="mt-8 text-center">

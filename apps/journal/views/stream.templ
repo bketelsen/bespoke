@@ -114,7 +114,7 @@ templ Stream(user auth.User, days []Day) {
 				@tabs.Script()
 			}
 		}
-		<div data-on-load="@get('/_live')">
+		<div data-init="@get('/_live')">
 			@StreamLive(days)
 		</div>
 		@textarea.Script()
