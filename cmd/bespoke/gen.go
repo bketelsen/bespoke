@@ -87,7 +87,7 @@ func writeUnits(apps []manifest.App) error {
 		}
 		f.Close()
 	}
-	return os.WriteFile("dist/gen/units/bespoke-litestream.service", []byte(genHeader+`[Unit]
+	if err := os.WriteFile("dist/gen/units/bespoke-litestream.service", []byte(genHeader+`[Unit]
 Description=Bespoke Litestream replication (ADR-0007)
 After=network-online.target
 
@@ -99,6 +99,34 @@ RestartSec=5
 
 [Install]
 WantedBy=default.target
+`), 0o644); err != nil {
+		return err
+	}
+	// Deploy watcher (ADR-0023): a path unit outside every app's cgroup so
+	// deploys survive the requesting app restarting. Enabled by deploy when
+	// the host is bootstrapped for the builder plane.
+	if err := os.WriteFile("dist/gen/units/bespoke-deploywatch.path", []byte(genHeader+`[Unit]
+Description=Bespoke deploy spool watcher (ADR-0023)
+
+[Path]
+DirectoryNotEmpty=/var/lib/bespoke/spool/deploy
+
+[Install]
+WantedBy=default.target
+`), 0o644); err != nil {
+		return err
+	}
+	return os.WriteFile("dist/gen/units/bespoke-deploywatch.service", []byte(genHeader+`[Unit]
+Description=Bespoke deploy from spool (ADR-0023)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/bespoke/repo
+EnvironmentFile=%h/bespoke/env
+Environment=BESPOKE_SPOOL=/var/lib/bespoke/spool
+# just/go/golangci-lint via Homebrew; git and ssh from the system.
+Environment=PATH=/home/linuxbrew/.linuxbrew/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/var/lib/bespoke/bin/bespoke deploywatch
 `), 0o644)
 }
 

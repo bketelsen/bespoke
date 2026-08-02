@@ -1,0 +1,109 @@
+package views
+
+import (
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/input"
+)
+
+templ RunPage(user auth.User, d RunDetail, appURL string) {
+	@ui.AppShell(ui.ShellProps{Title: "Builder", User: user}) {
+		<a href="/" class="text-sm text-primary hover:underline">← All runs</a>
+		<div class="mt-3" data-init={ "@get('/runs/" + d.ID + "/live')" }>
+			@RunLive(d, appURL)
+		</div>
+		if d.Status == "interviewing" {
+			<form method="post" action={ templ.SafeURL("/runs/" + d.ID + "/say") } class="mt-4 flex gap-2">
+				@input.Input(input.Props{Name: "body", Placeholder: "your answer…", Class: "flex-1"})
+				@button.Button(button.Props{Type: button.TypeSubmit}) {
+					Send
+				}
+			</form>
+		}
+	}
+}
+
+// RunLive is the run page's live region, re-rendered server-side every 2s
+// while the page is open (per-run SSE loop in main.go). Keep the id stable.
+templ RunLive(d RunDetail, appURL string) {
+	<div id="run-live" class="space-y-4">
+		@card.Card() {
+			@card.Content(card.ContentProps{Class: "pt-6"}) {
+				<div class="flex items-center justify-between gap-3">
+					<span class="min-w-0 flex-1 font-medium">{ d.Idea }</span>
+					@StatusBadge(d.Status)
+				</div>
+				if d.Status == "failed" && d.Detail != "" {
+					<pre class="mt-3 max-h-60 overflow-x-auto overflow-y-auto rounded bg-muted p-3 text-xs">{ d.Detail }</pre>
+				}
+				if appURL != "" {
+					<p class="mt-3 text-sm">
+						It's live:
+						<a href={ templ.SafeURL(appURL) } class="text-primary underline">{ appURL }</a>
+					</p>
+				}
+			}
+		}
+		if len(d.Messages) > 0 {
+			<div class="space-y-2">
+				for _, m := range d.Messages {
+					if m.Role == "user" {
+						<div class="ml-8 rounded-lg bg-primary/10 px-4 py-2">
+							@ui.Markdown(m.Body)
+						</div>
+					} else {
+						<div class="mr-8 rounded-lg border bg-card px-4 py-2">
+							@ui.Markdown(m.Body)
+						</div>
+					}
+				}
+			</div>
+		}
+		if d.Spec != "" {
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Spec — { d.Slug }
+					}
+				}
+				@card.Content() {
+					<div class="max-h-[50dvh] overflow-y-auto">
+						@ui.Markdown(d.Spec)
+					</div>
+					if d.Status == "ready" {
+						<form method="post" action={ templ.SafeURL("/runs/" + d.ID + "/approve") } class="mt-4">
+							@button.Button(button.Props{Type: button.TypeSubmit}) {
+								Approve — build it
+							}
+						</form>
+						<p class="mt-2 text-xs text-muted-foreground">
+							This is the only gate: after approval it builds, tests, commits to main, and deploys on its own.
+						</p>
+					}
+				}
+			}
+		}
+		if len(d.Events) > 0 {
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Build log
+					}
+				}
+				@card.Content() {
+					<div class="max-h-[40dvh] space-y-1 overflow-y-auto text-xs">
+						for _, e := range d.Events {
+							<div class="flex gap-2">
+								<span class="shrink-0 tabular-nums text-muted-foreground">{ e.TS }</span>
+								<span class="shrink-0 font-medium">{ e.Kind }</span>
+								<span class="min-w-0 flex-1 whitespace-pre-wrap break-words">{ e.Body }</span>
+							</div>
+						}
+					</div>
+				}
+			}
+		}
+	</div>
+}

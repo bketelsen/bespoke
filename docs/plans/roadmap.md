@@ -124,11 +124,23 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - Build the next real app by prompt only; every manual intervention is filed
   as a framework bug and fixed.
 - **Done when:** three consecutive apps ship as one-shot prompts.
-- **Status (2026-08-01):** skills + cross-agent surface implemented —
+- **Status (2026-08-02): ✅ done-when met** — three consecutive apps shipped
+  as one-shot prompts (journal, todo, print-projects), with the third built
+  by a different agent entirely (Codex), validating ADR-0013's portability
+  claim in practice, not just on paper. Skills + cross-agent surface:
   AGENTS.md canonical with CLAUDE.md/GEMINI.md/copilot-instructions symlinks,
-  skills in `.agents/skills/` (symlinked for Claude). The done-when now
-  depends on real usage: build the next three apps by one-shot prompt (any
-  agent) and log every manual intervention here as a framework bug.
+  skills in `.agents/skills/` (symlinked for Claude).
+  - **One-shot log (3/3): print-projects** (2026-08-02, built by **Codex**,
+    not Claude — the first app shipped by a different agent off the same
+    instruction surface) — 3D print project queue and history: projects with
+    source URL/notes, dated print history with optional images (8 MiB cap,
+    stored in the app's SQLite), dashboard card (waiting/total/recent),
+    live region, chat plus five tools (delete marked destructive,
+    explicit-request-only), `create-project` intent, integration review
+    recorded in the app README's Non-goals. Interventions: none.
+    Observation: first app to need a modal — vendored templUI's dialog via
+    the sanctioned `./tools/templui add` route, so the design system grew
+    without hand-editing components.
   - **One-shot log (2/3): todo** (2026-08-01, detailed spec provided —
     design-app skipped per its own skip rule) — subtasks with two-way
     completion cascade, priorities, humanized dues, deduplicated
@@ -180,6 +192,21 @@ apps deploy to `selfie`, builds happen on the dev machine)
   workdir, branch-only commits, deploy gated on `just check`), and the
   Copilot runtime already living on selfie does the heavy lifting. Big; park
   until the one-shot log hits 3/3 and the skills are proven boring.
+  **Status (2026-08-02): BUILT — unparked by Phase 6 completing the same
+  day.** Adopted as
+  [ADR-0023](../adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md)
+  with one major revision to this sketch: the gateway does NOT grow an
+  agentic session type (tool execution inherits the gateway's uid — a
+  privilege escalation by construction); the agent runs in a separate
+  runner under an unprivileged `builder` unix user, with spooled hand-offs
+  and a platform-side deploy watcher that re-verifies everything
+  ([builder-plane.md](../design/builder-plane.md)). Shipped: the builder
+  app (interview → spec gate → autonomous build/test/deploy), the runner,
+  `bespoke deploywatch`, the `/llm/activity` quiesce endpoint (every
+  deploy now waits for in-flight completions), and selfie's toolchain
+  (Go/just/golangci-lint via brew). Remaining to go live: the one-time
+  root bootstrap (`deploy/bootstrap-builder.sh`), builder's Copilot login,
+  and selfie's pubkey on GitHub for the watcher's push.
 - **MCP surface (idea, 2026-08-01): every app's actions available to any
   LLM.** One aggregate MCP server on platformd (official Go SDK, Streamable
   HTTP) at the apex `/mcp`, routed by Caddy like any page. Apps opt
@@ -221,7 +248,10 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.
-- Opt-in agentic LLM sessions for apps.
+- ~~Opt-in agentic LLM sessions for apps~~ resolved 2026-08-02 by
+  [ADR-0023](../adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md):
+  never in the gateway (uid inheritance); agentic work runs in per-user
+  runner services like the builder's.
 
 ## Open questions
 

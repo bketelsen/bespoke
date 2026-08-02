@@ -64,6 +64,14 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   chat is also exposed to external LLM clients at the apex `/mcp`
   (Streamable HTTP, tools namespaced `<slug>_<name>`, per-request identity
   from the edge headers) — [ADR-0021](../adr/0021-tools-agentic-chat-mcp.md).
+- **Activity signal ([ADR-0023](../adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md)):**
+  `GET /llm/activity` on the same plane reports
+  `{"inflight": n, "idle_seconds": s}` for in-flight completions. The
+  deploy watcher polls it to quiesce before restarting units, so a deploy
+  never kills a completion mid-reply. Agentic *coding* sessions are
+  explicitly NOT a gateway feature — tool execution inherits the gateway's
+  uid; they live in the builder runner instead
+  ([builder-plane.md](builder-plane.md)).
 - **Usage logging:** one line per call — app, prompt/output bytes, tool
   count, duration, error — plus one `llm-tool` line per tool invocation.
   The observability point for all LLM traffic.

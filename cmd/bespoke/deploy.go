@@ -66,6 +66,14 @@ func cmdDeploy(args []string) error {
 	if err := build("platformd", "./platform"); err != nil {
 		return err
 	}
+	// The CLI itself and the builder runner ship too (ADR-0023): the deploy
+	// watcher and build runner on the app host run these binaries.
+	if err := build("bespoke", "./cmd/bespoke"); err != nil {
+		return err
+	}
+	if err := build("builder-runner", "./cmd/builder-runner"); err != nil {
+		return err
+	}
 	for _, a := range targets {
 		if err := build(a.Slug, "./apps/"+a.Slug); err != nil {
 			return err
@@ -92,6 +100,34 @@ func cmdDeploy(args []string) error {
 	if err := run("ssh", cfg.SelfieSSH,
 		fmt.Sprintf("test -f ~/bespoke/env || printf 'BESPOKE_BIND_IP=%%s\\nBESPOKE_DOMAIN=%%s\\nBESPOKE_LLM_URL=http://%%s:4001\\nBESPOKE_ROOT=%%s/bespoke\\nBESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1\\n' '%s' '%s' '%s' \"$HOME\" > ~/bespoke/env", cfg.SelfieTSIP, cfg.Domain, cfg.SelfieTSIP)); err != nil {
 		return err
+	}
+
+	// Builder-plane binaries land in the shared bin dir when the host is
+	// bootstrapped (deploy/bootstrap-builder.sh); the path unit gets enabled
+	// idempotently. A host without the bootstrap skips this silently.
+	if err := run("ssh", cfg.SelfieSSH, `if [ -d /var/lib/bespoke/bin ]; then
+  mv -f ~/bespoke/bin.new/bespoke /var/lib/bespoke/bin/bespoke
+  mv -f ~/bespoke/bin.new/builder-runner /var/lib/bespoke/bin/builder-runner
+  systemctl --user daemon-reload
+  systemctl --user enable --now bespoke-deploywatch.path >/dev/null 2>&1 || true
+fi`); err != nil {
+		return err
+	}
+
+	// Quiesce (ADR-0023): never restart units while a completion is in
+	// flight — someone may be mid-chat. Polled over ssh because the ACL
+	// blocks 4001 from everywhere but the edge host. Unreachable gateway
+	// (first deploy, platformd down) proceeds immediately.
+	if !slices.Contains(args, "--no-wait") {
+		fmt.Println("==> waiting for LLM gateway to go idle")
+		if err := run("ssh", cfg.SelfieSSH, fmt.Sprintf(`for i in $(seq 1 90); do
+  a=$(curl -fsS --max-time 2 http://%s:4001/llm/activity 2>/dev/null) || exit 0
+  case "$a" in *'"inflight":0'*) exit 0 ;; esac
+  sleep 2
+done
+echo "LLM gateway still busy after 180s; deploying anyway" >&2`, cfg.SelfieTSIP)); err != nil {
+			return err
+		}
 	}
 
 	restart := func(slug string, port int) error {

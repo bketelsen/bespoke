@@ -32,6 +32,11 @@ type llmGateway struct {
 	mu     sync.RWMutex
 	client *copilot.Client
 	status string // "" = healthy; otherwise the dashboard warning text
+
+	// Activity tracking for the deploy watcher's quiesce (ADR-0023): a
+	// deploy must not restart platformd while a completion is in flight.
+	inflight int
+	lastDone time.Time
 }
 
 // briefFor returns the user's self-provided brief as a system-prompt
@@ -61,9 +66,24 @@ func (g *llmGateway) briefFor(ctx context.Context, login string) string {
 
 func newLLMGateway() *llmGateway {
 	return &llmGateway{
-		model:  os.Getenv("BESPOKE_LLM_MODEL"), // empty = CLI default
-		status: "LLM gateway starting…",
+		model:    os.Getenv("BESPOKE_LLM_MODEL"), // empty = CLI default
+		status:   "LLM gateway starting…",
+		lastDone: time.Now(),
 	}
+}
+
+// begin/end bracket one /llm/complete request, tool round-trips included.
+func (g *llmGateway) begin() {
+	g.mu.Lock()
+	g.inflight++
+	g.mu.Unlock()
+}
+
+func (g *llmGateway) end() {
+	g.mu.Lock()
+	g.inflight--
+	g.lastDone = time.Now()
+	g.mu.Unlock()
 }
 
 // start launches the Copilot CLI runtime and the auth health loop. Runs in a
@@ -279,12 +299,30 @@ func (g *llmGateway) register(mux *http.ServeMux) {
 		}
 		w.Write([]byte("ok"))
 	})
+	// Quiesce signal for unattended deploys (ADR-0023): restarts wait until
+	// nothing is mid-completion so nobody loses an in-flight chat reply.
+	mux.HandleFunc("GET /llm/activity", func(w http.ResponseWriter, r *http.Request) {
+		g.mu.RLock()
+		inflight, idle := g.inflight, time.Since(g.lastDone)
+		g.mu.RUnlock()
+		if inflight > 0 {
+			idle = 0
+		}
+		// Struct, not map: the deploy watcher greps `"inflight":0`, so field
+		// order must be stable.
+		json.NewEncoder(w).Encode(struct {
+			Inflight    int `json:"inflight"`
+			IdleSeconds int `json:"idle_seconds"`
+		}{inflight, int(idle.Seconds())})
+	})
 	mux.HandleFunc("POST /llm/complete", func(w http.ResponseWriter, r *http.Request) {
 		var req completeRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Prompt == "" {
 			http.Error(w, "bad request: need {app, prompt}", http.StatusBadRequest)
 			return
 		}
+		g.begin()
+		defer g.end()
 		timeout := 120 * time.Second
 		if len(req.Tools) > 0 {
 			timeout = 300 * time.Second // agentic loops take multiple turns

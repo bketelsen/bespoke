@@ -1,0 +1,129 @@
+package views
+
+import (
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/badge"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/input"
+)
+
+type Run struct {
+	ID      string
+	Idea    string
+	Slug    string
+	Status  string
+	Detail  string
+	Updated string
+}
+
+type Message struct {
+	Role string // user|assistant
+	Body string
+}
+
+type Event struct {
+	TS   string
+	Kind string
+	Body string
+}
+
+type RunDetail struct {
+	ID       string
+	Idea     string
+	Slug     string
+	Spec     string
+	Status   string
+	Detail   string
+	Updated  string
+	Messages []Message
+	Events   []Event
+}
+
+templ Home(user auth.User, runs []Run) {
+	@ui.AppShell(ui.ShellProps{Title: "Builder", User: user}) {
+		@card.Card() {
+			@card.Header() {
+				@card.Title() {
+					Build me a…
+				}
+				@card.Description() {
+					Describe an app. A short interview turns it into a spec; approve the spec and it builds, tests, and deploys itself.
+				}
+			}
+			@card.Content() {
+				<form method="post" action="/runs" class="flex flex-col gap-2 sm:flex-row">
+					@input.Input(input.Props{Name: "idea", Placeholder: "a plant watering tracker", Class: "flex-1"})
+					@button.Button(button.Props{Type: button.TypeSubmit}) {
+						Design it
+					}
+				</form>
+			}
+		}
+		<div data-init="@get('/_live')">
+			@HomeLive(runs)
+		</div>
+	}
+}
+
+// HomeLive is the live region (ADR-0022) — id must stay stable.
+templ HomeLive(runs []Run) {
+	<div id="builder-live" class="mt-6 space-y-2">
+		if len(runs) == 0 {
+			<p class="text-muted-foreground">No runs yet — the first app starts above.</p>
+		}
+		for _, r := range runs {
+			<a href={ templ.SafeURL("/runs/" + r.ID) } class="block rounded-lg border bg-card px-4 py-3 hover:bg-accent/50">
+				<div class="flex items-center justify-between gap-3">
+					<span class="min-w-0 flex-1 truncate font-medium">{ r.Idea }</span>
+					@StatusBadge(r.Status)
+				</div>
+				<div class="mt-1 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+					<span class="truncate">
+						if r.Slug != "" {
+							{ r.Slug }
+						}
+						if r.Detail != "" {
+							&nbsp;— { r.Detail }
+						}
+					</span>
+					<span class="shrink-0">{ r.Updated }</span>
+				</div>
+			</a>
+		}
+	</div>
+}
+
+templ StatusBadge(status string) {
+	switch status {
+		case "interviewing":
+			@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+				interviewing
+			}
+		case "ready":
+			@badge.Badge() {
+				spec ready
+			}
+		case "building":
+			@badge.Badge() {
+				building
+			}
+		case "deploying":
+			@badge.Badge() {
+				deploying
+			}
+		case "live":
+			@badge.Badge(badge.Props{Class: "bg-green-600 text-white"}) {
+				live
+			}
+		case "failed":
+			@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) {
+				failed
+			}
+		default:
+			@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+				{ status }
+			}
+	}
+}

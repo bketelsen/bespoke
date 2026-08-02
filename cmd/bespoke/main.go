@@ -20,6 +20,8 @@ Usage:
   bespoke logs <slug> [-f]    tail an app's journal on the app host
   bespoke rm <slug> [--force] retire an app (never deletes databases)
   bespoke gen                 regenerate dist/gen artifacts without deploying
+  bespoke deploywatch         drain the deploy spool (run by the path unit on
+                              the app host — ADR-0023; not for interactive use)
 `
 
 func main() {
@@ -43,6 +45,8 @@ func main() {
 		err = cmdRm(os.Args[2:])
 	case "gen":
 		err = cmdGen(os.Args[2:])
+	case "deploywatch":
+		err = cmdDeployWatch(os.Args[2:])
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 	default:

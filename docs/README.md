@@ -35,6 +35,7 @@ Docs are split by the question they answer:
 - [0020 — Dashboard chat over aggregated app contexts](adr/0020-dashboard-chat-aggregated-context.md)
 - [0021 — App tools: agentic chat and the MCP surface](adr/0021-tools-agentic-chat-mcp.md)
 - [0022 — Live updates: Datastar SSE over a change hub](adr/0022-live-updates.md)
+- [0023 — Builder plane: unprivileged agent user, spooled deploys](adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md)
 
 ### Design
 
@@ -43,6 +44,7 @@ Docs are split by the question they answer:
 - [LLM gateway](design/llm-gateway.md) — Copilot SDK integration in platformd
 - [Internal services](design/internal-services.md) — catalog of shared capabilities + how to add one
 - [Agent layer](design/agent-layer.md) — conventions, skills, CLAUDE.md as law
+- [Builder plane](design/builder-plane.md) — unattended build/test/deploy machinery behind the builder app
 
 ### Specs
 

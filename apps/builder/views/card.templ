@@ -1,0 +1,19 @@
+package views
+
+import "strconv"
+
+// DashCard is the dashboard card fragment (ADR-0017): current activity or
+// the shipped count. Cheap queries only.
+templ DashCard(active, activeStatus string, shipped int) {
+	<div class="space-y-1">
+		if active != "" {
+			<p class="truncate text-sm font-medium">{ active }</p>
+			<p class="text-xs text-muted-foreground">{ activeStatus }</p>
+		} else if shipped > 0 {
+			<p class="text-sm">{ strconv.Itoa(shipped) } app(s) shipped</p>
+			<p class="text-xs text-muted-foreground">Type an idea to build another.</p>
+		} else {
+			<p class="text-sm text-muted-foreground">Type an idea, get an app.</p>
+		}
+	</div>
+}
