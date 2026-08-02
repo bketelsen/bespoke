@@ -32,3 +32,6 @@ is that yours should be bespoke too.
 - **How agents build apps here:** [AGENTS.md](AGENTS.md) and
   [.agents/skills/](.agents/skills/)
 - **What's next:** [docs/plans/roadmap.md](docs/plans/roadmap.md)
+- **Forking?** Point your coding agent at
+  [MAKE-IT-YOUR-OWN.md](MAKE-IT-YOUR-OWN.md) — it interviews you and swaps
+  my apps, theme, and deployment for yours.

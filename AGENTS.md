@@ -23,6 +23,7 @@ them rather than improvising, whichever agent you are:
   requests) → [.agents/skills/design-app/SKILL.md](.agents/skills/design-app/SKILL.md)
 - **Building a new app** → [.agents/skills/new-app/SKILL.md](.agents/skills/new-app/SKILL.md)
 - **Adding/adjusting UI components or the theme** → [.agents/skills/new-component/SKILL.md](.agents/skills/new-component/SKILL.md)
+- **Adapting a fresh fork for a new owner** → [MAKE-IT-YOUR-OWN.md](MAKE-IT-YOUR-OWN.md)
 
 ## Code conventions (live — the code exists)
 
