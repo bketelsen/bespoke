@@ -103,6 +103,46 @@ func main() {
 			http.Redirect(w, r, dest, http.StatusSeeOther)
 		})
 
+		mux.HandleFunc("GET /tasks/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			var t views.Task
+			err := sqldb.QueryRowContext(r.Context(),
+				"SELECT id, description, COALESCE(due,''), priority FROM tasks WHERE id = ? AND login = ?",
+				r.PathValue("id"), user.Login).Scan(&t.ID, &t.Description, &t.Due, &t.Priority)
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			views.Edit(user, t).Render(r.Context(), w)
+		})
+
+		mux.HandleFunc("POST /tasks/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			desc := strings.TrimSpace(r.FormValue("description"))
+			if desc == "" {
+				http.Error(w, "description required", http.StatusBadRequest)
+				return
+			}
+			priority := r.FormValue("priority")
+			if priority != "M" && priority != "H" {
+				priority = "L"
+			}
+			due := strings.TrimSpace(r.FormValue("due"))
+			if due != "" {
+				if _, err := time.Parse("2006-01-02", due); err != nil {
+					http.Error(w, "bad due date", http.StatusBadRequest)
+					return
+				}
+			}
+			if _, err := sqldb.ExecContext(r.Context(),
+				"UPDATE tasks SET description = ?, due = NULLIF(?, ''), priority = ? WHERE id = ? AND login = ?",
+				desc, due, priority, r.PathValue("id"), user.Login); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+		})
+
 		mux.HandleFunc("POST /tasks/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			if _, err := sqldb.ExecContext(r.Context(),

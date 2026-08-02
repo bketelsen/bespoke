@@ -26,7 +26,8 @@ Tasks with optional due dates, priorities, and one level of subtasks.
   destructive; Today/Tomorrow humanized.
 - `POST /tasks` — create top-level task. `POST /tasks/{id}/sub` — add
   subtask. `POST /tasks/{id}/toggle` — complete/reopen with cascades.
-  `POST /tasks/{id}/delete` — delete (and subtasks).
+  `GET`/`POST /tasks/{id}/edit` — edit description/due/priority (pencil on
+  each row). `POST /tasks/{id}/delete` — delete (and subtasks).
 - `GET /_card` — dashboard card: **Due Today** (includes overdue), **Due
   This Week** (next 7 days), **High Priority** — open tasks only,
   deduplicated in that order, capped at 4 rows each with +N more counts.

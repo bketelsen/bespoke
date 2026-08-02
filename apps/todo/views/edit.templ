@@ -1,0 +1,43 @@
+package views
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/input"
+)
+
+templ Edit(user auth.User, t Task) {
+	@ui.AppShell(ui.ShellProps{Title: "Todo", User: user}) {
+		<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/edit", t.ID)) }>
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Edit task
+					}
+				}
+				@card.Content(card.ContentProps{Class: "space-y-3"}) {
+					@input.Input(input.Props{Name: "description", Value: t.Description})
+					<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+						@input.Input(input.Props{Name: "due", Type: input.TypeDate, Value: t.Due, Class: "w-40"})
+						<select name="priority" class="h-9 rounded-md border bg-transparent px-2 text-sm text-foreground">
+							<option value="L" selected?={ t.Priority == "L" }>Low</option>
+							<option value="M" selected?={ t.Priority == "M" }>Medium</option>
+							<option value="H" selected?={ t.Priority == "H" }>High</option>
+						</select>
+					</div>
+				}
+				@card.Footer(card.FooterProps{Class: "justify-end gap-2"}) {
+					@button.Button(button.Props{Href: "/", Variant: button.VariantGhost}) {
+						Cancel
+					}
+					@button.Button(button.Props{Type: button.TypeSubmit}) {
+						Save
+					}
+				}
+			}
+		</form>
+	}
+}

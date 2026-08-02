@@ -149,10 +149,15 @@ templ taskRow(t Task, sub bool) {
 				Med
 			}
 		}
-		<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/delete", t.ID)) } class="shrink-0 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
-			@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-6 text-muted-foreground pointer-coarse:size-8"}) {
-				@icon.X(icon.Props{Class: "size-3.5"})
+		<span class="flex shrink-0 items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+			@button.Button(button.Props{Href: fmt.Sprintf("/tasks/%d/edit", t.ID), Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-6 text-muted-foreground pointer-coarse:size-8"}) {
+				@icon.Pencil(icon.Props{Class: "size-3.5"})
 			}
-		</form>
+			<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/delete", t.ID)) }>
+				@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-6 text-muted-foreground pointer-coarse:size-8"}) {
+					@icon.X(icon.Props{Class: "size-3.5"})
+				}
+			</form>
+		</span>
 	</div>
 }
