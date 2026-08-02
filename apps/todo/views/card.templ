@@ -1,0 +1,40 @@
+package views
+
+import "fmt"
+
+// DashCard: Due Today / Due This Week / High Priority, deduplicated in that
+// order (README), capped rows with +N more. Content only (ADR-0017).
+templ DashCard(dueToday, dueWeek, highPri []CardRow) {
+	if len(dueToday) == 0 && len(dueWeek) == 0 && len(highPri) == 0 {
+		<p class="text-sm text-muted-foreground">Nothing due — all clear.</p>
+	} else {
+		<div class="space-y-3">
+			@cardSection("Due today", dueToday)
+			@cardSection("Due this week", dueWeek)
+			@cardSection("High priority", highPri)
+		</div>
+	}
+}
+
+templ cardSection(title string, rows []CardRow) {
+	if len(rows) > 0 {
+		<div>
+			<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{ title }</p>
+			<ul class="mt-1 space-y-0.5">
+				for i, r := range rows {
+					if i < 4 {
+						<li class="flex items-baseline gap-2 text-sm">
+							<span class="min-w-0 flex-1 truncate">{ r.Description }</span>
+							if r.DueLabel != "" {
+								<span class={ "shrink-0 text-xs", templ.KV("text-destructive", r.Overdue), templ.KV("text-muted-foreground", !r.Overdue) }>{ r.DueLabel }</span>
+							}
+						</li>
+					}
+				}
+			</ul>
+			if len(rows) > 4 {
+				<p class="mt-0.5 text-xs text-muted-foreground">{ fmt.Sprintf("+%d more", len(rows)-4) }</p>
+			}
+		</div>
+	}
+}

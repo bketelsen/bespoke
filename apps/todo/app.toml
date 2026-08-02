@@ -1,0 +1,5 @@
+name        = "Todo"
+slug        = "todo"
+port        = 4103
+icon        = "list-todo"
+description = "Tasks with due dates, priorities, and subtasks"

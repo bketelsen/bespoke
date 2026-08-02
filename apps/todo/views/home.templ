@@ -1,0 +1,125 @@
+package views
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/badge"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+	"github.com/bketelsen/bespoke/pkg/ui/components/input"
+)
+
+type Task struct {
+	ID          int64
+	Description string
+	Due         string // YYYY-MM-DD or ""
+	DueLabel    string // humanized
+	Overdue     bool
+	Priority    string // L/M/H
+	Done        bool
+	Subtasks    []Task
+}
+
+type CardRow struct {
+	Description string
+	DueLabel    string
+	Overdue     bool
+	Priority    string
+}
+
+templ Home(user auth.User, tasks []Task, hideCompleted bool) {
+	@ui.AppShell(ui.ShellProps{Title: "Todo", User: user}) {
+		<form method="post" action="/tasks">
+			@card.Card() {
+				@card.Content(card.ContentProps{Class: "space-y-3 pt-6"}) {
+					@input.Input(input.Props{Name: "description", Placeholder: "what needs doing?"})
+					<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<div class="flex items-center gap-2">
+							@input.Input(input.Props{Name: "due", Type: input.TypeDate, Class: "w-40"})
+							<select name="priority" class="h-9 rounded-md border bg-transparent px-2 text-sm text-foreground">
+								<option value="L" selected>Low</option>
+								<option value="M">Medium</option>
+								<option value="H">High</option>
+							</select>
+						</div>
+						@button.Button(button.Props{Type: button.TypeSubmit}) {
+							Add task
+						}
+					</div>
+				}
+			}
+		</form>
+		<div class="mt-6 flex items-center justify-end">
+			if hideCompleted {
+				<a href="/" class="text-sm text-primary hover:underline">show completed</a>
+			} else {
+				<a href="/?completed=hidden" class="text-sm text-primary hover:underline">hide completed</a>
+			}
+		</div>
+		if len(tasks) == 0 {
+			<p class="mt-4 text-muted-foreground">Nothing here — add the first task above.</p>
+		}
+		<div class="mt-2 space-y-3">
+			for _, t := range tasks {
+				<div class="rounded-lg border bg-card px-4 py-3">
+					@taskRow(t, false)
+					<div class="ml-7 mt-1 space-y-1">
+						for _, s := range t.Subtasks {
+							@taskRow(s, true)
+						}
+						<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/sub", t.ID)) } class="flex items-center gap-2 pt-1">
+							@input.Input(input.Props{Name: "description", Placeholder: "add a subtask…", Class: "h-8 text-sm"})
+							@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-8 shrink-0 text-muted-foreground"}) {
+								@icon.Plus(icon.Props{Class: "size-4"})
+							}
+						</form>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ taskRow(t Task, sub bool) {
+	<div class="group flex items-center gap-2">
+		<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/toggle", t.ID)) } class="shrink-0">
+			@button.Button(button.Props{
+				Type:    button.TypeSubmit,
+				Variant: button.VariantGhost,
+				Size:    button.SizeIcon,
+				Class:   "size-7 text-muted-foreground pointer-coarse:size-8",
+			}) {
+				if t.Done {
+					@icon.CircleCheckBig(icon.Props{Class: "size-4.5 text-primary"})
+				} else {
+					@icon.Circle(icon.Props{Class: "size-4.5"})
+				}
+			}
+		</form>
+		<span class={ "min-w-0 flex-1 break-words", templ.KV("text-muted-foreground line-through", t.Done), templ.KV("text-sm", sub) }>
+			{ t.Description }
+		</span>
+		if t.DueLabel != "" && !t.Done {
+			<span class={ "shrink-0 text-xs", templ.KV("text-destructive", t.Overdue), templ.KV("text-muted-foreground", !t.Overdue) }>
+				{ t.DueLabel }
+			</span>
+		}
+		if !t.Done && t.Priority == "H" {
+			@badge.Badge(badge.Props{Variant: badge.VariantDestructive, Class: "shrink-0"}) {
+				High
+			}
+		}
+		if !t.Done && t.Priority == "M" {
+			@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "shrink-0"}) {
+				Med
+			}
+		}
+		<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/delete", t.ID)) } class="shrink-0 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+			@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-6 text-muted-foreground pointer-coarse:size-8"}) {
+				@icon.X(icon.Props{Class: "size-3.5"})
+			}
+		</form>
+	</div>
+}

@@ -129,6 +129,16 @@ apps deploy to `selfie`, builds happen on the dev machine)
   skills in `.agents/skills/` (symlinked for Claude). The done-when now
   depends on real usage: build the next three apps by one-shot prompt (any
   agent) and log every manual intervention here as a framework bug.
+  - **One-shot log (2/3): todo** (2026-08-01, detailed spec provided —
+    design-app skipped per its own skip rule) — subtasks with two-way
+    completion cascade, priorities, humanized dues, deduplicated
+    three-list dashboard card, chat. All spec rules verified by curl
+    (cascade up/down, depth limit, dedup, hide-completed) plus visual
+    pass; deployed with `--edge` for the new subdomain, live at
+    todo.bespoke.ketelsen.cloud. Interventions: none. Observation: the
+    design system lacks a plain select (templUI's selectbox is a JS
+    searchable combo) — used a token-styled native select; candidate for
+    a pkg/ui wrapper if a third app needs one.
   - **One-shot log (1/3): journal** (2026-08-01, "build me a journal") —
     design-app interview (4 questions) → spec → built and verified live,
     including an LLM weekly summary through the gateway. Interventions: none
