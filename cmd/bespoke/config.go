@@ -21,7 +21,7 @@ type config struct {
 func loadConfig() (config, error) {
 	f, err := os.Open("deploy/deploy.env")
 	if err != nil {
-		return config{}, fmt.Errorf("deploy/deploy.env: %w (run from the repo root)", err)
+		return config{}, fmt.Errorf("deploy/deploy.env: %w (run from the repo root; copy deploy/deploy.env.example and fill in your hosts)", err)
 	}
 	defer f.Close()
 

@@ -75,7 +75,7 @@ The gateway pattern (ADR-0009/0012) means backends are invisible to apps —
 - **GitHub Copilot** (live): frontier models via the Copilot CLI.
   Cloud inference; ~1.5s/call ([llm-gateway.md](llm-gateway.md)).
 - **[Lemonade](https://lemonade-server.ai/)** — local, OpenAI-compatible
-  server ON selfie at `http://<app-host-ip>:13305/api/v1` (localhost from
+  server ON selfie at `http://<app-host>:13305/api/v1` (localhost from
   platformd in prod; the deploy-created env file sets
   `BESPOKE_LEMONADE_URL`). Ideal for embeddings, image generation,
   lighter-weight inference, and **privacy-sensitive prompts that never

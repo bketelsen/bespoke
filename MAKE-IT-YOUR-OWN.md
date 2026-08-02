@@ -36,8 +36,9 @@ server (local voice/TTS; stub mode without).
 ## 2. Deployment config
 
 - **ASK:** domain, edge host (ssh + tailscale IPv4), app host (ssh +
-  tailscale IPv4 + arch), ssh username. Rewrite
-  [deploy/deploy.env](deploy/deploy.env) — every value in it is Brian's.
+  tailscale IPv4 + arch), ssh username. Copy
+  [deploy/deploy.env.example](deploy/deploy.env.example) to
+  `deploy/deploy.env` (gitignored) and fill in their values.
 - Replace the username (`bjk`) in both [deploy/sudoers/](deploy/sudoers/)
   files.
 - Walk [deploy/README.md](deploy/README.md) with them: custom Caddy build

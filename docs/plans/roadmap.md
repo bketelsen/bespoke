@@ -18,7 +18,7 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - **Done when:** `hello.bespoke.example.com` renders my Tailscale login name.
 - **Status (2026-08-01):** code complete and smoke-tested locally (auth
   gating, dashboard-from-manifests, hello). Remote progress, evening:
-  ✅ edge host live in deploy.env (`you@your-caddy-host`, ts <edge-tailscale-ip>); ✅ scoped
+  ✅ edge host live in deploy.env; ✅ scoped
   sudoers installed and validated; ✅ **custom Caddy v2.11.4
   (tailscale + cloudflare-dns) built on the dev machine, pushed, and
   running on the edge** (`just caddy-push`; rollback kept as caddy.bak).
@@ -28,7 +28,7 @@ apps deploy to `selfie`, builds happen on the dev machine)
   rendering with the switcher. LLM gateway degraded as designed — copilot
   CLI not installed on selfie yet (install + `copilot` sign-in there to
   light up chat/summaries in prod). ✅ Domain chosen and DNS validated:
-  `bespoke.ketelsen.cloud` + wildcard → <edge-tailscale-ip> (apex, hello,
+  `bespoke.ketelsen.cloud` + wildcard → the edge tailscale IP (apex, hello,
   journal, and a random name all resolve); selfie env + deploy.env
   updated, apps redeployed, routes pushed to the edge with the real
   domain. ✅ **DONE-WHEN CLOSED (2026-08-01):** import line + token drop-in
@@ -155,7 +155,7 @@ apps deploy to `selfie`, builds happen on the dev machine)
   generation, private/local completions behind the existing `pkg/llm` seam —
   ADR when first wired ([catalog](../design/internal-services.md#backends)).
   **Status 2026-08-01: RESOLVED — Lemonade fully operational** at
-  `http://<app-host-ip>:13305/api/v1`. Verified live: transcription
+  `http://<app-host>:13305/api/v1`. Verified live: transcription
   (Whisper-Large-v3-Turbo, first load was just slow), TTS (kokoro-v1),
   embeddings model downloaded (nomic-embed-text-v2-moe). A real voice
   entry went through journal → gateway → whisper end to end. Remaining

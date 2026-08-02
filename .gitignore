@@ -7,3 +7,4 @@ tools/
 /journal
 /platformd
 /testapp
+deploy/deploy.env

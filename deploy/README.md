@@ -107,9 +107,10 @@ installs. Adjust the username inside if it isn't `bjk`.
 
 ### 6. Dev machine
 
-Edit [deploy.env](deploy.env): domain, ssh destinations, selfie's tailscale
-IP, arch (selfie `GOARCH`, edge `EDGE_GOARCH`). Requires `go`, `rsync`,
-`ssh`, `just`.
+Copy [deploy.env.example](deploy.env.example) to `deploy/deploy.env`
+(gitignored — your hosts stay out of the repo) and fill in: domain, ssh
+destinations, tailscale IPs, arch (`GOARCH`, `EDGE_GOARCH`). Requires
+`go`, `rsync`, `ssh`, `just`.
 
 ## Deploying
 
