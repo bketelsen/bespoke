@@ -154,8 +154,10 @@ func runAgent(repoDir string, req buildRequest, events *eventLog) error {
 
 	// The whole session runs as the unprivileged builder user — approving
 	// every permission request is the design, not a hole (ADR-0023).
+	// ApproveOnce is the valid interactive reply; the bare Approved variant
+	// is a result record and the orchestrator rejects it.
 	approveAll := func(_ copilot.PermissionRequest, _ copilot.PermissionInvocation) (rpc.PermissionDecision, error) {
-		return &rpc.PermissionDecisionApproved{}, nil
+		return &rpc.PermissionDecisionApproveOnce{}, nil
 	}
 	sess, err := client.CreateSession(ctx, &copilot.SessionConfig{
 		ClientName:          "bespoke-builder",
