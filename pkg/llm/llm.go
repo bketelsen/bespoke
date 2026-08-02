@@ -39,11 +39,19 @@ type request struct {
 	App    string `json:"app"`
 	System string `json:"system,omitempty"`
 	Prompt string `json:"prompt"`
+	Login  string `json:"login,omitempty"`
 }
 
 // WithSystem adds system instructions to a completion.
 func WithSystem(s string) Option {
 	return func(r *request) { r.System = s }
+}
+
+// WithUser tags the completion with the requesting user's login; the
+// gateway prepends that user's self-provided brief (ADR-0019). Use for
+// anything user-facing (chat, summaries); omit for mechanical calls.
+func WithUser(login string) Option {
+	return func(r *request) { r.Login = login }
 }
 
 // Complete returns the model's text response for prompt.

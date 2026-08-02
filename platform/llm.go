@@ -7,12 +7,14 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,11 +23,37 @@ import (
 )
 
 type llmGateway struct {
-	model string
+	model  string
+	briefs *sql.DB // platformd's db; per-user brief injection (ADR-0019)
 
 	mu     sync.RWMutex
 	client *copilot.Client
 	status string // "" = healthy; otherwise the dashboard warning text
+}
+
+// briefFor returns the user's self-provided brief as a system-prompt
+// section, or "" when none is stored.
+func (g *llmGateway) briefFor(ctx context.Context, login string) string {
+	if g.briefs == nil || login == "" {
+		return ""
+	}
+	var name, brief string
+	if err := g.briefs.QueryRowContext(ctx,
+		"SELECT name, brief FROM briefs WHERE login = ?", login).Scan(&name, &brief); err != nil {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("About the user (self-provided brief — follow its rules):\n")
+	if name != "" {
+		fmt.Fprintf(&b, "Call them %s.\n", name)
+	}
+	if brief != "" {
+		b.WriteString(brief + "\n")
+	}
+	if name == "" && brief == "" {
+		return ""
+	}
+	return b.String()
 }
 
 func newLLMGateway() *llmGateway {
@@ -150,6 +178,7 @@ type completeRequest struct {
 	App    string `json:"app"`
 	System string `json:"system,omitempty"`
 	Prompt string `json:"prompt"`
+	Login  string `json:"login,omitempty"` // set via llm.WithUser → brief injection
 }
 
 // serveInternal runs the internal-services listener (the 4001 plane,
@@ -180,8 +209,12 @@ func (g *llmGateway) register(mux *http.ServeMux) {
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
 		defer cancel()
+		system := req.System
+		if brief := g.briefFor(ctx, req.Login); brief != "" {
+			system = brief + "\n" + system
+		}
 		start := time.Now()
-		text, err := g.complete(ctx, req.System, req.Prompt)
+		text, err := g.complete(ctx, system, req.Prompt)
 		log.Printf("llm app=%s prompt=%dB out=%dB dur=%s err=%v",
 			req.App, len(req.Prompt), len(text), time.Since(start).Round(time.Millisecond), err)
 		if err != nil {

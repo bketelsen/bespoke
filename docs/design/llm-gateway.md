@@ -36,6 +36,10 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   message deltas; add a `/llm/stream` SSE endpoint then).
 - **Model selection** is gateway config: `BESPOKE_LLM_MODEL` env on platformd
   (empty = CLI default). Apps never specify a model.
+- **User brief injection ([ADR-0019](../adr/0019-user-brief.md)):** requests
+  tagged with `llm.WithUser(login)` get that user's self-provided brief
+  (edited at the dashboard's `/settings`, stored in `data/platformd.db`)
+  prepended to the system prompt. Untagged calls are untouched.
 - **Second backend (candidate):** a [Lemonade](https://lemonade-server.ai/)
   server runs locally on selfie (OpenAI-compatible; embeddings, image gen,
   speech, lighter chat). When a capability adopts it, the gateway grows

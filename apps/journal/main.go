@@ -362,10 +362,12 @@ func summarizeWeek(r *http.Request, sqldb *sql.DB, ai *llm.Client, login string)
 		return fmt.Errorf("no entries in the last 7 days")
 	}
 
-	text, err := ai.Complete(r.Context(), b.String(), llm.WithSystem(
-		"You summarize one person's private journal from the past week. "+
-			"Write a short, warm summary (max ~150 words): what happened, recurring threads, overall mood. "+
-			"Second person ('you'), no preamble, no bullet-point dump."))
+	text, err := ai.Complete(r.Context(), b.String(),
+		llm.WithUser(login),
+		llm.WithSystem(
+			"You summarize one person's private journal from the past week. "+
+				"Write a short, warm summary (max ~150 words): what happened, recurring threads, overall mood. "+
+				"Second person ('you'), no preamble, no bullet-point dump."))
 	if err != nil {
 		return err
 	}

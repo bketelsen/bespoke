@@ -204,7 +204,7 @@ func Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, car
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><p class=\"mt-8 text-center\"><a href=\"/settings\" class=\"text-sm text-muted-foreground transition-colors hover:text-primary\">Your brief — what every AI here knows about you →</a></p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -274,7 +274,7 @@ func Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, car
 						var templ_7745c5c3_Var13 string
 						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(w)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/dashboard.templ`, Line: 51, Col: 9}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/dashboard.templ`, Line: 54, Col: 9}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 						if templ_7745c5c3_Err != nil {

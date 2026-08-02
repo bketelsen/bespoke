@@ -40,6 +40,9 @@ templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, ca
 				}
 			}
 		</div>
+		<p class="mt-8 text-center">
+			<a href="/settings" class="text-sm text-muted-foreground transition-colors hover:text-primary">Your brief — what every AI here knows about you →</a>
+		</p>
 		for _, w := range warnings {
 			<div class="mt-4">
 				@alert.Alert(alert.Props{Variant: alert.VariantDestructive}) {

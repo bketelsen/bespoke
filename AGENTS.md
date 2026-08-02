@@ -72,7 +72,9 @@ them rather than improvising, whichever agent you are:
   `Classify` ([design](docs/design/llm-gateway.md)); never call a model
   provider or the Copilot SDK from an app. Expect ~1.5s per call — design
   features accordingly. Local dev needs platformd running (`just dev`) and
-  the `copilot` CLI authenticated.
+  the `copilot` CLI authenticated. Tag user-facing completions with
+  `llm.WithUser(user.Login)` so the gateway injects the user's brief
+  (ADR-0019) — chat does this automatically; omit it for mechanical calls.
 - The AppShell provides platform chrome automatically (ADR-0015): the app
   switcher needs nothing from you; in-app LLM chat is one call —
   `web.EnableChat(mux, slug, provider)` where provider returns the user's

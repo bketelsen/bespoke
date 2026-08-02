@@ -105,7 +105,7 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 				"missing. %s\n\n--- app data ---\n%s",
 			slug, time.Now().Format("Monday, January 2 2006, 3:04 PM (MST)"), style, appContext)
 
-		text, err := ai.Complete(r.Context(), b.String(), llm.WithSystem(system))
+		text, err := ai.Complete(r.Context(), b.String(), llm.WithSystem(system), llm.WithUser(user.Login))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return

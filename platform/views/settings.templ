@@ -1,0 +1,49 @@
+package views
+
+import (
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/input"
+	"github.com/bketelsen/bespoke/pkg/ui/components/textarea"
+)
+
+templ Settings(user auth.User, name, brief string, saved bool) {
+	@ui.AppShell(ui.ShellProps{Title: "Your brief", User: user}) {
+		<form method="post" action="/settings">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Your brief
+					}
+					@card.Description() {
+						Every LLM feature on the platform — chat, summaries — reads
+						this before answering. It's yours to instruct.
+					}
+				}
+				@card.Content(card.ContentProps{Class: "space-y-3"}) {
+					@input.Input(input.Props{Name: "name", Value: name, Placeholder: "what should they call you?"})
+					@textarea.Textarea(textarea.Props{
+						Name:        "brief",
+						Value:       brief,
+						Rows:        8,
+						AutoResize:  true,
+						Placeholder: "Standing rules and context, in plain prose. Useful: hard rules (\"never suggest I go to bed\"), the people behind names (L is my daughter), home city and units, tone you want, what you're focused on right now.",
+					})
+				}
+				@card.Footer(card.FooterProps{Class: "items-center justify-between"}) {
+					if saved {
+						<span class="text-sm text-primary">Saved.</span>
+					} else {
+						<span></span>
+					}
+					@button.Button(button.Props{Type: button.TypeSubmit}) {
+						Save
+					}
+				}
+			}
+		</form>
+		@textarea.Script()
+	}
+}

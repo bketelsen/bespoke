@@ -155,6 +155,9 @@ var litestreamTmpl = template.Must(template.New("ls").Parse(genHeader + `# Lites
 # host; BESPOKE_DATA_DIR and BESPOKE_REPLICA_URL come from the litestream
 # unit's environment (deploy/README.md).
 dbs:
+  - path: ${BESPOKE_DATA_DIR}/platformd.db
+    replicas:
+      - url: ${BESPOKE_REPLICA_URL}/platformd
 {{- range .}}
   - path: ${BESPOKE_DATA_DIR}/{{.Slug}}.db
     replicas:
