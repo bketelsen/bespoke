@@ -30,34 +30,46 @@ func withShellData(slug string, next http.Handler) http.Handler {
 		home = "http://localhost:4000/"
 	}
 
-	links := func() []ui.AppLink {
+	var cachedIntents []ui.IntentLink
+	links := func() ([]ui.AppLink, []ui.IntentLink) {
 		mu.Lock()
 		defer mu.Unlock()
 		if time.Since(fetched) < 10*time.Second {
-			return cached
+			return cached, cachedIntents
 		}
 		apps, _, err := manifest.LoadAll(root)
 		if err != nil {
-			return cached // stale beats broken chrome
+			return cached, cachedIntents // stale beats broken chrome
 		}
-		cached = cached[:0]
+		cached, cachedIntents = cached[:0], cachedIntents[:0]
 		for _, a := range apps {
 			url := fmt.Sprintf("https://%s.%s/", a.Slug, domain)
 			if dev {
 				url = fmt.Sprintf("http://localhost:%d/", a.Port)
 			}
 			cached = append(cached, ui.AppLink{Name: a.Name, Slug: a.Slug, Icon: a.Icon, URL: url})
+			if a.Slug == slug {
+				continue // never offer an app its own intents
+			}
+			for _, in := range a.Intents {
+				cachedIntents = append(cachedIntents, ui.IntentLink{
+					App: a.Slug, Name: in.Name, Title: in.Title,
+					URL: url + "_intents/" + in.Name,
+				})
+			}
 		}
 		fetched = time.Now()
-		return cached
+		return cached, cachedIntents
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apps, intents := links()
 		ctx := ui.WithShellData(r.Context(), ui.ShellData{
-			Apps:        links(),
+			Apps:        apps,
 			Current:     slug,
 			HomeURL:     home,
 			ChatEnabled: chatEnabled.Load(),
+			Intents:     intents,
 		})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

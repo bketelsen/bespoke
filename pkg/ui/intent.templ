@@ -1,0 +1,47 @@
+// Intent confirm page (ADR-0018): the platform-rendered edit-then-commit
+// step every intent goes through. Kept generic — the target app supplies
+// title, prompt, and the POST handler.
+package ui
+
+import (
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/textarea"
+)
+
+templ IntentConfirm(user auth.User, appTitle, intentTitle, prompt, action, text string) {
+	@AppShell(ShellProps{Title: appTitle, User: user}) {
+		<form method="post" action={ templ.SafeURL(action) }>
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						{ intentTitle }
+					}
+					if prompt != "" {
+						@card.Description() {
+							{ prompt }
+						}
+					}
+				}
+				@card.Content() {
+					@textarea.Textarea(textarea.Props{
+						Name:       "text",
+						Value:      text,
+						Rows:       3,
+						AutoResize: true,
+					})
+				}
+				@card.Footer(card.FooterProps{Class: "justify-end gap-2"}) {
+					@button.Button(button.Props{Type: button.TypeButton, Variant: button.VariantGhost, Attributes: templ.Attributes{"onclick": "history.back()"}}) {
+						Cancel
+					}
+					@button.Button(button.Props{Type: button.TypeSubmit}) {
+						{ intentTitle }
+					}
+				}
+			}
+		</form>
+		@textarea.Script()
+	}
+}

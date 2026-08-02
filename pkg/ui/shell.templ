@@ -61,8 +61,39 @@ templ AppShell(p ShellProps) {
 			if shell.ChatEnabled {
 				@chatPanel(p.Title)
 			}
+			if len(shell.Intents) > 0 {
+				@intentChrome(shell.Intents)
+			}
 		</body>
 	</html>
+}
+
+// intentChrome ships the selection popover (ADR-0018): foreign intents as
+// JSON for intents.js, plus the popover markup (classes live here so
+// Tailwind scans them).
+templ intentChrome(intents []IntentLink) {
+	@templ.JSONScript("bespoke-intents", intentJSON(intents))
+	<template id="bespoke-intent-pop-template">
+		<div id="bespoke-intent-pop" class="absolute z-50 flex items-center gap-1 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md">
+			<template>
+				<a class="rounded-md px-2.5 py-1.5 text-sm transition-colors hover:bg-muted hover:text-primary"></a>
+			</template>
+		</div>
+	</template>
+	<script type="module" src="/_bespoke/js/intents.js"></script>
+}
+
+type intentJSONEntry struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
+}
+
+func intentJSON(intents []IntentLink) []intentJSONEntry {
+	out := make([]intentJSONEntry, 0, len(intents))
+	for _, in := range intents {
+		out = append(out, intentJSONEntry{Title: in.Title, URL: in.URL})
+	}
+	return out
 }
 
 func shellHome(d ShellData) templ.SafeURL {

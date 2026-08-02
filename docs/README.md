@@ -30,6 +30,7 @@ Docs are split by the question they answer:
 - [0015 — AppShell platform chrome: app switcher and in-app chat](adr/0015-appshell-platform-chrome.md)
 - [0016 — Mobile-first UI standard](adr/0016-mobile-first-ui-standard.md)
 - [0017 — App-provided dashboard cards](adr/0017-app-provided-dashboard-cards.md)
+- [0018 — Cross-app intents](adr/0018-cross-app-intents.md)
 
 ### Design
 

@@ -3,3 +3,8 @@ slug        = "todo"
 port        = 4103
 icon        = "list-todo"
 description = "Tasks with due dates, priorities, and subtasks"
+
+[[intents]]
+name    = "create-task"
+title   = "Create Todo"
+accepts = "text"

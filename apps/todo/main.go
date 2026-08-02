@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -38,6 +39,17 @@ func main() {
 			return dashCard(ctx, sqldb, user.Login)
 		})
 
+		web.Intent(mux, "Todo", web.IntentDef{
+			Name:   "create-task",
+			Title:  "Create Todo",
+			Prompt: "This becomes a task (low priority, no due date — edit it after if needed).",
+			Handler: func(ctx context.Context, user auth.User, text string) (string, error) {
+				_, err := sqldb.ExecContext(ctx,
+					"INSERT INTO tasks (login, description) VALUES (?, ?)", user.Login, text)
+				return "/", err
+			},
+		})
+
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			hideCompleted := r.URL.Query().Get("completed") == "hidden"
@@ -46,7 +58,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			views.Home(user, tasks, hideCompleted).Render(r.Context(), w)
+			views.Home(user, tasks, hideCompleted, r.URL.Query().Get("did")).Render(r.Context(), w)
 		})
 
 		mux.HandleFunc("POST /tasks", func(w http.ResponseWriter, r *http.Request) {
@@ -78,11 +90,17 @@ func main() {
 
 		mux.HandleFunc("POST /tasks/{id}/toggle", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
-			if err := toggleTask(r.Context(), sqldb, user.Login, r.PathValue("id")); err != nil {
+			completed, err := toggleTask(r.Context(), sqldb, user.Login, r.PathValue("id"))
+			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			dest := "/"
+			if completed != "" {
+				// Event → intent (ADR-0018): the view offers "Journal it?".
+				dest = "/?did=" + url.QueryEscape(completed)
+			}
+			http.Redirect(w, r, dest, http.StatusSeeOther)
 		})
 
 		mux.HandleFunc("POST /tasks/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
@@ -132,34 +150,36 @@ func doneSQL(done int) string {
 
 // toggleTask flips done and applies both cascades (README rules): parents
 // push their state down to subtasks; subtasks pull the parent up (all done)
-// or back open (any reopened).
-func toggleTask(ctx context.Context, sqldb *sql.DB, login, id string) error {
+// or back open (any reopened). Returns the task's description when the
+// toggle COMPLETED it (fuel for the journal follow-up), else "".
+func toggleTask(ctx context.Context, sqldb *sql.DB, login, id string) (string, error) {
 	tx, err := sqldb.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer tx.Rollback()
 
 	var taskID int64
 	var parent sql.NullInt64
 	var done int
+	var desc string
 	if err := tx.QueryRowContext(ctx,
-		"SELECT id, parent_id, done FROM tasks WHERE id = ? AND login = ?", id, login).
-		Scan(&taskID, &parent, &done); err != nil {
-		return err
+		"SELECT id, parent_id, done, description FROM tasks WHERE id = ? AND login = ?", id, login).
+		Scan(&taskID, &parent, &done, &desc); err != nil {
+		return "", err
 	}
 	newDone := 1 - done
 
 	if _, err := tx.ExecContext(ctx,
 		"UPDATE tasks SET "+doneSQL(newDone)+" WHERE id = ? AND login = ?", taskID, login); err != nil {
-		return err
+		return "", err
 	}
 
 	if !parent.Valid {
 		// Parent toggled directly: cascade down to all subtasks.
 		if _, err := tx.ExecContext(ctx,
 			"UPDATE tasks SET "+doneSQL(newDone)+" WHERE parent_id = ? AND login = ?", taskID, login); err != nil {
-			return err
+			return "", err
 		}
 	} else {
 		// Subtask toggled: cascade up.
@@ -167,7 +187,7 @@ func toggleTask(ctx context.Context, sqldb *sql.DB, login, id string) error {
 		if err := tx.QueryRowContext(ctx,
 			"SELECT count(*) FROM tasks WHERE parent_id = ? AND login = ? AND done = 0",
 			parent.Int64, login).Scan(&open); err != nil {
-			return err
+			return "", err
 		}
 		parentDone := 0
 		if open == 0 {
@@ -175,10 +195,16 @@ func toggleTask(ctx context.Context, sqldb *sql.DB, login, id string) error {
 		}
 		if _, err := tx.ExecContext(ctx,
 			"UPDATE tasks SET "+doneSQL(parentDone)+" WHERE id = ? AND login = ?", parent.Int64, login); err != nil {
-			return err
+			return "", err
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return "", err
+	}
+	if newDone == 1 {
+		return desc, nil
+	}
+	return "", nil
 }
 
 func loadTasks(ctx context.Context, sqldb *sql.DB, login string, hideCompleted bool) ([]views.Task, error) {

@@ -45,6 +45,17 @@ func main() {
 			return dashCard(ctx, sqldb, user.Login)
 		})
 
+		web.Intent(mux, "Journal", web.IntentDef{
+			Name:   "add-entry",
+			Title:  "Add to Journal",
+			Prompt: "This becomes a journal entry.",
+			Handler: func(ctx context.Context, user auth.User, text string) (string, error) {
+				_, err := sqldb.ExecContext(ctx,
+					"INSERT INTO entries (login, body) VALUES (?, ?)", user.Login, text)
+				return "/", err
+			},
+		})
+
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			days, err := loadDays(sqldb, user.Login)

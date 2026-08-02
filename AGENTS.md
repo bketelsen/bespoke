@@ -83,6 +83,15 @@ them rather than improvising, whichever agent you are:
   serving `GET /_card` (ADR-0017) — a content-only fragment with the user's
   current state ("3 entries today"), cheap queries only, never LLM calls.
   Without one the dashboard falls back to the manifest description.
+- **Cross-app intents (ADR-0018):** declare an `[[intents]]` in `app.toml`
+  for anything other apps might feed this one (text → entry/task/etc.) and
+  mount it with `web.Intent(mux, appTitle, def)`. The selection popover
+  offers them everywhere automatically; for event-driven follow-ups use
+  `ui.IntentsFrom(ctx)` (see todo's "Journal it?" banner).
+- **Integration review is part of adding an app:** when a new app lands,
+  reconsider the EXISTING apps — should any of them offer this app's
+  intents after an event, or declare a new intent the new app would call?
+  Wire the natural ones; note rejected ones in the app README's Non-goals.
 - Voice input: `ui.VoiceButton("/your/endpoint")` in the view +
   `audio.New(slug).Transcribe` in the handler ([ADR-0014](docs/adr/0014-audio-service-transcription.md));
   never touch MediaRecorder or a speech backend directly. Currently

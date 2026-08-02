@@ -1,7 +1,9 @@
 package views
 
 import (
+	"context"
 	"fmt"
+	"net/url"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/ui"
 	"github.com/bketelsen/bespoke/pkg/ui/components/badge"
@@ -29,8 +31,11 @@ type CardRow struct {
 	Priority    string
 }
 
-templ Home(user auth.User, tasks []Task, hideCompleted bool) {
+templ Home(user auth.User, tasks []Task, hideCompleted bool, justDid string) {
 	@ui.AppShell(ui.ShellProps{Title: "Todo", User: user}) {
+		if justDid != "" {
+			@doneBanner(justDid)
+		}
 		<form method="post" action="/tasks">
 			@card.Card() {
 				@card.Content(card.ContentProps{Class: "space-y-3 pt-6"}) {
@@ -80,6 +85,34 @@ templ Home(user auth.User, tasks []Task, hideCompleted bool) {
 			}
 		</div>
 	}
+}
+
+// doneBanner is the event→intent idiom (ADR-0018): completing a task offers
+// journaling it, via journal's declared add-entry intent from the registry.
+templ doneBanner(desc string) {
+	{{ journalIntent := findIntent(ctx, "journal", "add-entry") }}
+	<div class="mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-4 py-3">
+		@icon.CircleCheckBig(icon.Props{Class: "size-4 shrink-0 text-primary"})
+		<span class="min-w-0 flex-1 break-words text-sm">Completed: { desc }</span>
+		if journalIntent != "" {
+			<a
+				href={ templ.SafeURL(journalIntent + "?text=" + url.QueryEscape("Completed: "+desc)) }
+				class="shrink-0 text-sm text-primary hover:underline"
+			>
+				Journal it →
+			</a>
+		}
+		<a href="/" class="shrink-0 text-sm text-muted-foreground hover:text-foreground" title="dismiss">✕</a>
+	</div>
+}
+
+func findIntent(ctx context.Context, app, name string) string {
+	for _, in := range ui.IntentsFrom(ctx) {
+		if in.App == app && in.Name == name {
+			return in.URL
+		}
+	}
+	return ""
 }
 
 templ taskRow(t Task, sub bool) {

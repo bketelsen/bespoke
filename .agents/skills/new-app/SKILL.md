@@ -51,6 +51,11 @@ config, stop: you're off the path (see AGENTS.md).
    6a. **Dashboard card**: `web.DashboardCard(mux, provider)` returning a
    small templ fragment of the user's live state (apps/journal `DashCard`
    is the reference) — cheap queries only, no LLM calls, no AppShell.
+   6b. **Intents (ADR-0018)**: declare `[[intents]]` for anything other
+   apps might feed this one + `web.Intent(mux, ...)`; then REVIEW EXISTING
+   APPS for natural integrations both ways (event banners via
+   `ui.IntentsFrom` — todo's "Journal it?" is the reference) and wire them
+   in the same change.
 7. **Regenerate.** After any `.templ` change: `just ui`, and commit the
    generated `*_templ.go` + `pkg/ui/assets/styles.css` alongside your
    sources.

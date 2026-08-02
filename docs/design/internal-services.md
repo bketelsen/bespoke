@@ -37,7 +37,8 @@ app ──pkg/* helper────────► (no network at all — compose
 | App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
 | Transcription | 2 | **LIVE (real)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` (WAV) | ADR-0014; whisper on Lemonade, validated end to end 2026-08-01; stub mode when `BESPOKE_LEMONADE_URL` unset |
 | Speech synthesis | 2 | **LIVE** | `audio.New(slug).Speak`; chat panels get a persisted speak-toggle for free | First consumer: the chat speak toggle (ADR-0015 chrome); kokoro-v1 via `/audio/speak`, validated in prod 2026-08-01 |
-| MCP surface | 2 | candidate | external LLM clients via `https://<apex>/mcp` | One aggregated MCP server on platformd; apps opt tools in via `web.Tool`, namespaced `<slug>_<tool>` (see roadmap idea) |
+| Cross-app intents | — | **live** | `[[intents]]` in app.toml + `web.Intent`; selection popover + `ui.IntentsFrom` | ADR-0018; journal↔todo are the reference pair |
+| MCP surface | 2 | candidate | external LLM clients via `https://<apex>/mcp` | One aggregated MCP server on platformd — converges with the intents registry (ADR-0018): same actions, MCP face for LLMs |
 
 ## Audio (first-class service — transcription live, stub-backed)
 

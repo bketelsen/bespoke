@@ -3,3 +3,8 @@ slug        = "journal"
 port        = 4102
 icon        = "notebook-pen"
 description = "One stream for everything — notes, work log, reflections"
+
+[[intents]]
+name    = "add-entry"
+title   = "Add to Journal"
+accepts = "text"

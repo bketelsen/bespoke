@@ -37,7 +37,10 @@ any point, write the spec from what you have and move on.
    service needs the user didn't imply.
 5. **Lifecycle** — edit/delete? retention? does old data ever resurface
    (weekly summary, on-this-day)?
-6. **Non-goals** — name 2–3 things it deliberately won't do (sharing,
+6. **Integrations** — check other apps' `[[intents]]` and this app's
+   events: what text/objects should flow between apps? ("completing X
+   offers journaling it"). One question, options from the actual registry.
+7. **Non-goals** — name 2–3 things it deliberately won't do (sharing,
    mobile app, export…), confirmed with the user.
 7. **Identity** — display name, slug, Lucide icon, one-line dashboard
    description.

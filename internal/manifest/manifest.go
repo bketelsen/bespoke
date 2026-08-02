@@ -14,11 +14,20 @@ import (
 )
 
 type App struct {
-	Name        string `toml:"name"`
-	Slug        string `toml:"slug"`
-	Port        int    `toml:"port"`
-	Icon        string `toml:"icon"`
-	Description string `toml:"description"`
+	Name        string   `toml:"name"`
+	Slug        string   `toml:"slug"`
+	Port        int      `toml:"port"`
+	Icon        string   `toml:"icon"`
+	Description string   `toml:"description"`
+	Intents     []Intent `toml:"intents"`
+}
+
+// Intent is a declared cross-app action (docs/adr/0018-cross-app-intents.md):
+// the app promises to serve GET/POST /_intents/<name>.
+type Intent struct {
+	Name    string `toml:"name"`    // slug-like, unique within the app
+	Title   string `toml:"title"`   // shown on buttons: "Create Todo"
+	Accepts string `toml:"accepts"` // payload type; v1: "text" (default)
 }
 
 var slugRe = regexp.MustCompile(`^[a-z0-9-]{1,32}$`)
@@ -37,6 +46,20 @@ func (a App) validate(dir string) error {
 		return fmt.Errorf("icon is required")
 	case a.Description == "":
 		return fmt.Errorf("description is required")
+	}
+	seen := map[string]bool{}
+	for i, in := range a.Intents {
+		switch {
+		case !slugRe.MatchString(in.Name):
+			return fmt.Errorf("intents[%d]: name %q must match %s", i, in.Name, slugRe)
+		case in.Title == "":
+			return fmt.Errorf("intents[%d] (%s): title is required", i, in.Name)
+		case in.Accepts != "" && in.Accepts != "text":
+			return fmt.Errorf("intents[%d] (%s): accepts %q unsupported (v1: text)", i, in.Name, in.Accepts)
+		case seen[in.Name]:
+			return fmt.Errorf("intents[%d]: duplicate name %q", i, in.Name)
+		}
+		seen[in.Name] = true
 	}
 	return nil
 }

@@ -58,5 +58,20 @@ mounted by `pkg/web` for Go apps):
 | `GET /_bespoke/*` | MUST (automatic) | Design-system assets, embedded |
 | `GET /_card` | MAY | Per-user dashboard card fragment ([ADR-0017](../adr/0017-app-provided-dashboard-cards.md)); content-only HTML, cheap queries, no LLM calls; dashboard falls back to `description` when absent |
 | `POST /_chat`, `/_chat/speak` | MAY (via `web.EnableChat`) | In-app chat + TTS ([ADR-0015](../adr/0015-appshell-platform-chrome.md)) |
+| `GET`+`POST /_intents/<name>` | MUST for each declared `[[intents]]` (via `web.Intent`) | Cross-app intent confirm + execute ([ADR-0018](../adr/0018-cross-app-intents.md)) |
 
 The `_`-prefixed path namespace is reserved for the platform.
+
+## Intents (`[[intents]]`)
+
+Optional repeated table declaring cross-app actions
+([ADR-0018](../adr/0018-cross-app-intents.md)):
+
+| Field | Required | Constraints |
+| --- | --- | --- |
+| `name` | yes | `[a-z0-9-]{1,32}`, unique within the app; the `/_intents/<name>` path |
+| `title` | yes | Button label other apps show ("Create Todo") |
+| `accepts` | no | Payload type; v1 supports only `text` (default) |
+
+Every declared intent MUST be mounted with `web.Intent` — the declaration
+is the promise other apps' chrome relies on.
