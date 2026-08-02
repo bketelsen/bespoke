@@ -1,0 +1,274 @@
+// templui component dialog - version: v1.12.1 installed by templui v1.12.1
+// 📚 Documentation: https://templui.io/docs/components/dialog
+package dialog
+
+import (
+	"context"
+	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+	"github.com/bketelsen/bespoke/pkg/ui/utils"
+)
+
+type contextKey string
+
+const (
+	openKey contextKey = "dialogOpen"
+)
+
+type Props struct {
+	ID               string
+	Class            string
+	Attributes       templ.Attributes
+	DisableClickAway bool
+	DisableESC       bool
+	Open             bool
+}
+
+type TriggerProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+	For        string // Dialog root ID for external triggers
+}
+
+type ContentProps struct {
+	Class           string
+	Attributes      templ.Attributes
+	HideCloseButton bool
+	DisableModal    bool
+}
+
+type CloseProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+	For        string // Dialog root ID to close (optional, defaults to closest dialog)
+}
+
+type HeaderProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+type FooterProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+type TitleProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+type DescriptionProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+templ Dialog(props ...Props) {
+	{{ var p Props }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	{{ ctx = context.WithValue(ctx, openKey, p.Open) }}
+	<div
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		data-tui-dialog
+		if p.DisableClickAway {
+			data-tui-dialog-disable-click-away="true"
+		}
+		if p.DisableESC {
+			data-tui-dialog-disable-esc="true"
+		}
+		data-tui-dialog-open={ utils.IfElse(p.Open, "true", "false") }
+		class={ utils.TwMerge("contents", p.Class) }
+		{ p.Attributes... }
+	>
+		{ children... }
+	</div>
+}
+
+templ Trigger(props ...TriggerProps) {
+	{{ var p TriggerProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<span
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		data-tui-dialog-trigger
+		if p.For != "" {
+			data-tui-dialog-target={ p.For }
+		}
+		data-tui-dialog-trigger-open="false"
+		class={ utils.TwMerge("contents", p.Class) }
+		{ p.Attributes... }
+	>
+		{ children... }
+	</span>
+}
+
+templ Content(props ...ContentProps) {
+	{{ var p ContentProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	{{ open := false }}
+	if val := ctx.Value(openKey); val != nil {
+		{{ open = val.(bool) }}
+	}
+	<dialog
+		class={
+			utils.TwMerge(
+				"fixed left-[50%] top-[50%] z-50 m-0 flex w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden border bg-background p-6 text-foreground shadow-lg outline-none sm:max-w-lg",
+				"[&:not([open]):not([data-tui-dialog-closing=true])]:hidden",
+				"rounded-lg",
+				"[&::backdrop]:transition-all [&::backdrop]:duration-200",
+				"data-[tui-dialog-open=false]:[&::backdrop]:bg-black/0",
+				"data-[tui-dialog-open=true]:[&::backdrop]:bg-black/50",
+				"transition-all duration-200",
+				"data-[tui-dialog-open=false]:scale-95",
+				"data-[tui-dialog-open=true]:scale-100",
+				"data-[tui-dialog-open=false]:opacity-0",
+				"data-[tui-dialog-open=true]:opacity-100",
+				p.Class,
+			),
+		}
+		data-tui-dialog-content
+		data-tui-dialog-open={ utils.IfElse(open, "true", "false") }
+		data-tui-dialog-initial-open={ utils.IfElse(open, "true", "false") }
+		data-tui-dialog-show-modal={ utils.IfElse(!p.DisableModal, "true", "false") }
+		{ p.Attributes... }
+	>
+		{ children... }
+		if !p.HideCloseButton {
+			<button
+				class={ utils.TwMerge(
+						// Positioning
+						"absolute top-4 right-4",
+						// Style
+						"rounded-xs opacity-70",
+						// Interactions
+						"transition-opacity hover:opacity-100",
+						// Focus states
+						"focus:outline-none focus:ring-2",
+						"focus:ring-ring focus:ring-offset-2",
+						"ring-offset-background",
+						// Hover/Data states
+						"data-[tui-dialog-open=true]:bg-accent",
+						"data-[tui-dialog-open=true]:text-muted-foreground",
+						// Disabled state
+						"disabled:pointer-events-none",
+						// Icon styles
+						"[&_svg]:pointer-events-none",
+					"[&_svg]:shrink-0",
+					"[&_svg:not([class*='size-'])]:size-4",
+				) }
+				data-tui-dialog-close
+				aria-label="Close"
+				type="button"
+			>
+				@icon.X()
+				<span class="sr-only">Close</span>
+			</button>
+		}
+	</dialog>
+}
+
+templ Close(props ...CloseProps) {
+	{{ var p CloseProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<span
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		data-tui-dialog-close
+		if p.For != "" {
+			data-tui-dialog-target={ p.For }
+		}
+		class={ utils.TwMerge("contents cursor-pointer", p.Class) }
+		{ p.Attributes... }
+	>
+		{ children... }
+	</span>
+}
+
+templ Header(props ...HeaderProps) {
+	{{ var p HeaderProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<div
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={ utils.TwMerge("flex flex-col gap-2 text-center sm:text-left", p.Class) }
+		{ p.Attributes... }
+	>
+		{ children... }
+	</div>
+}
+
+templ Footer(props ...FooterProps) {
+	{{ var p FooterProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<div
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={ utils.TwMerge("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", p.Class) }
+		{ p.Attributes... }
+	>
+		{ children... }
+	</div>
+}
+
+templ Title(props ...TitleProps) {
+	{{ var p TitleProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<h2
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={ utils.TwMerge("text-lg leading-none font-semibold", p.Class) }
+		{ p.Attributes... }
+	>
+		{ children... }
+	</h2>
+}
+
+templ Description(props ...DescriptionProps) {
+	{{ var p DescriptionProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<p
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={ utils.TwMerge("text-muted-foreground text-sm", p.Class) }
+		{ p.Attributes... }
+	>
+		{ children... }
+	</p>
+}
+
+var scriptOnce = templ.NewOnceHandle()
+
+templ Script() {
+	@scriptOnce.Once() {
+		@utils.ComponentScript("dialog")
+	}
+}

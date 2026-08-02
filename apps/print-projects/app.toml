@@ -1,0 +1,10 @@
+name        = "Print Projects"
+slug        = "print-projects"
+port        = 4104
+icon        = "printer"
+description = "Track 3D print ideas, source files, notes, and print history"
+
+[[intents]]
+name    = "create-project"
+title   = "Create Print Project"
+accepts = "text"

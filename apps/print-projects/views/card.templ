@@ -1,0 +1,11 @@
+package views
+
+import "fmt"
+
+templ DashCard(waiting, projects, recent int) {
+	<div class="grid grid-cols-3 gap-3 text-center">
+		<div><p class="text-2xl font-semibold">{fmt.Sprint(waiting)}</p><p class="text-xs text-muted-foreground">want to print</p></div>
+		<div><p class="text-2xl font-semibold">{fmt.Sprint(projects)}</p><p class="text-xs text-muted-foreground">projects</p></div>
+		<div><p class="text-2xl font-semibold">{fmt.Sprint(recent)}</p><p class="text-xs text-muted-foreground">prints / 30d</p></div>
+	</div>
+}
