@@ -21,7 +21,7 @@ templ AppShell(p ShellProps) {
 	<html lang="en" class="h-full">
 		<head>
 			<meta charset="utf-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 			if p.Title != "" {
 				<title>{ p.Title } · Bespoke</title>
 			} else {
@@ -47,11 +47,11 @@ templ AppShell(p ShellProps) {
 							}
 						</div>
 					</nav>
-					<div class="flex items-center gap-3">
+					<div class="flex min-w-0 items-center gap-3">
 						if shell.ChatEnabled {
 							@chatButton()
 						}
-						<span class="text-sm text-muted-foreground">{ p.User.Name }</span>
+						<span class="max-w-[7rem] truncate text-sm text-muted-foreground sm:max-w-none">{ p.User.Name }</span>
 					</div>
 				</div>
 			</header>

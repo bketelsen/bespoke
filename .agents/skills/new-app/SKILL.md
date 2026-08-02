@@ -56,6 +56,11 @@ config, stop: you're off the path (see AGENTS.md).
      through AppShell; the dashboard at `http://localhost:4000` lists it;
      `curl http://localhost:<port>/healthz` says ok. Exercise each route you
      added (create/read at minimum) with curl and confirm the data persists.
+   - **Mobile pass (ADR-0016):** walk every view mentally (or in devtools) at
+     375px/coarse pointer — no hover-only controls (`pointer-coarse:`
+     present on any hover-revealed element), no fixed widths that force page
+     scroll, wide tables wrapped in `overflow-x-auto`, overlays capped with
+     `dvh`. A view that needs a mouse is a failed build.
 9. **Commit** sources + generated files together, message
    `<slug>: <what the app does>`.
 

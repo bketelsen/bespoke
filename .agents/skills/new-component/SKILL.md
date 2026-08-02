@@ -42,6 +42,11 @@ scripts/build-ui.sh   # templ generate + Tailwind compile (or: just ui)
 just check
 ```
 
+Wrappers and theme changes must hold the mobile standard (ADR-0016): usable
+at 375px with a coarse pointer, no hover-only reveals, `dvh`-capped
+overlays, and never touch the unlayered 16px-input rule in
+`design/input.css`.
+
 Commit generated output (`*_templ.go`, `pkg/ui/assets/styles.css`) with your
 change, and add a row to the design-system notes in
 `docs/design/architecture.md` only if you added a wrapper with non-obvious

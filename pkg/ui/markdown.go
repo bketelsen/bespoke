@@ -29,7 +29,7 @@ func Markdown(src string) templ.Component {
 		if err := md.Convert([]byte(src), buf); err != nil {
 			return err
 		}
-		if _, err := io.WriteString(w, `<div class="prose prose-sm dark:prose-invert max-w-none">`); err != nil {
+		if _, err := io.WriteString(w, `<div class="prose prose-sm dark:prose-invert max-w-none break-words">`); err != nil {
 			return err
 		}
 		if _, err := w.Write(buf.Bytes()); err != nil {

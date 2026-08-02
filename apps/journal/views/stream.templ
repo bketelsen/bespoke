@@ -59,7 +59,8 @@ templ Stream(user auth.User, days []Day) {
 							Work Log
 						}
 						@tabs.Trigger(tabs.TriggerProps{Value: "reflection"}) {
-							Evening Reflection
+							<span class="hidden sm:inline">Evening&nbsp;</span>
+							Reflection
 						}
 					}
 					@tabs.Content(tabs.ContentProps{Value: "random", IsActive: true}) {
@@ -128,13 +129,13 @@ templ Stream(user auth.User, days []Day) {
 						<form
 							method="post"
 							action={ templ.SafeURL(fmt.Sprintf("/entries/%d/delete", e.ID)) }
-							class="opacity-0 transition-opacity group-hover:opacity-100"
+							class="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
 						>
 							@button.Button(button.Props{
 								Type:    button.TypeSubmit,
 								Variant: button.VariantGhost,
 								Size:    button.SizeIcon,
-								Class:   "size-6 text-muted-foreground",
+								Class:   "size-6 text-muted-foreground pointer-coarse:size-8",
 							}) {
 								@icon.X(icon.Props{Class: "size-3.5"})
 							}

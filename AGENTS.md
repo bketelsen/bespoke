@@ -58,6 +58,15 @@ them rather than improvising, whichever agent you are:
 - Render user- or LLM-authored markdown with `ui.Markdown(text)` (GFM,
   `prose`-styled, raw HTML omitted by goldmark — never enable unsafe HTML);
   never store HTML or roll your own renderer.
+- **Mobile-first is enforced
+  ([ADR-0016](docs/adr/0016-mobile-first-ui-standard.md)):** every view must
+  work at 375px with a coarse pointer. No hover-only affordances (add
+  `pointer-coarse:opacity-100` + `focus-within:`); icon controls add
+  `pointer-coarse:size-8`; overlays cap height in `dvh` and width with
+  `max-w-[calc(100vw-2rem)]`; wide content scrolls in its own
+  `overflow-x-auto` container, never the page; grids collapse to one column
+  by default. The 16px-input rule in `design/input.css` is load-bearing —
+  never remove or override it. A view that needs a mouse is a failed build.
 - LLM inference only via `llm.New(slug)` → `Complete`/`CompleteJSON`/
   `Classify` ([design](docs/design/llm-gateway.md)); never call a model
   provider or the Copilot SDK from an app. Expect ~1.5s per call — design

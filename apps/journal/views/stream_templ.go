@@ -246,7 +246,7 @@ func Stream(user auth.User, days []Day) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "Evening Reflection")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"hidden sm:inline\">Evening&nbsp;</span> Reflection")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -461,7 +461,7 @@ func Stream(user auth.User, days []Day) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(d.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/journal/views/stream.templ`, Line: 120, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/journal/views/stream.templ`, Line: 121, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -479,7 +479,7 @@ func Stream(user auth.User, days []Day) templ.Component {
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(e.Time)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/journal/views/stream.templ`, Line: 124, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/journal/views/stream.templ`, Line: 125, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -500,13 +500,13 @@ func Stream(user auth.User, days []Day) templ.Component {
 					var templ_7745c5c3_Var17 templ.SafeURL
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/entries/%d/delete", e.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/journal/views/stream.templ`, Line: 130, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/journal/views/stream.templ`, Line: 131, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"opacity-0 transition-opacity group-hover:opacity-100\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -532,7 +532,7 @@ func Stream(user auth.User, days []Day) templ.Component {
 						Type:    button.TypeSubmit,
 						Variant: button.VariantGhost,
 						Size:    button.SizeIcon,
-						Class:   "size-6 text-muted-foreground",
+						Class:   "size-6 text-muted-foreground pointer-coarse:size-8",
 					}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var18), templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err

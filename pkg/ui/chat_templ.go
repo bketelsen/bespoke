@@ -72,7 +72,7 @@ func chatPanel(appTitle string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"bespoke-chat\" class=\"fixed bottom-4 right-4 z-50 hidden w-96 max-w-[calc(100vw-2rem)]\"><div class=\"flex h-[28rem] flex-col rounded-lg border bg-card text-card-foreground shadow-lg\"><div class=\"flex items-center justify-between border-b px-4 py-2\"><span class=\"text-sm font-medium\">Ask ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"bespoke-chat\" class=\"fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 hidden w-96 max-w-[calc(100vw-2rem)]\"><div class=\"flex h-[28rem] max-h-[calc(100dvh-5rem)] flex-col rounded-lg border bg-card text-card-foreground shadow-lg\"><div class=\"flex items-center justify-between border-b px-4 py-2\"><span class=\"text-sm font-medium\">Ask ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

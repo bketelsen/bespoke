@@ -28,6 +28,7 @@ Docs are split by the question they answer:
 - [0013 — Agent-portable instruction surface](adr/0013-agent-portable-instruction-surface.md)
 - [0014 — Audio service: transcription, stub-first](adr/0014-audio-service-transcription.md)
 - [0015 — AppShell platform chrome: app switcher and in-app chat](adr/0015-appshell-platform-chrome.md)
+- [0016 — Mobile-first UI standard](adr/0016-mobile-first-ui-standard.md)
 
 ### Design
 

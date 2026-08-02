@@ -106,3 +106,15 @@
     font-family: system-ui, -apple-system, sans-serif;
   }
 }
+
+/* MOBILE INVARIANT (ADR-0016) — deliberately UNLAYERED so it outranks
+   utility classes: iOS Safari auto-zooms the page when a focused form
+   control's font-size is under 16px. Every input keeps >=16px on coarse
+   pointers regardless of text-sm etc. Do not remove or layer this rule. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}

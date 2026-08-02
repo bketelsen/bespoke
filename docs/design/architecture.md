@@ -118,6 +118,11 @@ Single Go module monorepo — one dependency graph
   ([ADR-0015](../adr/0015-appshell-platform-chrome.md)): app switcher fed
   from the registry via request context (zero app code), and an in-app LLM
   chat panel when the app opts in with `web.EnableChat`.
+- Mobile-first is a standing invariant
+  ([ADR-0016](../adr/0016-mobile-first-ui-standard.md)): 375px/coarse-pointer
+  usability, enforced partly by the design system (16px input rule,
+  dvh-capped chat panel, breaking markdown, truncating header) and partly by
+  per-view rules the skills gate on.
 
 ## Deploy loop
 
