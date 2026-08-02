@@ -54,8 +54,12 @@ them rather than improvising, whichever agent you are:
   `scripts/build-ui.sh` and COMMIT the generated `*_templ.go` and
   `pkg/ui/assets/styles.css` — builds and deploys must not need the UI
   toolchain.
-- Live UI updates use `web.NewSSE` (Datastar); the AppShell already loads
-  `datastar.js`.
+- Live UI updates (ADR-0022): call `web.Changed(user.Login)` after EVERY
+  mutation (handlers, tools, intents — no exceptions), expose the page's
+  dynamic region as an id-stable fragment, and mount it with
+  `web.Live(mux, fragment)` plus a `data-on-load="@get('/_live')"` wrapper
+  (see journal's StreamLive). Lower-level SSE via `web.NewSSE` (Datastar)
+  when a page needs custom streams.
 - Render user- or LLM-authored markdown with `ui.Markdown(text)` (GFM,
   `prose`-styled, raw HTML omitted by goldmark — never enable unsafe HTML);
   never store HTML or roll your own renderer.

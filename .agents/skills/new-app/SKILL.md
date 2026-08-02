@@ -48,6 +48,11 @@ config, stop: you're off the path (see AGENTS.md).
    `web.EnableChat(mux, slug, provider)` with a provider returning the
    user's recent data as text (see apps/journal for the reference). The app
    switcher is automatic — never build navigation between apps.
+   6-live. **Live region (ADR-0022)**: render the dynamic part of the page
+   as an id-stable fragment, mount `web.Live(mux, fragment)`, wrap with
+   `data-on-load="@get('/_live')"`, and call `web.Changed(user.Login)`
+   after EVERY mutation — handlers, tools, and intents (journal/todo are
+   references). A page that goes stale after a chat action is a bug.
    6a. **Dashboard card**: `web.DashboardCard(mux, provider)` returning a
    small templ fragment of the user's live state (apps/journal `DashCard`
    is the reference) — cheap queries only, no LLM calls, no AppShell.

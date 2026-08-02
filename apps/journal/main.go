@@ -53,8 +53,20 @@ func main() {
 			Handler: func(ctx context.Context, user auth.User, text string) (string, error) {
 				_, err := sqldb.ExecContext(ctx,
 					"INSERT INTO entries (login, body) VALUES (?, ?)", user.Login, text)
+				if err == nil {
+					web.Changed(user.Login)
+				}
 				return "/", err
 			},
+		})
+
+		// Live stream region (ADR-0022): patched on any entry change.
+		web.Live(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
+			days, err := loadDays(sqldb, user.Login)
+			if err != nil {
+				return nil, err
+			}
+			return views.StreamLive(days), nil
 		})
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +87,7 @@ func main() {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
+				web.Changed(user.Login)
 			}
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
@@ -87,6 +100,7 @@ func main() {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
+				web.Changed(user.Login)
 			}
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
@@ -99,6 +113,7 @@ func main() {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
+				web.Changed(user.Login)
 			}
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
@@ -120,6 +135,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			web.Changed(user.Login)
 			w.WriteHeader(http.StatusNoContent) // recorder.js reloads the page
 		})
 
@@ -129,6 +145,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			web.Changed(user.Login)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 

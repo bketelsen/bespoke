@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/a-h/templ"
 	"github.com/bketelsen/bespoke/internal/manifest"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/db"
@@ -76,6 +77,18 @@ func main() {
 		// External LLM clients: the platform MCP endpoint (ADR-0021).
 		mux.Handle("/mcp", mcpHandler(root))
 
+		// Live card grid (ADR-0022): re-rendered when any app reports a
+		// change for this user via the plane's /notify.
+		dev := os.Getenv("BESPOKE_DEV_USER") != ""
+		web.Live(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
+			apps, _, err := manifest.LoadAll(root)
+			if err != nil {
+				return nil, err
+			}
+			cards := fetchCards(ctx, user.Login, user.Name, apps)
+			return views.CardGrid(dev, domain, apps, cards), nil
+		})
+
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			apps, warnings, err := manifest.LoadAll(root)
 			if err != nil {
@@ -89,8 +102,9 @@ func main() {
 				warnings = append(warnings, s)
 			}
 			dev := os.Getenv("BESPOKE_DEV_USER") != ""
-			cards := fetchCards(r, apps)
-			views.Dashboard(auth.FromContext(r.Context()), dev, domain, apps, cards, warnings).Render(r.Context(), w)
+			user := auth.FromContext(r.Context())
+			cards := fetchCards(r.Context(), user.Login, user.Name, apps)
+			views.Dashboard(user, dev, domain, apps, cards, warnings).Render(r.Context(), w)
 		})
 
 		mux.HandleFunc("GET /settings", func(w http.ResponseWriter, r *http.Request) {

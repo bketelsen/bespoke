@@ -41,6 +41,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Cross-app intents | — | **live** | `[[intents]]` in app.toml + `web.Intent`; selection popover + `ui.IntentsFrom` | ADR-0018; journal↔todo are the reference pair |
 | User brief | 2 | **live** | edit at apex `/settings`; injected by the gateway for any completion tagged `llm.WithUser(login)` | ADR-0019; chat + summaries get it automatically; mechanical calls (Classify) untouched |
 | App tools + agentic chat | — | **LIVE** | `web.Tool(mux, def)`; chats act automatically (app-scoped and cross-app from the dashboard) | ADR-0021; full CRUD on todo, spec-bounded on journal; chat mic input via local whisper |
+| Live updates | — | **LIVE** | `web.Changed(login)` after mutations + `web.Live(mux, fragment)` | ADR-0022; pages and dashboard cards patch over SSE from any face (forms, chat, MCP, intents) |
 | MCP surface | 2 | **LIVE** | `claude mcp add --transport http bespoke https://<apex>/mcp` | ADR-0021; per-request identity scoping, tools namespaced `<slug>_<name>` |
 
 ## Audio (first-class service — transcription live, stub-backed)

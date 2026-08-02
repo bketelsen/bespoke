@@ -63,28 +63,38 @@ templ Home(user auth.User, tasks []Task, hideCompleted bool, justDid string) {
 				<a href="/?completed=hidden" class="text-sm text-primary hover:underline">hide completed</a>
 			}
 		</div>
+		<div data-on-load="@get('/_live')">
+			@TasksLive(tasks)
+		</div>
+	}
+}
+
+// TasksLive is the live region (ADR-0022): patched over SSE on any change
+// to this user's tasks. Always renders the show-all view; a user in
+// ?completed=hidden sees completed reappear after a live change —
+// documented trade-off.
+templ TasksLive(tasks []Task) {
+	<div id="todo-live" class="mt-2 space-y-3">
 		if len(tasks) == 0 {
 			<p class="mt-4 text-muted-foreground">Nothing here — add the first task above.</p>
 		}
-		<div class="mt-2 space-y-3">
-			for _, t := range tasks {
-				<div class="rounded-lg border bg-card px-4 py-3">
-					@taskRow(t, false)
-					<div class="ml-7 mt-1 space-y-1">
-						for _, s := range t.Subtasks {
-							@taskRow(s, true)
+		for _, t := range tasks {
+			<div class="rounded-lg border bg-card px-4 py-3">
+				@taskRow(t, false)
+				<div class="ml-7 mt-1 space-y-1">
+					for _, s := range t.Subtasks {
+						@taskRow(s, true)
+					}
+					<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/sub", t.ID)) } class="flex items-center gap-2 pt-1">
+						@input.Input(input.Props{Name: "description", Placeholder: "add a subtask…", Class: "h-8 text-sm"})
+						@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-8 shrink-0 text-muted-foreground"}) {
+							@icon.Plus(icon.Props{Class: "size-4"})
 						}
-						<form method="post" action={ templ.SafeURL(fmt.Sprintf("/tasks/%d/sub", t.ID)) } class="flex items-center gap-2 pt-1">
-							@input.Input(input.Props{Name: "description", Placeholder: "add a subtask…", Class: "h-8 text-sm"})
-							@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-8 shrink-0 text-muted-foreground"}) {
-								@icon.Plus(icon.Props{Class: "size-4"})
-							}
-						</form>
-					</div>
+					</form>
 				</div>
-			}
-		</div>
-	}
+			</div>
+		}
+	</div>
 }
 
 // doneBanner is the event→intent idiom (ADR-0018): completing a task offers

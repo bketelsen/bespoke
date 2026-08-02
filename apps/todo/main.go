@@ -40,6 +40,15 @@ func main() {
 			return dashCard(ctx, sqldb, user.Login)
 		})
 
+		// Live tasks region (ADR-0022): patched on any task change.
+		web.Live(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
+			tasks, err := loadTasks(ctx, sqldb, user.Login, false)
+			if err != nil {
+				return nil, err
+			}
+			return views.TasksLive(tasks), nil
+		})
+
 		web.Intent(mux, "Todo", web.IntentDef{
 			Name:   "create-task",
 			Title:  "Create Todo",
@@ -47,6 +56,9 @@ func main() {
 			Handler: func(ctx context.Context, user auth.User, text string) (string, error) {
 				_, err := sqldb.ExecContext(ctx,
 					"INSERT INTO tasks (login, description) VALUES (?, ?)", user.Login, text)
+				if err == nil {
+					web.Changed(user.Login)
+				}
 				return "/", err
 			},
 		})
@@ -68,6 +80,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
+			web.Changed(user.Login)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 
@@ -86,6 +99,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
+			web.Changed(user.Login)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 
@@ -96,6 +110,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			web.Changed(user.Login)
 			dest := "/"
 			if completed != "" {
 				// Event → intent (ADR-0018): the view offers "Journal it?".
@@ -141,6 +156,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			web.Changed(user.Login)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 
@@ -152,6 +168,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			web.Changed(user.Login)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 	})

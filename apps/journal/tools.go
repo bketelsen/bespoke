@@ -40,6 +40,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 				"INSERT INTO entries (login, body) VALUES (?, ?)", user.Login, strings.TrimSpace(a.Body)); err != nil {
 				return "", err
 			}
+			web.Changed(user.Login)
 			return "Entry added.", nil
 		},
 	})
@@ -104,6 +105,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			if n, _ := res.RowsAffected(); n == 0 {
 				return "", fmt.Errorf("no entry #%d", a.ID)
 			}
+			web.Changed(user.Login)
 			return fmt.Sprintf("Deleted entry #%d.", a.ID), nil
 		},
 	})

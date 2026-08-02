@@ -114,6 +114,18 @@ templ Stream(user auth.User, days []Day) {
 				@tabs.Script()
 			}
 		}
+		<div data-on-load="@get('/_live')">
+			@StreamLive(days)
+		</div>
+		@textarea.Script()
+	}
+}
+
+// StreamLive is the live region (ADR-0022): re-rendered and patched over
+// SSE whenever this user's entries change — forms, chat tools, MCP, or
+// intents. Must keep the stable id.
+templ StreamLive(days []Day) {
+	<div id="journal-live">
 		if len(days) == 0 {
 			<p class="mt-8 text-muted-foreground">Nothing yet — first entry goes above.</p>
 		}
@@ -144,6 +156,5 @@ templ Stream(user auth.User, days []Day) {
 				}
 			</div>
 		}
-		@textarea.Script()
-	}
+	</div>
 }

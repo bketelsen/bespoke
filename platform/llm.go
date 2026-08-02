@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bketelsen/bespoke/pkg/web"
 	copilot "github.com/github/copilot-sdk/go"
 	"github.com/github/copilot-sdk/go/rpc"
 )
@@ -251,6 +252,19 @@ func serveInternal(addr string, llm *llmGateway, audio *audioGateway) {
 	mux := http.NewServeMux()
 	llm.register(mux)
 	audio.register(mux)
+	// Change notifications from apps (ADR-0022): wake the dashboard's
+	// /_live subscribers so cards refresh on any app's mutation.
+	mux.HandleFunc("POST /notify", func(w http.ResponseWriter, r *http.Request) {
+		var b struct {
+			Login string `json:"login"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&b); err != nil || b.Login == "" {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		web.Notify(b.Login)
+		w.WriteHeader(http.StatusNoContent)
+	})
 	log.Printf("internal services listening on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		llm.setStatus(fmt.Sprintf("internal listener down: %v", err))

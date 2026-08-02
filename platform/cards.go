@@ -75,10 +75,8 @@ func aggregateContexts(ctx context.Context, login, name string, apps []manifest.
 
 // fetchCards returns slug → card fragment HTML for apps that serve /_card.
 // Missing/slow/broken cards are simply absent — the view falls back.
-func fetchCards(r *http.Request, apps []manifest.App) map[string]string {
+func fetchCards(ctx context.Context, login, name string, apps []manifest.App) map[string]string {
 	host := cmp.Or(os.Getenv("BESPOKE_BIND_IP"), "127.0.0.1")
-	login := r.Header.Get("Tailscale-User-Login")
-	name := r.Header.Get("Tailscale-User-Name")
 
 	var mu sync.Mutex
 	cards := make(map[string]string, len(apps))
@@ -87,7 +85,7 @@ func fetchCards(r *http.Request, apps []manifest.App) map[string]string {
 		wg.Add(1)
 		go func(app manifest.App) {
 			defer wg.Done()
-			req, err := http.NewRequestWithContext(r.Context(), http.MethodGet,
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 				fmt.Sprintf("http://%s:%d/_card", host, app.Port), nil)
 			if err != nil {
 				return

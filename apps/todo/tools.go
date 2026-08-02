@@ -101,6 +101,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 				return "", err
 			}
 			id, _ := res.LastInsertId()
+			web.Changed(user.Login)
 			return fmt.Sprintf("Created task #%d: %s", id, a.Description), nil
 		},
 	})
@@ -151,6 +152,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			if n, _ := res.RowsAffected(); n == 0 {
 				return "", fmt.Errorf("no task #%d", a.ID)
 			}
+			web.Changed(user.Login)
 			return fmt.Sprintf("Updated task #%d.", a.ID), nil
 		},
 	})
@@ -186,6 +188,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			if err != nil {
 				return "", err
 			}
+			web.Changed(user.Login)
 			if desc != "" {
 				return fmt.Sprintf("Completed task #%d: %s", a.ID, desc), nil
 			}
@@ -215,6 +218,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			if n, _ := res.RowsAffected(); n == 0 {
 				return "", fmt.Errorf("no task #%d", a.ID)
 			}
+			web.Changed(user.Login)
 			return fmt.Sprintf("Deleted task #%d.", a.ID), nil
 		},
 	})

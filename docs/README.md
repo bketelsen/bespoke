@@ -34,6 +34,7 @@ Docs are split by the question they answer:
 - [0019 — User brief: per-person context for every LLM feature](adr/0019-user-brief.md)
 - [0020 — Dashboard chat over aggregated app contexts](adr/0020-dashboard-chat-aggregated-context.md)
 - [0021 — App tools: agentic chat and the MCP surface](adr/0021-tools-agentic-chat-mcp.md)
+- [0022 — Live updates: Datastar SSE over a change hub](adr/0022-live-updates.md)
 
 ### Design
 
