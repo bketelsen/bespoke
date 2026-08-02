@@ -66,6 +66,7 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 		var req struct {
 			Message string        `json:"message"`
 			History []chatMessage `json:"history"`
+			Speak   bool          `json:"speak"` // reply will be read aloud
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Message) == "" {
 			http.Error(w, "bad request: need {message}", http.StatusBadRequest)
@@ -87,11 +88,20 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 		}
 		fmt.Fprintf(&b, "user: %s", req.Message)
 
+		style := "Write plain conversational prose — the chat renders raw text, so never use " +
+			"markdown, bullets, headings, or formatting symbols."
+		if req.Speak {
+			style = "Your answer will be READ ALOUD by text-to-speech. Write exactly what should " +
+				"be spoken: plain conversational sentences only — absolutely no markdown, bullets, " +
+				"symbols, or abbreviations that read poorly. Humanize dates and times " +
+				"('yesterday evening', 'August first', 'about two weeks ago' — never raw " +
+				"timestamps). Prefer one short, natural paragraph a friend would say."
+		}
 		system := fmt.Sprintf(
 			"You are the assistant inside the %q app on Bespoke, the owner's personal platform. "+
 				"Today is %s. Answer briefly and concretely from the app data below; when asked about "+
-				"trends, reason over dates. If the data can't answer, say what's missing.\n\n--- app data ---\n%s",
-			slug, time.Now().Format("Monday, January 2 2006"), appContext)
+				"trends, reason over dates. If the data can't answer, say what's missing. %s\n\n--- app data ---\n%s",
+			slug, time.Now().Format("Monday, January 2 2006"), style, appContext)
 
 		text, err := ai.Complete(r.Context(), b.String(), llm.WithSystem(system))
 		if err != nil {

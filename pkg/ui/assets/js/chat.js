@@ -26,10 +26,15 @@ document.addEventListener("click", (e) => {
 
 async function speak(text) {
   try {
+    // Belt and braces: strip any markdown that slipped past the prompt so
+    // the TTS never reads symbols aloud.
+    const clean = text
+      .replace(/[*_`#>]+/g, "")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
     const resp = await fetch("/_chat/speak", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text: clean }),
     });
     if (!resp.ok) return; // no TTS backend — stay quiet
     const url = URL.createObjectURL(await resp.blob());
@@ -73,7 +78,7 @@ document.addEventListener("submit", async (e) => {
     const resp = await fetch("/_chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, speak: speakOn() }),
     });
     if (resp.ok) {
       pending.textContent = (await resp.json()).text;
