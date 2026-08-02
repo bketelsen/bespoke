@@ -32,6 +32,7 @@ func main() {
 	}
 
 	web.Run("todo", func(mux *http.ServeMux) {
+		registerTools(mux, sqldb) // before EnableChat so chat sees them
 		web.EnableChat(mux, "todo", func(ctx context.Context, user auth.User) (string, error) {
 			return chatContext(ctx, sqldb, user.Login)
 		})

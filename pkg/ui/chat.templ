@@ -45,9 +45,17 @@ templ chatPanel(appTitle string) {
 					<textarea
 						name="message"
 						rows="1"
-						placeholder="ask something…"
+						placeholder="ask — or tell it what to do…"
 						class="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
 					></textarea>
+					<button
+						type="button"
+						data-chat-mic
+						title="speak your message (edit before sending)"
+						class="flex size-9 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 data-[state=rec]:animate-pulse data-[state=rec]:border-destructive data-[state=rec]:text-destructive"
+					>
+						@icon.Mic(icon.Props{Class: "size-4"})
+					</button>
 					<button type="submit" class="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
 						@icon.SendHorizontal(icon.Props{Class: "size-4"})
 					</button>

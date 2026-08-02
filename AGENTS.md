@@ -86,6 +86,12 @@ them rather than improvising, whichever agent you are:
   serving `GET /_card` (ADR-0017) — a content-only fragment with the user's
   current state ("3 entries today"), cheap queries only, never LLM calls.
   Without one the dashboard falls back to the manifest description.
+- **LLM tools (ADR-0021):** expose every meaningful action as
+  `web.Tool(mux, def)` — user-scoped handler, JSON schema, honest
+  description (mark destructive ones "only on an explicit user request").
+  Registered tools make the app's chat agentic, join the dashboard chat as
+  `<slug>_<name>`, and appear on the platform MCP endpoint automatically.
+  Respect app specs: journal is append-only, so it has no update tool.
 - **Cross-app intents (ADR-0018):** declare an `[[intents]]` in `app.toml`
   for anything other apps might feed this one (text → entry/task/etc.) and
   mount it with `web.Intent(mux, appTitle, def)`. The selection popover

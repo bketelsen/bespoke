@@ -37,6 +37,7 @@ func main() {
 	voice := audio.New("journal")
 
 	web.Run("journal", func(mux *http.ServeMux) {
+		registerTools(mux, sqldb) // before EnableChat so chat sees them
 		web.EnableChat(mux, "journal", func(ctx context.Context, user auth.User) (string, error) {
 			return chatContext(ctx, sqldb, user.Login)
 		})

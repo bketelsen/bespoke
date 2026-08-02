@@ -1,7 +1,51 @@
-// Bespoke in-app chat (ADR-0015). Panel + bubble markup live in chat.templ;
-// this just moves messages. History is whatever bubbles are in the log.
-// The speak toggle (local TTS via /_chat/speak) persists in localStorage.
+// Bespoke in-app chat (ADR-0015/0021). Panel + bubble markup live in
+// chat.templ; this just moves messages. History is whatever bubbles are in
+// the log. Speak toggle persists in localStorage; the mic transcribes into
+// the textarea (editable before sending) via local whisper.
+import { startRecording } from "./wav.js";
+
 const panel = () => document.getElementById("bespoke-chat");
+
+let chatRec = null;
+document.addEventListener("click", async (e) => {
+  const mic = e.target.closest("[data-chat-mic]");
+  if (!mic) return;
+
+  if (chatRec) {
+    const rec = chatRec;
+    chatRec = null;
+    mic.dataset.state = "";
+    mic.disabled = true;
+    try {
+      const wav = await rec.stop();
+      const resp = await fetch("/_chat/transcribe", {
+        method: "POST",
+        headers: { "Content-Type": "audio/wav" },
+        body: wav,
+      });
+      if (resp.ok) {
+        const { text } = await resp.json();
+        const ta = panel().querySelector("textarea");
+        ta.value = (ta.value ? ta.value + " " : "") + text;
+        ta.focus();
+      } else {
+        alert("transcription failed: " + (await resp.text()));
+      }
+    } catch (err) {
+      alert("transcription failed: " + err.message);
+    } finally {
+      mic.disabled = false;
+    }
+    return;
+  }
+
+  try {
+    chatRec = await startRecording();
+    mic.dataset.state = "rec";
+  } catch (err) {
+    alert("microphone unavailable: " + err.message);
+  }
+});
 const SPEAK_KEY = "bespoke-chat-speak";
 
 const speakBtn = () => panel()?.querySelector("[data-chat-speak-toggle]");

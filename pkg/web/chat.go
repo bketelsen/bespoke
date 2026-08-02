@@ -29,14 +29,46 @@ type chatMessage struct {
 	Text string `json:"text"`
 }
 
+// ToolSource supplies the tools a chat may use (ADR-0021). Apps get their
+// own registered tools automatically via EnableChat; platformd's dashboard
+// chat aggregates every app's.
+type ToolSource func(ctx context.Context, user auth.User) []llm.Tool
+
 // EnableChat mounts POST /_chat and turns on the AppShell chat panel. Call
 // once inside web.Run's register function:
 //
 //	web.EnableChat(mux, "journal", func(ctx, user) (string, error) { … })
+//
+// The chat is agentic over the app's own web.Tool registrations.
 func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
+	EnableChatWithTools(mux, slug, provider, func(ctx context.Context, user auth.User) []llm.Tool {
+		wire := localTools()
+		tools := make([]llm.Tool, 0, len(wire))
+		for _, t := range wire {
+			tools = append(tools, llm.Tool{Name: t.Name, Description: t.Description, Schema: t.Schema, URL: t.URL})
+		}
+		return tools
+	})
+}
+
+// EnableChatWithTools is EnableChat with an explicit tool source.
+func EnableChatWithTools(mux *http.ServeMux, slug string, provider ChatProvider, toolSource ToolSource) {
 	chatEnabled.Store(true)
 	ai := llm.New(slug)
 	voice := audio.New(slug)
+
+	// Voice input for the chat panel: browser WAV → local whisper → text
+	// the user can edit before sending.
+	mux.HandleFunc("POST /_chat/transcribe", func(w http.ResponseWriter, r *http.Request) {
+		text, err := voice.Transcribe(r.Context(),
+			http.MaxBytesReader(w, r.Body, 25<<20),
+			audio.WithMIME(r.Header.Get("Content-Type")))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"text": strings.TrimSpace(text)})
+	})
 
 	// Speak toggle in the chat panel (ADR-0015 chrome): synthesize a reply
 	// via the audio service's local TTS. Degrades to an error the panel
@@ -102,8 +134,15 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 		}
 		fmt.Fprintf(&b, "user: %s", req.Message)
 
+		tools := toolSource(r.Context(), user)
+
 		style := "Write plain conversational prose — the chat renders raw text, so never use " +
 			"markdown, bullets, headings, or formatting symbols."
+		if len(tools) > 0 {
+			style += " You have tools to CREATE, UPDATE, COMPLETE, and DELETE the user's data — " +
+				"use them when asked instead of explaining how; then confirm plainly what you did. " +
+				"For destructive actions (delete), act only on an explicit, unambiguous request."
+		}
 		if req.Speak {
 			style = "Your answer will be READ ALOUD by text-to-speech. Write exactly what should " +
 				"be spoken: plain conversational sentences only — absolutely no markdown, bullets, " +
@@ -119,7 +158,11 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 				"missing. %s\n\n--- app data ---\n%s",
 			slug, time.Now().Format("Monday, January 2 2006, 3:04 PM (MST)"), style, appContext)
 
-		text, err := ai.Complete(r.Context(), b.String(), llm.WithSystem(system), llm.WithUser(user.Login))
+		opts := []llm.Option{llm.WithSystem(system), llm.WithUser(user.Login)}
+		if len(tools) > 0 {
+			opts = append(opts, llm.WithTools(tools))
+		}
+		text, err := ai.Complete(r.Context(), b.String(), opts...)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return

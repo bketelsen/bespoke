@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -21,6 +22,10 @@ import (
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/ui"
 )
+
+// selfBase is the app's own HTTP base (set once listening), used to hand
+// the gateway callable tool URLs.
+var selfBase atomic.Pointer[string]
 
 // Run serves the app named slug on the port from its manifest — the normal
 // entrypoint for apps. Production units override the address with
@@ -42,6 +47,11 @@ func Serve(slug string, defaultPort int, register func(mux *http.ServeMux)) {
 	def := cmp.Or(os.Getenv("BESPOKE_LISTEN"), fmt.Sprintf("127.0.0.1:%d", defaultPort))
 	listen := flag.String("listen", def, "listen address")
 	flag.Parse()
+
+	// The app's own callable base — the gateway invokes tools back over
+	// HTTP at this address (ADR-0021).
+	base := "http://" + *listen
+	selfBase.Store(&base)
 
 	mux := http.NewServeMux()
 	register(mux)

@@ -6,10 +6,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -123,9 +125,10 @@ var denyAll = func(_ copilot.PermissionRequest, _ copilot.PermissionInvocation) 
 	return &rpc.PermissionDecisionDeniedInteractivelyByUser{}, nil
 }
 
-// complete runs one inference-only session: create, send, extract the final
-// assistant message, delete.
-func (g *llmGateway) complete(ctx context.Context, system, prompt string) (string, error) {
+// complete runs one locked-down session: inference-only by default, or
+// agentic over exactly the provided tools (ADR-0021) — builtins stay
+// unavailable either way.
+func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools []copilot.Tool) (string, error) {
 	g.mu.RLock()
 	client, status := g.client, g.status
 	g.mu.RUnlock()
@@ -133,10 +136,15 @@ func (g *llmGateway) complete(ctx context.Context, system, prompt string) (strin
 		return "", fmt.Errorf("gateway unavailable: %s", status)
 	}
 
+	allowed := make([]string, 0, len(tools)) // empty → inference only
+	for _, t := range tools {
+		allowed = append(allowed, t.Name)
+	}
 	cfg := &copilot.SessionConfig{
 		ClientName:              "bespoke",
 		Model:                   g.model,
-		AvailableTools:          []string{}, // inference only; denyAll backstops
+		Tools:                   tools,
+		AvailableTools:          allowed,
 		OnPermissionRequest:     denyAll,
 		EnableSkills:            copilot.Bool(false),
 		EnableConfigDiscovery:   copilot.Bool(false),
@@ -175,10 +183,66 @@ func (g *llmGateway) complete(ctx context.Context, system, prompt string) (strin
 
 // completeRequest is the wire format shared with pkg/llm.
 type completeRequest struct {
-	App    string `json:"app"`
-	System string `json:"system,omitempty"`
-	Prompt string `json:"prompt"`
-	Login  string `json:"login,omitempty"` // set via llm.WithUser → brief injection
+	App    string     `json:"app"`
+	System string     `json:"system,omitempty"`
+	Prompt string     `json:"prompt"`
+	Login  string     `json:"login,omitempty"` // set via llm.WithUser → brief injection
+	Tools  []wireTool `json:"tools,omitempty"` // agentic mode (ADR-0021)
+}
+
+type wireTool struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Schema      map[string]any `json:"schema"`
+	URL         string         `json:"url"`
+}
+
+// toolClient executes model-requested tool calls back against apps.
+var toolClient = &http.Client{Timeout: 30 * time.Second}
+
+// copilotTools wraps wire tools as SDK tools whose handlers POST to the
+// owning app with the user's identity — the same trusted-forwarding pattern
+// as cards and contexts. Tools run as the user, never as "the platform".
+func copilotTools(tools []wireTool, login string) []copilot.Tool {
+	out := make([]copilot.Tool, 0, len(tools))
+	for _, t := range tools {
+		t := t
+		out = append(out, copilot.Tool{
+			Name:           t.Name,
+			Description:    t.Description,
+			Parameters:     t.Schema,
+			SkipPermission: true, // ours by construction; builtins stay denied
+			Handler: func(inv copilot.ToolInvocation) (copilot.ToolResult, error) {
+				args, err := json.Marshal(inv.Arguments)
+				if err != nil {
+					return copilot.ToolResult{}, err
+				}
+				req, err := http.NewRequest(http.MethodPost, t.URL, bytes.NewReader(args))
+				if err != nil {
+					return copilot.ToolResult{}, err
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Tailscale-User-Login", login)
+				resp, err := toolClient.Do(req)
+				if err != nil {
+					return copilot.ToolResult{}, err
+				}
+				defer resp.Body.Close()
+				body, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+				if resp.StatusCode != http.StatusOK {
+					// Tool-level failures go back to the model as text so it
+					// can recover or explain, not as session errors.
+					return copilot.ToolResult{
+						TextResultForLLM: fmt.Sprintf("tool error (%s): %s", resp.Status, strings.TrimSpace(string(body))),
+						ResultType:       "failure",
+					}, nil
+				}
+				log.Printf("llm-tool app-url=%s user=%s ok", t.URL, login)
+				return copilot.ToolResult{TextResultForLLM: string(body), ResultType: "success"}, nil
+			},
+		})
+	}
+	return out
 }
 
 // serveInternal runs the internal-services listener (the 4001 plane,
@@ -207,16 +271,24 @@ func (g *llmGateway) register(mux *http.ServeMux) {
 			http.Error(w, "bad request: need {app, prompt}", http.StatusBadRequest)
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+		timeout := 120 * time.Second
+		if len(req.Tools) > 0 {
+			timeout = 300 * time.Second // agentic loops take multiple turns
+			if req.Login == "" {
+				http.Error(w, "tools require a tagged user (llm.WithUser)", http.StatusBadRequest)
+				return
+			}
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 		system := req.System
 		if brief := g.briefFor(ctx, req.Login); brief != "" {
 			system = brief + "\n" + system
 		}
 		start := time.Now()
-		text, err := g.complete(ctx, system, req.Prompt)
-		log.Printf("llm app=%s prompt=%dB out=%dB dur=%s err=%v",
-			req.App, len(req.Prompt), len(text), time.Since(start).Round(time.Millisecond), err)
+		text, err := g.complete(ctx, system, req.Prompt, copilotTools(req.Tools, req.Login))
+		log.Printf("llm app=%s prompt=%dB tools=%d out=%dB dur=%s err=%v",
+			req.App, len(req.Prompt), len(req.Tools), len(text), time.Since(start).Round(time.Millisecond), err)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return

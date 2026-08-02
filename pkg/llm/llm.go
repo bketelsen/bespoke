@@ -35,11 +35,22 @@ func New(app string) *Client {
 
 type Option func(*request)
 
+// Tool is an action the model may call during a completion (ADR-0021).
+// The gateway invokes URL with the tagged user's identity when the model
+// requests it.
+type Tool struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Schema      map[string]any `json:"schema"`
+	URL         string         `json:"url"`
+}
+
 type request struct {
 	App    string `json:"app"`
 	System string `json:"system,omitempty"`
 	Prompt string `json:"prompt"`
 	Login  string `json:"login,omitempty"`
+	Tools  []Tool `json:"tools,omitempty"`
 }
 
 // WithSystem adds system instructions to a completion.
@@ -52,6 +63,12 @@ func WithSystem(s string) Option {
 // anything user-facing (chat, summaries); omit for mechanical calls.
 func WithUser(login string) Option {
 	return func(r *request) { r.Login = login }
+}
+
+// WithTools lets the model call actions during the completion (agentic
+// mode, ADR-0021). Requires WithUser — tools execute as that user.
+func WithTools(tools []Tool) Option {
+	return func(r *request) { r.Tools = tools }
 }
 
 // Complete returns the model's text response for prompt.

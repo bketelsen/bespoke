@@ -7,6 +7,7 @@ import (
 	"context"
 	"embed"
 	"flag"
+	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"github.com/bketelsen/bespoke/internal/manifest"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/db"
+	"github.com/bketelsen/bespoke/pkg/llm"
 	"github.com/bketelsen/bespoke/pkg/web"
 	"github.com/bketelsen/bespoke/platform/views"
 )
@@ -49,13 +51,30 @@ func main() {
 
 		// The all-apps chat (ADR-0020): context aggregated from every
 		// chat-enabled app over the app contract — never their databases.
-		web.EnableChat(mux, "dashboard", func(ctx context.Context, user auth.User) (string, error) {
-			apps, _, err := manifest.LoadAll(root)
-			if err != nil {
-				return "", err
-			}
-			return aggregateContexts(ctx, user.Login, user.Name, apps), nil
-		})
+		// Agentic across ALL apps' tools (ADR-0021), namespaced per app.
+		web.EnableChatWithTools(mux, "dashboard",
+			func(ctx context.Context, user auth.User) (string, error) {
+				apps, _, err := manifest.LoadAll(root)
+				if err != nil {
+					return "", err
+				}
+				return aggregateContexts(ctx, user.Login, user.Name, apps), nil
+			},
+			func(ctx context.Context, user auth.User) []llm.Tool {
+				var tools []llm.Tool
+				for _, t := range allAppTools(ctx, root) {
+					tools = append(tools, llm.Tool{
+						Name:        t.Slug + "_" + t.Name,
+						Description: fmt.Sprintf("[%s] %s", t.Slug, t.Description),
+						Schema:      t.Schema,
+						URL:         t.URL,
+					})
+				}
+				return tools
+			})
+
+		// External LLM clients: the platform MCP endpoint (ADR-0021).
+		mux.Handle("/mcp", mcpHandler(root))
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			apps, warnings, err := manifest.LoadAll(root)
