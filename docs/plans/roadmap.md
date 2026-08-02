@@ -22,9 +22,17 @@ apps deploy to `selfie`, builds happen on the dev machine)
   sudoers installed and validated; ✅ **custom Caddy v2.11.4
   (tailscale + cloudflare-dns) built on the dev machine, pushed, and
   running on the edge** (`just caddy-push`; rollback kept as caddy.bak).
-  ⚠ Still open: Cloudflare wildcard DNS + API token drop-in, tailnet ACL
-  for selfie:4000-4999, selfie bootstrap (linger/sudoers), first
-  `just deploy-edge`. The done-when remains open until those land.
+  ✅ **selfie deployed and validated** (same evening): `just deploy` shipped
+  platformd/hello/journal, units active, all healthz green over the
+  tailnet, audio gateway in real mode (Lemonade via localhost), dashboard
+  rendering with the switcher. LLM gateway degraded as designed — copilot
+  CLI not installed on selfie yet (install + `copilot` sign-in there to
+  light up chat/summaries in prod). ⚠ Still open: pick the domain (env
+  file on selfie still has the placeholder — update `BESPOKE_DOMAIN` when
+  chosen), Cloudflare wildcard DNS → <edge-tailscale-ip> + API token drop-in,
+  `import /etc/caddy/bespoke.caddy` in the edge Caddyfile, tailnet ACL for
+  selfie:4000-4999 (verified needed: a fake identity header from another
+  tailnet device reaches apps today), first `just deploy-edge`.
 
 ## Phase 2 — Framework v0
 
