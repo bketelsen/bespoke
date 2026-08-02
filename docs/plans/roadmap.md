@@ -17,10 +17,14 @@ apps deploy to `selfie`, builds happen on the dev machine)
   push Caddy routes to edge. Runbook in `deploy/README.md`.
 - **Done when:** `hello.bespoke.example.com` renders my Tailscale login name.
 - **Status (2026-08-01):** code complete and smoke-tested locally (auth
-  gating, dashboard-from-manifests, hello). ⚠ **Remote steps UNVALIDATED** —
-  edge Caddy rebuild, Cloudflare DNS, Tailscale ACL, and the first real
-  deploy have not been executed; the runbook is written but untested. The
-  done-when remains open until then.
+  gating, dashboard-from-manifests, hello). Remote progress, evening:
+  ✅ edge host live in deploy.env (`you@your-caddy-host`, ts <edge-tailscale-ip>); ✅ scoped
+  sudoers installed and validated; ✅ **custom Caddy v2.11.4
+  (tailscale + cloudflare-dns) built on the dev machine, pushed, and
+  running on the edge** (`just caddy-push`; rollback kept as caddy.bak).
+  ⚠ Still open: Cloudflare wildcard DNS + API token drop-in, tailnet ACL
+  for selfie:4000-4999, selfie bootstrap (linger/sudoers), first
+  `just deploy-edge`. The done-when remains open until those land.
 
 ## Phase 2 — Framework v0
 
