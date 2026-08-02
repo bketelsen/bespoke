@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Forking Bespoke for yourself?
+    url: https://github.com/bketelsen/bespoke/blob/main/MAKE-IT-YOUR-OWN.md
+    about: Point your coding agent at MAKE-IT-YOUR-OWN.md — it walks through swapping the apps, theme, and deployment for yours. No issue needed.

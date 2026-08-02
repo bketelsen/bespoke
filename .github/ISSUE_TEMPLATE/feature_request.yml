@@ -1,0 +1,29 @@
+name: Feature request
+description: An idea for the platform — a convention, a pkg/* capability, a CLI verb, an agent skill.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bespoke is a personal platform: new *apps* belong in your own fork
+        (see [MAKE-IT-YOUR-OWN.md](../blob/main/MAKE-IT-YOUR-OWN.md)). Good
+        requests here make the *platform* better — things every fork inherits.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What can't an app (or an agent building one) do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed shape
+      description: What would the convention, API, or CLI verb look like? Rough is fine.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including "build it into one app" — the internal-services catalog has a decision tree for this.

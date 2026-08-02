@@ -72,7 +72,7 @@ func (g *llmGateway) start() {
 	// A scratch working directory keeps the runtime from discovering repo
 	// instructions (AGENTS.md etc.) and mixing them into app inference.
 	wd := filepath.Join(os.TempDir(), "bespoke-llm")
-	os.MkdirAll(wd, 0o755)
+	_ = os.MkdirAll(wd, 0o755) // failure surfaces in client.Start below
 
 	client := copilot.NewClient(&copilot.ClientOptions{WorkingDirectory: wd})
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -165,7 +165,7 @@ func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools 
 	defer func() {
 		dctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		client.DeleteSession(dctx, sess.SessionID)
+		_ = client.DeleteSession(dctx, sess.SessionID) // best-effort cleanup
 	}()
 
 	ev, err := sess.SendAndWait(ctx, copilot.MessageOptions{Prompt: prompt})

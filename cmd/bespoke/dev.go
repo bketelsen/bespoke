@@ -47,7 +47,7 @@ func cmdDev(args []string) error {
 		for _, c := range cmds {
 			if c.Process != nil {
 				// go run re-execs the built binary; signal the process group.
-				syscall.Kill(-c.Process.Pid, syscall.SIGTERM)
+				_ = syscall.Kill(-c.Process.Pid, syscall.SIGTERM)
 			}
 		}
 	}
@@ -74,7 +74,7 @@ func cmdDev(args []string) error {
 	<-sig
 	stopAll()
 	for _, c := range cmds {
-		c.Wait()
+		_ = c.Wait()
 	}
 	return nil
 }

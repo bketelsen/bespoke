@@ -110,7 +110,8 @@ func main() {
 		mux.HandleFunc("GET /settings", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			var name, brief string
-			sqldb.QueryRowContext(r.Context(),
+			// No row yet is fine — the form just renders empty.
+			_ = sqldb.QueryRowContext(r.Context(),
 				"SELECT name, brief FROM briefs WHERE login = ?", user.Login).Scan(&name, &brief)
 			views.Settings(user, name, brief, r.URL.Query().Get("saved") == "1").Render(r.Context(), w)
 		})

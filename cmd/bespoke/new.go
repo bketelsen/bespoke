@@ -51,9 +51,9 @@ func cmdNew(args []string) error {
 
 	data := map[string]any{"Slug": slug, "Port": port}
 	files := map[string]*template.Template{
-		filepath.Join(dir, "app.toml"):                  scaffoldManifest,
-		filepath.Join(dir, "main.go"):                   scaffoldMain,
-		filepath.Join(dir, "views", "home.templ"):       scaffoldView,
+		filepath.Join(dir, "app.toml"):                    scaffoldManifest,
+		filepath.Join(dir, "main.go"):                     scaffoldMain,
+		filepath.Join(dir, "views", "home.templ"):         scaffoldView,
 		filepath.Join(dir, "migrations", "0001_init.sql"): scaffoldMigration,
 	}
 	for path, tmpl := range files {

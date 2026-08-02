@@ -94,8 +94,9 @@ func (g *audioGateway) transcribe(mime string, body io.Reader) (string, error) {
 	if _, err := io.Copy(fw, body); err != nil {
 		return "", err
 	}
-	mw.WriteField("model", g.model)
-	mw.Close()
+	// Writes into a bytes.Buffer — cannot fail.
+	_ = mw.WriteField("model", g.model)
+	_ = mw.Close()
 
 	resp, err := g.hc.Post(g.base+"/audio/transcriptions", mw.FormDataContentType(), &buf)
 	if err != nil {

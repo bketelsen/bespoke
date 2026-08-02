@@ -16,10 +16,14 @@ new slug:
 list *args:
     go run ./cmd/bespoke list {{ args }}
 
-# vet + tests + the CGO-free linux cross-compile (run before calling work done)
+# vet + tests + lint + tidy + the CGO-free linux cross-compile.
+# CI runs exactly this recipe (.github/workflows/ci.yml) — change one,
+# you've changed both. Run before calling work done.
 check:
     go vet ./...
     go test ./...
+    golangci-lint run
+    go mod tidy -diff
     CGO_ENABLED=0 GOOS=linux go build ./...
 
 # Regenerate templ views + recompile the design system CSS (commit the output)

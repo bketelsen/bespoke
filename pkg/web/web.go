@@ -78,7 +78,7 @@ func Serve(slug string, defaultPort int, register func(mux *http.ServeMux)) {
 	<-ctx.Done()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	srv.Shutdown(shutdownCtx)
+	_ = srv.Shutdown(shutdownCtx)
 }
 
 func logRequests(slug string, next http.Handler) http.Handler {

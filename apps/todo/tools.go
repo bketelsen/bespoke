@@ -34,7 +34,11 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			var a struct {
 				IncludeDone bool `json:"include_done"`
 			}
-			json.Unmarshal(args, &a)
+			if len(args) > 0 {
+				if err := json.Unmarshal(args, &a); err != nil {
+					return "", fmt.Errorf("bad arguments: %w", err)
+				}
+			}
 			tasks, err := loadTasks(ctx, sqldb, user.Login, !a.IncludeDone)
 			if err != nil {
 				return "", err

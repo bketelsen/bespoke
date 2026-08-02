@@ -118,8 +118,9 @@ them rather than improvising, whichever agent you are:
   its decision tree: `pkg/*` helper first, internal service on platformd's
   4001 plane only for cross-app state or heavy runtimes (ADR-0012). Update
   the catalog when you add one.
-- Run `just check` (vet + tests + the CGO-free linux cross-compile) before
-  calling any change done.
+- Run `just check` (vet + tests + golangci-lint + `go mod tidy -diff` + the
+  CGO-free linux cross-compile) before calling any change done. CI runs the
+  same recipe, so a local pass is a CI pass.
 
 ## Documentation rules (enforced)
 

@@ -30,10 +30,9 @@ type wireTool struct {
 }
 
 var (
-	toolsMu    sync.Mutex
-	toolDefs   []wireTool
-	toolsOnce  sync.Once
-	toolMounts *http.ServeMux // captured for the /_tools listing mount
+	toolsMu   sync.Mutex
+	toolDefs  []wireTool
+	toolsOnce sync.Once
 )
 
 // Tool registers an LLM-callable action: POST /_tools/<name> executes it

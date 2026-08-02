@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in the platform (pkg/*, platformd, the CLI, the docs) is broken.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Heads up: the apps under `apps/` are Brian's personal apps — they double
+        as reference implementations, so bugs in them are fair game too, but
+        feature requests for them belong in your own fork.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+      placeholder: Ran `just dev`, opened the dashboard, and…
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How can it be reproduced?
+      description: Steps, commands, or a minimal app that triggers it.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Go version, and whether this is `just dev` or a real deployment.
+      placeholder: Debian 13, go1.26.5, just dev
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      render: shell

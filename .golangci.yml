@@ -1,0 +1,39 @@
+# golangci-lint v2 config. CI runs this via `just check` — keep the two in
+# sync by only ever invoking the linter through that recipe.
+version: "2"
+
+linters:
+  # standard = errcheck, govet, ineffassign, staticcheck, unused
+  default: standard
+  enable:
+    - misspell
+    - unconvert
+    - nolintlint
+  settings:
+    errcheck:
+      # Fire-and-forget idioms: failures here mean a dead client or are
+      # already surfaced by the operation that follows. Anything else that
+      # ignores an error must do so explicitly with `_ =`.
+      exclude-functions:
+        - (net/http.ResponseWriter).Write
+        - (*encoding/json.Encoder).Encode
+        - io.Copy
+        - (io.Closer).Close
+        - (*os.File).Close
+        - (*database/sql.DB).Close
+        - (*database/sql.Rows).Close
+        - (*database/sql.Tx).Rollback
+        - (github.com/a-h/templ.Component).Render
+  exclusions:
+    # Skip files with a "Code generated ... DO NOT EDIT" header (*_templ.go).
+    generated: lax
+    paths:
+      # Vendored templUI components are never hand-edited (see AGENTS.md).
+      - pkg/ui/components
+
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    paths:
+      - pkg/ui/components

@@ -55,7 +55,11 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			var a struct {
 				Days int `json:"days"`
 			}
-			json.Unmarshal(args, &a)
+			if len(args) > 0 {
+				if err := json.Unmarshal(args, &a); err != nil {
+					return "", fmt.Errorf("bad arguments: %w", err)
+				}
+			}
 			if a.Days <= 0 || a.Days > 365 {
 				a.Days = 7
 			}

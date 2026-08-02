@@ -1,5 +1,8 @@
 # Bespoke
 
+[![CI](https://github.com/bketelsen/bespoke/actions/workflows/ci.yml/badge.svg)](https://github.com/bketelsen/bespoke/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Bespoke is my personal app platform: software that exists for exactly one
 user — me. A journal that talks back. A todo list that knows what my week
 looks like. Whatever I want next, described to an AI agent in a sentence or
