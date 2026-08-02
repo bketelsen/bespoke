@@ -1,3 +1,9 @@
 dist/
 data/
 tools/
+
+# compiled binaries never land in the repo (build to dist/ or use go build -o /dev/null for checks)
+/hello
+/journal
+/platformd
+/testapp
