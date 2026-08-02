@@ -27,12 +27,16 @@ apps deploy to `selfie`, builds happen on the dev machine)
   tailnet, audio gateway in real mode (Lemonade via localhost), dashboard
   rendering with the switcher. LLM gateway degraded as designed — copilot
   CLI not installed on selfie yet (install + `copilot` sign-in there to
-  light up chat/summaries in prod). ⚠ Still open: pick the domain (env
-  file on selfie still has the placeholder — update `BESPOKE_DOMAIN` when
-  chosen), Cloudflare wildcard DNS → <edge-tailscale-ip> + API token drop-in,
-  `import /etc/caddy/bespoke.caddy` in the edge Caddyfile, tailnet ACL for
+  light up chat/summaries in prod). ✅ Domain chosen and DNS validated:
+  `bespoke.ketelsen.cloud` + wildcard → <edge-tailscale-ip> (apex, hello,
+  journal, and a random name all resolve); selfie env + deploy.env
+  updated, apps redeployed, routes pushed to the edge with the real
+  domain. ⚠ Still open, all user-side on the caddy host: add
+  `import /etc/caddy/bespoke.caddy` to the main Caddyfile, add the
+  `CLOUDFLARE_API_TOKEN` drop-in, reload; and the tailnet ACL for
   selfie:4000-4999 (verified needed: a fake identity header from another
-  tailnet device reaches apps today), first `just deploy-edge`.
+  tailnet device reaches apps today). Then the done-when closes at
+  `https://hello.bespoke.ketelsen.cloud`.
 
 ## Phase 2 — Framework v0
 
@@ -82,9 +86,13 @@ apps deploy to `selfie`, builds happen on the dev machine)
   with `new`/`dev`/`gen`/`deploy`/`list`/`logs`/`rm`. Validated locally:
   scaffold compiles immediately, `dev` runs everything from the manifests,
   generated units/routes/litestream carry GENERATED headers, `rm` degrades
-  gracefully when the host is unreachable. ⚠ Remote paths (deploy with
-  rollback, logs, rm cleanup, litestream restore drill) are **UNVALIDATED**
-  until the Phase 1 runbook is executed — the done-when stays open.
+  gracefully when the host is unreachable. **Remote deploy VALIDATED
+  2026-08-01**: `just deploy` shipped three apps to selfie end to end —
+  staged binary swap, unit restarts, healthz gates all green, repeated for
+  the domain change and the `--edge` route push. Still unexercised:
+  rollback-on-failed-healthz (needs a bad deploy to prove it), remote
+  `logs`/`rm`, and the litestream restore drill (litestream not yet
+  installed on selfie) — the done-when stays open on the restore drill.
   scripts/deploy.sh and the static units/caddy files are retired.
 
 ## Phase 5 — LLM gateway
