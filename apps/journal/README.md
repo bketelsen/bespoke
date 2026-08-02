@@ -35,10 +35,11 @@ evening reflections — opened whenever, written in seconds.
 
 - `pkg/llm` for the weekly summary — on demand, cached in `summaries`, never
   automatic.
-- `pkg/audio` for voice capture (first consumer, ADR-0014). **Stub-backed
-  until the Lemonade backlog clears** — entries arrive clearly marked as
-  stubs; flipping `BESPOKE_LEMONADE_URL` on platformd makes them real with
-  no app change.
+- `pkg/audio` for voice capture (first consumer, ADR-0014). Fully wired to
+  Lemonade (WAV recorder → Whisper-Large-v3-Turbo) and validated end to
+  end; **currently blocked on selfie's whisper backend loading** (roadmap
+  backlog) — until then, unset `BESPOKE_LEMONADE_URL` gives clearly-marked
+  stub entries.
 
 ## Non-goals (confirmed)
 

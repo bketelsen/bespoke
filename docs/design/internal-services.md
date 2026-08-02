@@ -7,7 +7,7 @@ you add one, add its row.
 
 ## The plane
 
-```
+```text
 app ──pkg/<name> client──► platformd internal listener (:4001, never Caddy-routed)
 app ──pkg/* helper────────► (no network at all — composes existing primitives)
 ```
@@ -28,15 +28,15 @@ app ──pkg/* helper────────► (no network at all — compose
 | Files/blobs | 2 | candidate | future `pkg/files` | When two apps first share uploads (ADR-0006) |
 | Notifications | 1 or 2 | candidate | future `pkg/notify` | Tier depends on delivery mechanism |
 | Scheduled jobs | — | candidate | systemd timers per app first | Escalate only if cross-app coordination appears |
-| Embeddings | 2 | candidate | future `llm.Embed` | Backend: Lemonade on selfie (see Backends) |
+| Embeddings | 2 | candidate | future `llm.Embed` | Backend ready: nomic-embed-text-v2-moe downloaded on Lemonade |
 | Search | 2 | candidate | future `pkg/search` | Shared index; pairs with embeddings |
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
 | In-app chat | 1 | **live** | `web.EnableChat(mux, slug, provider)` | ADR-0015; context-stuffing v1, upgrades to MCP tools later |
 | Markdown rendering | 1 | **live** | `ui.Markdown(text)` | GFM via goldmark, `prose`-styled, raw HTML omitted (tested) |
 | App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
-| Transcription | 2 | **live (stub backend)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` | ADR-0014; real transcription flips on with `BESPOKE_LEMONADE_URL` |
-| Speech synthesis | 2 | planned (first-class) | future `audio.New(slug).Speak` | See Audio below |
+| Transcription | 2 | **wired — blocked on selfie whisper backend** | `audio.New(slug).Transcribe` + `ui.VoiceButton` (WAV) | ADR-0014; full path validated live incl. error propagation; stub mode when `BESPOKE_LEMONADE_URL` unset |
+| Speech synthesis | 2 | planned (backend verified) | future `audio.New(slug).Speak` | kokoro-v1 works on Lemonade; build with first consumer |
 | MCP surface | 2 | candidate | external LLM clients via `https://<apex>/mcp` | One aggregated MCP server on platformd; apps opt tools in via `web.Tool`, namespaced `<slug>_<tool>` (see roadmap idea) |
 
 ## Audio (first-class service — transcription live, stub-backed)
@@ -68,14 +68,18 @@ The gateway pattern (ADR-0009/0012) means backends are invisible to apps —
 
 - **GitHub Copilot** (live): frontier models via the Copilot CLI.
   Cloud inference; ~1.5s/call ([llm-gateway.md](llm-gateway.md)).
-- **[Lemonade](https://lemonade-server.ai/)** (available on selfie, not yet
-  wired): local, OpenAI-compatible server — chat, vision, image, speech,
-  transcription, embeddings. Not frontier-strength for text, but ideal for
-  embeddings, image generation, lighter-weight inference, and
-  **privacy-sensitive prompts that should never leave the house**. Zero
-  marginal cost. Wiring it in = new gateway routes on the 4001 plane backed
-  by Lemonade's endpoint + `pkg/llm` helpers; record an ADR when the first
-  capability adopts it.
+- **[Lemonade](https://lemonade-server.ai/)** — local, OpenAI-compatible
+  server ON selfie at `http://<app-host-ip>:13305/api/v1` (localhost from
+  platformd in prod; the deploy-created env file sets
+  `BESPOKE_LEMONADE_URL`). Ideal for embeddings, image generation,
+  lighter-weight inference, and **privacy-sensitive prompts that never
+  leave the house**; zero marginal cost. Verified 2026-08-01: `/models`
+  live; **TTS works** (kokoro-v1 generated real audio); transcription
+  request shape validated but **whisper-server currently fails to load**
+  (selfie ops item in the roadmap backlog);
+  `nomic-embed-text-v2-moe-GGUF` downloaded for future `llm.Embed`.
+  Transcription accepts **WAV only** — the pkg/ui recorder encodes WAV
+  client-side for exactly this reason.
 
 ## Adding a capability (decision tree)
 

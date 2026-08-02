@@ -30,7 +30,7 @@ type audioGateway struct {
 func newAudioGateway() *audioGateway {
 	g := &audioGateway{
 		base:  strings.TrimSuffix(os.Getenv("BESPOKE_LEMONADE_URL"), "/"),
-		model: cmp.Or(os.Getenv("BESPOKE_AUDIO_MODEL"), "whisper-base"),
+		model: cmp.Or(os.Getenv("BESPOKE_AUDIO_MODEL"), "Whisper-Large-v3-Turbo"),
 		hc:    &http.Client{Timeout: 120 * time.Second},
 	}
 	if !g.stub() {
@@ -81,8 +81,9 @@ func (g *audioGateway) transcribe(mime string, body io.Reader) (string, error) {
 			max(n/1024, 1)), nil
 	}
 
-	// OpenAI-compatible transcription request. VALIDATE against a live
-	// Lemonade server when the backend flips on (ADR-0014).
+	// OpenAI-compatible transcription request, validated against Lemonade
+	// 2026-08-01: multipart file+model to /audio/transcriptions, WAV input
+	// only (the pkg/ui recorder encodes WAV client-side), {text} response.
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	fw, err := mw.CreateFormFile("file", "audio"+extFor(mime))

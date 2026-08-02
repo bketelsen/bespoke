@@ -1,6 +1,9 @@
 # 0014 — Audio service: transcription, stub-first
 
-- **Status:** Accepted
+- **Status:** Accepted — request shape validated against the live Lemonade
+  server later the same day (endpoint/fields/response confirmed; WAV-only
+  input discovered → the pkg/ui recorder now encodes WAV client-side;
+  whisper backend itself pending a selfie-side fix, see roadmap backlog)
 - **Date:** 2026-08-01
 
 ## Context

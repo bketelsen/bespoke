@@ -68,8 +68,10 @@ loginctl enable-linger $USER     # user units run without a login session
 mkdir -p ~/bespoke
 ```
 
-`~/bespoke/env` is created by the first deploy (bind IP + domain); units,
-binaries, manifests, and litestream config are synced by `bespoke deploy`.
+`~/bespoke/env` is created by the first deploy (bind IP, domain, LLM plane
+URL, and `BESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1` for the audio
+backend — adjust if Lemonade's port differs); units, binaries, manifests,
+and litestream config are synced by `bespoke deploy`.
 
 For backups (ADR-0007), install [Litestream](https://litestream.io) to
 `/usr/local/bin/litestream`, then append to `~/bespoke/env`:
