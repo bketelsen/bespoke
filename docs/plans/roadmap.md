@@ -195,7 +195,29 @@ apps deploy to `selfie`, builds happen on the dev machine)
   same surface (Copilot SDK takes MCP configs) — apps calling apps through
   the front door. Guardrail to decide at build time: write-capable tools
   opt-in/flagged, read-only the default. Builds on ADR-0012's plane; gets
-  its ADR when adopted.
+  its ADR when adopted. **Status 2026-08-01: RESOLVED — adopted as
+  [ADR-0021](../adr/0021-llm-tools-agentic-chat-mcp.md)**; full CRUD tools
+  live on `/mcp`, chat is agentic, dashboard chat aggregates every app.
+- **Shared-data tailnet apps (idea, 2026-08-02): one dataset for the whole
+  household.** Every app today is per-user (`WHERE login = ?` everywhere —
+  the multi-user accident the README brags about). The complement is an app
+  whose data is deliberately communal: canonical example, a **family
+  medical tracker** — meds, doses, appointments, symptoms for every family
+  member, recorded by whichever adult is holding the phone. Scope decision
+  made up front to keep it buildable: **no RBAC, ever**. Tailnet membership
+  IS the access control — anyone on the tailnet is an admin of shared data,
+  full stop. Identity still flows for *attribution* (the `login` column
+  records who logged the dose; chat can say "Brian logged it at 3pm") but
+  never for filtering. What it touches when built: a manifest marker (e.g.
+  `scope = "shared"`) so the platform and skills know which convention
+  applies; the app's SQL flips `login` from predicate to provenance;
+  `web.Changed` needs a broadcast-to-all variant so one person's entry
+  live-patches everyone's open pages (today's live plumbing is per-login);
+  dashboard cards and chat context serve the same data to every user
+  (per-user briefs still shape tone, not content). Tools/MCP/intents
+  inherit the shared scope for free — they run through the same handlers.
+  Gets its ADR (the per-user/shared two-scope decision) when the first
+  shared app is built.
 - Resident maintenance agent on a schedule (dep bumps, backup verify, log triage).
 - Generated app icons.
 - Blob store in platformd when two apps first need shared files.
