@@ -1,0 +1,27 @@
+package views
+
+import "fmt"
+
+// DashCard: content-only fragment for the dashboard (ADR-0017) — today's
+// status and current streak.
+templ DashCard(logged bool, walked bool, streak int) {
+	<div class="space-y-1">
+		<p class="text-sm">
+			if !logged {
+				<span class="text-muted-foreground">Not logged yet tonight</span>
+			} else if walked {
+				<span class="text-primary">Walked tonight 🚶</span>
+			} else {
+				<span class="text-destructive">No walk tonight</span>
+			}
+		</p>
+		<p class="text-xs text-muted-foreground">
+			{ fmt.Sprintf("Streak: %d", streak) }
+			if streak == 1 {
+				night
+			} else {
+				nights
+			}
+		</p>
+	</div>
+}
