@@ -1,6 +1,7 @@
-// Voice input (ADR-0014): the shared recorder button. Click to record,
-// click to stop; the audio POSTs to action, which should transcribe (via
-// pkg/audio) and redirect/200. Renders its own script tag.
+// Voice input (ADR-0014): the shared recorder button with explicit states —
+// idle (mic) → recording (red stop square, pulsing, status text) →
+// transcribing (spinner, disabled) → page reload on success. recorder.js
+// drives data-state; the CSS here renders it.
 package ui
 
 import (
@@ -9,16 +10,30 @@ import (
 )
 
 templ VoiceButton(action string) {
-	@button.Button(button.Props{
-		Type:    button.TypeButton,
-		Variant: button.VariantOutline,
-		Size:    button.SizeIcon,
-		Attributes: templ.Attributes{
-			"data-voice-post": action,
-			"title":           "record a voice entry",
-		},
-	}) {
-		@icon.Mic(icon.Props{Class: "size-4"})
-	}
+	<span class="inline-flex items-center gap-2">
+		<span data-voice-status class="hidden text-xs text-muted-foreground" aria-live="polite"></span>
+		@button.Button(button.Props{
+			Type:    button.TypeButton,
+			Variant: button.VariantOutline,
+			Size:    button.SizeIcon,
+			Class: "group data-[state=rec]:animate-pulse data-[state=rec]:border-destructive " +
+				"data-[state=rec]:text-destructive",
+			Attributes: templ.Attributes{
+				"data-voice-post": action,
+				"data-state":      "idle",
+				"title":           "record a voice entry",
+			},
+		}) {
+			<span class="hidden group-data-[state=idle]:inline-flex">
+				@icon.Mic(icon.Props{Class: "size-4"})
+			</span>
+			<span class="hidden group-data-[state=rec]:inline-flex">
+				@icon.Square(icon.Props{Class: "size-3.5 fill-current"})
+			</span>
+			<span class="hidden group-data-[state=busy]:inline-flex">
+				@icon.LoaderCircle(icon.Props{Class: "size-4 animate-spin"})
+			</span>
+		}
+	</span>
 	<script type="module" src="/_bespoke/js/recorder.js"></script>
 }

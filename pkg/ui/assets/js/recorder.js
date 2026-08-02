@@ -1,14 +1,28 @@
-// Bespoke voice capture (ADR-0014): click a [data-voice-post] button to
-// record, click again to stop. Captures mono PCM via Web Audio and encodes
-// WAV client-side — the Lemonade transcription backend accepts WAV only.
-// Loaded by ui.VoiceButton.
+// Bespoke voice capture (ADR-0014): tap [data-voice-post] to record, tap the
+// stop square to finish. Captures mono PCM via Web Audio, encodes WAV
+// client-side (Lemonade accepts WAV only), POSTs, reloads on success.
+// States drive the button's UI via data-state: idle | rec | busy
+// (icons/colors live in ui.VoiceButton, not here).
 let active = null;
+
+const statusEl = (btn) => btn.parentElement.querySelector("[data-voice-status]");
+
+function setState(btn, state, statusText) {
+  btn.dataset.state = state;
+  btn.disabled = state === "busy";
+  const s = statusEl(btn);
+  if (s) {
+    s.textContent = statusText || "";
+    s.classList.toggle("hidden", !statusText);
+  }
+}
 
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-voice-post]");
   if (!btn) return;
   e.preventDefault();
 
+  if (btn.dataset.state === "busy") return;
   if (active) {
     active.stop();
     return;
@@ -30,8 +44,7 @@ document.addEventListener("click", async (e) => {
   source.connect(proc);
   proc.connect(ctx.destination);
 
-  btn.dataset.recording = "1";
-  btn.classList.add("animate-pulse", "text-destructive");
+  setState(btn, "rec", "recording — tap ■ to finish");
 
   active = {
     stop: async () => {
@@ -41,16 +54,25 @@ document.addEventListener("click", async (e) => {
       stream.getTracks().forEach((t) => t.stop());
       const rate = ctx.sampleRate;
       await ctx.close();
-      btn.dataset.recording = "0";
-      btn.classList.remove("animate-pulse", "text-destructive");
 
-      const resp = await fetch(btn.dataset.voicePost, {
-        method: "POST",
-        headers: { "Content-Type": "audio/wav" },
-        body: encodeWav(chunks, rate),
-      });
-      if (resp.ok) location.reload();
-      else alert("transcription failed: " + (await resp.text()));
+      setState(btn, "busy", "transcribing…");
+      try {
+        const resp = await fetch(btn.dataset.voicePost, {
+          method: "POST",
+          headers: { "Content-Type": "audio/wav" },
+          body: encodeWav(chunks, rate),
+        });
+        if (resp.ok) {
+          setState(btn, "busy", "saved — refreshing…");
+          location.reload();
+        } else {
+          setState(btn, "idle", "");
+          alert("transcription failed: " + (await resp.text()));
+        }
+      } catch (err) {
+        setState(btn, "idle", "");
+        alert("transcription failed: " + err.message);
+      }
     },
   };
 });
