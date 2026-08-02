@@ -53,6 +53,9 @@ After=network-online.target
 [Service]
 EnvironmentFile=%h/bespoke/env
 {{if .Platform}}Environment=BESPOKE_ROOT=%h/bespoke
+# systemd user units get a bare PATH; the LLM gateway execs copilot from
+# ~/.local/bin (ADR-0009).
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=%h/bespoke/bin/{{.Slug}} -listen ${BESPOKE_BIND_IP}:{{.Port}} -internal ${BESPOKE_BIND_IP}:4001
 {{else}}ExecStart=%h/bespoke/bin/{{.Slug}} -listen ${BESPOKE_BIND_IP}:{{.Port}}
 {{end}}
