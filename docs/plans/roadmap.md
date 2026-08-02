@@ -31,7 +31,14 @@ apps deploy to `selfie`, builds happen on the dev machine)
   `bespoke.ketelsen.cloud` + wildcard → <edge-tailscale-ip> (apex, hello,
   journal, and a random name all resolve); selfie env + deploy.env
   updated, apps redeployed, routes pushed to the edge with the real
-  domain. ⚠ Still open, all user-side on the caddy host: add
+  domain. ✅ **DONE-WHEN CLOSED (2026-08-01):** import line + token drop-in
+  landed, caddy restarted, wildcard cert issued
+  (`*.bespoke.ketelsen.cloud`, expires 2026-10-31), and
+  `https://hello.bespoke.ketelsen.cloud` renders "Hello, Brian Ketelsen —
+  Authenticated as bketelsen" through the full real path (tailscale_auth
+  on the edge → selfie). Dashboard and journal live over HTTPS. ⚠ One
+  security item before calling it production: the tailnet ACL below.
+  Superseded checklist (kept for history): add
   `import /etc/caddy/bespoke.caddy` to the main Caddyfile, add the
   `CLOUDFLARE_API_TOKEN` drop-in, reload; and the tailnet ACL for
   selfie:4000-4999 (verified needed: a fake identity header from another
