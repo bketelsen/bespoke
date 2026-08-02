@@ -83,6 +83,10 @@ them rather than improvising, whichever agent you are:
   `audio.New(slug).Transcribe` in the handler ([ADR-0014](docs/adr/0014-audio-service-transcription.md));
   never touch MediaRecorder or a speech backend directly. Currently
   stub-backed — transcriptions are placeholders until Lemonade is wired.
+- Timestamps are stored UTC (`datetime('now')`) but ALWAYS convert to local
+  time before showing users or feeding LLM contexts/prompts (see journal's
+  `localStamp`) — raw UTC makes chat narrate evening entries as "after
+  midnight". The platform chat prompt states the owner's local time.
 - Before building a shared capability into an app, check the
   [internal services catalog](docs/design/internal-services.md) and follow
   its decision tree: `pkg/*` helper first, internal service on platformd's

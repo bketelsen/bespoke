@@ -177,6 +177,17 @@ func reflectionMarkdown(general, work, family string) string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
+// localStamp renders a stored UTC timestamp in local time for LLM
+// consumption — feeding raw UTC to the model makes it narrate evening
+// entries as "just after midnight".
+func localStamp(created string) string {
+	t, err := time.ParseInLocation(sqliteTime, created, time.UTC)
+	if err != nil {
+		return created
+	}
+	return t.Local().Format("Mon Jan 2 2006, 3:04 PM")
+}
+
 // chatContext feeds the in-app chat (ADR-0015): the last 30 days of entries
 // plus the latest weekly summary — enough for mood/productivity questions.
 func chatContext(ctx context.Context, sqldb *sql.DB, login string) (string, error) {
@@ -188,15 +199,16 @@ func chatContext(ctx context.Context, sqldb *sql.DB, login string) (string, erro
 	}
 	defer rows.Close()
 
+	zone, _ := time.Now().Zone()
 	var b strings.Builder
-	b.WriteString("Journal entries, last 30 days (timestamps UTC):\n")
+	fmt.Fprintf(&b, "Journal entries, last 30 days (timestamps in the owner's local time, %s):\n", zone)
 	n := 0
 	for rows.Next() {
 		var created, body string
 		if err := rows.Scan(&created, &body); err != nil {
 			return "", err
 		}
-		fmt.Fprintf(&b, "[%s] %s\n", created, body)
+		fmt.Fprintf(&b, "[%s] %s\n", localStamp(created), body)
 		n++
 	}
 	if err := rows.Err(); err != nil {
@@ -211,7 +223,7 @@ func chatContext(ctx context.Context, sqldb *sql.DB, login string) (string, erro
 		"SELECT body, created_at FROM summaries WHERE login = ? ORDER BY created_at DESC, id DESC LIMIT 1",
 		login).Scan(&summary, &created)
 	if err == nil {
-		fmt.Fprintf(&b, "\nLatest weekly summary (generated %s):\n%s\n", created, summary)
+		fmt.Fprintf(&b, "\nLatest weekly summary (generated %s):\n%s\n", localStamp(created), summary)
 	} else if err != sql.ErrNoRows {
 		return "", err
 	}
@@ -295,7 +307,7 @@ func summarizeWeek(r *http.Request, sqldb *sql.DB, ai *llm.Client, login string)
 		if err := rows.Scan(&body, &created); err != nil {
 			return err
 		}
-		fmt.Fprintf(&b, "[%s] %s\n", created, body)
+		fmt.Fprintf(&b, "[%s] %s\n", localStamp(created), body)
 		n++
 	}
 	if err := rows.Err(); err != nil {

@@ -99,9 +99,11 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 		}
 		system := fmt.Sprintf(
 			"You are the assistant inside the %q app on Bespoke, the owner's personal platform. "+
-				"Today is %s. Answer briefly and concretely from the app data below; when asked about "+
-				"trends, reason over dates. If the data can't answer, say what's missing. %s\n\n--- app data ---\n%s",
-			slug, time.Now().Format("Monday, January 2 2006"), style, appContext)
+				"It is now %s (the owner's local time; timestamps in the app data are local too "+
+				"unless marked otherwise). Answer briefly and concretely from the app data below; "+
+				"when asked about trends, reason over dates. If the data can't answer, say what's "+
+				"missing. %s\n\n--- app data ---\n%s",
+			slug, time.Now().Format("Monday, January 2 2006, 3:04 PM (MST)"), style, appContext)
 
 		text, err := ai.Complete(r.Context(), b.String(), llm.WithSystem(system))
 		if err != nil {
