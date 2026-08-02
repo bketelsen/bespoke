@@ -61,6 +61,20 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 		io.Copy(w, rc)
 	})
 
+	// The app's chat context, raw (ADR-0020): platformd aggregates these for
+	// the dashboard's all-apps chat. Same auth as everything; identity is
+	// forwarded per request like dashboard cards.
+	mux.HandleFunc("GET /_chat/context", func(w http.ResponseWriter, r *http.Request) {
+		user := auth.FromContext(r.Context())
+		text, err := provider(r.Context(), user)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Write([]byte(text))
+	})
+
 	mux.HandleFunc("POST /_chat", func(w http.ResponseWriter, r *http.Request) {
 		user := auth.FromContext(r.Context())
 		var req struct {

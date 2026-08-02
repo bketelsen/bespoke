@@ -4,6 +4,7 @@ package main
 
 import (
 	"cmp"
+	"context"
 	"embed"
 	"flag"
 	"io/fs"
@@ -45,6 +46,16 @@ func main() {
 
 	web.Serve("platformd", 4000, func(mux *http.ServeMux) {
 		go serveInternal(*internal, gw, agw) // after flag.Parse (inside Serve)
+
+		// The all-apps chat (ADR-0020): context aggregated from every
+		// chat-enabled app over the app contract — never their databases.
+		web.EnableChat(mux, "dashboard", func(ctx context.Context, user auth.User) (string, error) {
+			apps, _, err := manifest.LoadAll(root)
+			if err != nil {
+				return "", err
+			}
+			return aggregateContexts(ctx, user.Login, user.Name, apps), nil
+		})
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			apps, warnings, err := manifest.LoadAll(root)

@@ -19,7 +19,7 @@ and cross-app intents — highlight text in the journal and "Create Todo" just
 appears.
 
 This repo went from [an idea file](docs/design/vision.md) to a deployed
-platform with nineteen architecture decision records and three running apps
+platform with twenty architecture decision records and three running apps
 in a single day — and two of those apps were built by describing them, not
 by writing them. Steal the idea before you steal the code: the whole point
 is that yours should be bespoke too.

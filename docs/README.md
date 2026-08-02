@@ -32,6 +32,7 @@ Docs are split by the question they answer:
 - [0017 — App-provided dashboard cards](adr/0017-app-provided-dashboard-cards.md)
 - [0018 — Cross-app intents](adr/0018-cross-app-intents.md)
 - [0019 — User brief: per-person context for every LLM feature](adr/0019-user-brief.md)
+- [0020 — Dashboard chat over aggregated app contexts](adr/0020-dashboard-chat-aggregated-context.md)
 
 ### Design
 

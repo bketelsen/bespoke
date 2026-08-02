@@ -33,6 +33,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
 | In-app chat | 1 | **live** | `web.EnableChat(mux, slug, provider)` | ADR-0015; context-stuffing v1, upgrades to MCP tools later |
+| Dashboard chat (all apps) | 2 | **live** | chat button on the apex dashboard | ADR-0020; aggregates every chat-enabled app's `/_chat/context`, never their databases |
 | Markdown rendering | 1 | **live** | `ui.Markdown(text)` | GFM via goldmark, `prose`-styled, raw HTML omitted (tested) |
 | App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
 | Transcription | 2 | **LIVE (real)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` (WAV) | ADR-0014; whisper on Lemonade, validated end to end 2026-08-01; stub mode when `BESPOKE_LEMONADE_URL` unset |
