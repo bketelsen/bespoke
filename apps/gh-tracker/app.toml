@@ -1,0 +1,5 @@
+name        = "GH Tracker"
+slug        = "gh-tracker"
+port        = 4107
+icon        = "git-pull-request"
+description = "Open PRs and issues across your GitHub projects"

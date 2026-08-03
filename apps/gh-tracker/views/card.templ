@@ -1,0 +1,10 @@
+package views
+
+import "fmt"
+
+templ DashCard(openCount int) {
+	<div class="text-center">
+		<p class="text-2xl font-semibold">{ fmt.Sprint(openCount) }</p>
+		<p class="text-xs text-muted-foreground">open PRs &amp; issues</p>
+	</div>
+}
