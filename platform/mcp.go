@@ -123,6 +123,30 @@ func mcpHandler(root string) http.Handler {
 				return result, nil
 			})
 		}
+		s.AddTool(&mcp.Tool{
+			Name:        "search",
+			Description: "Search across all your apps' data. Returns matches grouped by app with deep links.",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"q": map[string]any{"type": "string", "description": "search query"},
+				},
+				"required": []string{"q"},
+			},
+		}, func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			var args struct {
+				Q string `json:"q"`
+			}
+			if req.Params.Arguments != nil {
+				_ = json.Unmarshal(req.Params.Arguments, &args)
+			}
+			apps, _, err := manifest.LoadAll(root)
+			if err != nil {
+				return nil, err
+			}
+			out := formatSearchGroups(aggregateSearch(ctx, login, login, args.Q, apps))
+			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: out}}}, nil
+		})
 		return s
 	}, nil)
 }

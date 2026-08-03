@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -81,4 +82,25 @@ func aggregateSearch(ctx context.Context, login, name, q string, apps []manifest
 		}
 	}
 	return groups
+}
+
+// formatSearchGroups renders grouped results as text for the search tool —
+// each app's heading then "title — url" lines, so an LLM can cite deep links.
+func formatSearchGroups(groups []SearchGroup) string {
+	if len(groups) == 0 {
+		return "(no results)"
+	}
+	var b strings.Builder
+	for _, g := range groups {
+		fmt.Fprintf(&b, "## %s\n", g.Name)
+		for _, r := range g.Results {
+			if r.URL != "" {
+				fmt.Fprintf(&b, "- %s — %s\n", r.Title, r.URL)
+			} else {
+				fmt.Fprintf(&b, "- %s\n", r.Title)
+			}
+		}
+		b.WriteString("\n")
+	}
+	return b.String()
 }
