@@ -43,6 +43,23 @@ func loadNotes(ctx context.Context, sqldb *sql.DB, login string, limit int) ([]v
 	return notes, rows.Err()
 }
 
+// likeEscape neutralizes LIKE wildcards in q so it matches as a literal
+// substring (pair with ESCAPE '\' in the query).
+func likeEscape(q string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return r.Replace(q)
+}
+
+// truncateRunes caps s at n runes; long results would otherwise blow the
+// fan-out's response size cap and drop the whole app from search.
+func truncateRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + "…"
+}
+
 // searchNotes returns the user's notes whose body contains q (case-
 // insensitive substring), newest first, deep-linked to the note anchor.
 func searchNotes(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.SearchResult, error) {
@@ -51,8 +68,8 @@ func searchNotes(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.Sea
 		return nil, nil
 	}
 	rows, err := sqldb.QueryContext(ctx,
-		"SELECT id, body FROM notes WHERE login=? AND body LIKE '%'||?||'%' COLLATE NOCASE ORDER BY id DESC LIMIT 20",
-		login, q)
+		`SELECT id, body FROM notes WHERE login=? AND body LIKE '%'||?||'%' ESCAPE '\' ORDER BY id DESC LIMIT 20`,
+		login, likeEscape(q))
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +86,8 @@ func searchNotes(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.Sea
 			title = title[:i]
 		}
 		out = append(out, web.SearchResult{
-			Title:   title,
-			Snippet: body,
+			Title:   truncateRunes(title, 120),
+			Snippet: truncateRunes(body, 200),
 			URL:     fmt.Sprintf("/#note-%d", id),
 		})
 	}

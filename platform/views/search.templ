@@ -1,8 +1,6 @@
 package views
 
 import (
-	"strings"
-
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/ui"
 	"github.com/bketelsen/bespoke/pkg/ui/components/card"
@@ -14,14 +12,6 @@ type Group struct {
 	Name    string
 	Base    string
 	Results []Result
-}
-
-// resultHref joins an app's base URL with a result's app-relative URL.
-func resultHref(base, rel string) string {
-	if rel == "" {
-		rel = "/"
-	}
-	return strings.TrimSuffix(base, "/") + rel
 }
 
 templ SearchResults(user auth.User, dev bool, domain string, q string, groups []Group) {
@@ -49,7 +39,7 @@ templ SearchResults(user auth.User, dev bool, domain string, q string, groups []
 							for _, res := range g.Results {
 								@card.Card() {
 									@card.Content(card.ContentProps{Class: "py-3"}) {
-										<a href={ templ.SafeURL(resultHref(g.Base, res.URL)) } class="block">
+										<a href={ templ.SafeURL(ResultHref(g.Base, res.URL)) } class="block">
 											<span class="font-medium">{ res.Title }</span>
 											if res.Snippet != "" {
 												<span class="mt-1 block text-sm text-muted-foreground">{ res.Snippet }</span>

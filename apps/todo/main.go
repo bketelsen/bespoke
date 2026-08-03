@@ -177,6 +177,13 @@ func main() {
 	})
 }
 
+// likeEscape neutralizes LIKE wildcards in q so it matches as a literal
+// substring (pair with ESCAPE '\' in the query).
+func likeEscape(q string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return r.Replace(q)
+}
+
 // searchTasks returns the user's tasks whose description contains q (case-
 // insensitive substring), deep-linked to the task anchor.
 func searchTasks(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.SearchResult, error) {
@@ -186,8 +193,8 @@ func searchTasks(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.Sea
 	}
 	rows, err := sqldb.QueryContext(ctx, `
 		SELECT id, description, COALESCE(due,''), priority, done
-		FROM tasks WHERE login=? AND description LIKE '%'||?||'%' COLLATE NOCASE
-		ORDER BY done, id DESC LIMIT 20`, login, q)
+		FROM tasks WHERE login=? AND description LIKE '%'||?||'%' ESCAPE '\'
+		ORDER BY done, id DESC LIMIT 20`, login, likeEscape(q))
 	if err != nil {
 		return nil, err
 	}

@@ -43,6 +43,16 @@ func TestSearchTasks(t *testing.T) {
 		}
 	})
 
+	t.Run("LIKE wildcards match literally", func(t *testing.T) {
+		got, err := searchTasks(ctx, sqldb, "me@x", "_")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("bare _ should match nothing, got %+v", got)
+		}
+	})
+
 	t.Run("returns nil for whitespace query", func(t *testing.T) {
 		got, err := searchTasks(ctx, sqldb, "me@x", "  ")
 		if err != nil {

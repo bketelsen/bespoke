@@ -19,6 +19,7 @@ import (
 
 	"github.com/bketelsen/bespoke/internal/manifest"
 	"github.com/bketelsen/bespoke/pkg/web"
+	"github.com/bketelsen/bespoke/platform/views"
 )
 
 var searchClient = &http.Client{Timeout: 900 * time.Millisecond}
@@ -74,7 +75,7 @@ func aggregateSearch(ctx context.Context, login, name, q string, dev bool, domai
 			slots[i] = slot{SearchGroup{
 				Slug:    app.Slug,
 				Name:    app.Name,
-				Base:    appBase(dev, domain, app),
+				Base:    string(views.AppBase(dev, domain, app)),
 				Results: payload.Results,
 			}, true}
 		}(i, app)
@@ -90,23 +91,6 @@ func aggregateSearch(ctx context.Context, login, name, q string, dev bool, domai
 	return groups
 }
 
-func appBase(dev bool, domain string, app manifest.App) string {
-	if dev {
-		return fmt.Sprintf("http://localhost:%d/", app.Port)
-	}
-	return fmt.Sprintf("https://%s.%s/", app.Slug, domain)
-}
-
-func joinURL(base, rel string) string {
-	if base == "" {
-		return ""
-	}
-	if rel == "" {
-		rel = "/"
-	}
-	return strings.TrimSuffix(base, "/") + rel
-}
-
 // formatSearchGroups renders grouped results as text for the search tool —
 // each app's heading then "title — url" lines, so an LLM can cite deep links.
 func formatSearchGroups(groups []SearchGroup) string {
@@ -117,11 +101,7 @@ func formatSearchGroups(groups []SearchGroup) string {
 	for _, g := range groups {
 		fmt.Fprintf(&b, "## %s\n", g.Name)
 		for _, r := range g.Results {
-			if href := joinURL(g.Base, r.URL); href != "" {
-				fmt.Fprintf(&b, "- %s — %s\n", r.Title, href)
-			} else {
-				fmt.Fprintf(&b, "- %s\n", r.Title)
-			}
+			fmt.Fprintf(&b, "- %s — %s\n", r.Title, views.ResultHref(g.Base, r.URL))
 		}
 		b.WriteString("\n")
 	}

@@ -9,8 +9,6 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"strings"
-
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/ui"
 	"github.com/bketelsen/bespoke/pkg/ui/components/card"
@@ -22,14 +20,6 @@ type Group struct {
 	Name    string
 	Base    string
 	Results []Result
-}
-
-// resultHref joins an app's base URL with a result's app-relative URL.
-func resultHref(base, rel string) string {
-	if rel == "" {
-		rel = "/"
-	}
-	return strings.TrimSuffix(base, "/") + rel
 }
 
 func SearchResults(user auth.User, dev bool, domain string, q string, groups []Group) templ.Component {
@@ -72,7 +62,7 @@ func SearchResults(user auth.User, dev bool, domain string, q string, groups []G
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(q)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 33, Col: 13}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 23, Col: 13}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -95,7 +85,7 @@ func SearchResults(user auth.User, dev bool, domain string, q string, groups []G
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(q)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 42, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 32, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -118,7 +108,7 @@ func SearchResults(user auth.User, dev bool, domain string, q string, groups []G
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(g.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 47, Col: 75}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 37, Col: 75}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -131,7 +121,7 @@ func SearchResults(user auth.User, dev bool, domain string, q string, groups []G
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(len(g.Results))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 47, Col: 95}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 37, Col: 95}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -171,9 +161,9 @@ func SearchResults(user auth.User, dev bool, domain string, q string, groups []G
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var9 templ.SafeURL
-								templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(resultHref(g.Base, res.URL)))
+								templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(ResultHref(g.Base, res.URL)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 52, Col: 62}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 42, Col: 62}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 								if templ_7745c5c3_Err != nil {
@@ -186,7 +176,7 @@ func SearchResults(user auth.User, dev bool, domain string, q string, groups []G
 								var templ_7745c5c3_Var10 string
 								templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(res.Title)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 53, Col: 48}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 43, Col: 48}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 								if templ_7745c5c3_Err != nil {
@@ -204,7 +194,7 @@ func SearchResults(user auth.User, dev bool, domain string, q string, groups []G
 									var templ_7745c5c3_Var11 string
 									templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(res.Snippet)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 55, Col: 80}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/search.templ`, Line: 45, Col: 80}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 									if templ_7745c5c3_Err != nil {
