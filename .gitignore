@@ -2,9 +2,21 @@ dist/
 data/
 tools/
 
-# compiled binaries never land in the repo (build to dist/ or use go build -o /dev/null for checks)
+# compiled binaries never land in the repo (build to dist/ or use go build
+# -o /dev/null for checks). One entry per app slug + platform binaries;
+# `bespoke new` appends new slugs automatically.
 /hello
 /journal
+/todo
+/print-projects
+/family-walks
+/gh-tracker
+/personal-wiki
+/bookmarks
+/builder
+/builder-runner
+/bespoke
+/platform
 /platformd
 /testapp
 deploy/deploy.env

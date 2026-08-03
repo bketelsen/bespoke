@@ -16,7 +16,10 @@ config) is forbidden by convention. Source: `cmd/bespoke`.
    (db + web.Run wiring), `views/home.templ` (AppShell + Card),
    `migrations/0001_init.sql`.
 3. Assign the next free port (sequential from 4101, max 4999) into `app.toml`.
-4. Run `templ generate` for the new view if `tools/templ` is installed, so
+4. Append `/<slug>` to `.gitignore` (idempotent) so a direct
+   `go build ./apps/<slug>` can never leave a committable binary in the
+   repo root.
+5. Run `templ generate` for the new view if `tools/templ` is installed, so
    the app compiles immediately; otherwise print the setup commands.
 
 ### `bespoke dev`

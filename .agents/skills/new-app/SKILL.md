@@ -19,8 +19,11 @@ config, stop: you're off the path (see AGENTS.md).
    contract.
    Also plan the dashboard card (step 6a): what one glance should show.
 1. **Scaffold.** `just new <slug>` (slug: `[a-z0-9-]{1,32}`). This assigns
-   the port, writes the manifest, and generates a compiling app. Never pick
-   ports or create `apps/<slug>/` by hand.
+   the port, writes the manifest, appends `/<slug>` to `.gitignore` (a
+   direct `go build ./apps/<slug>` drops a binary in the repo root — it
+   must never be committed), and generates a compiling app. Never pick
+   ports or create `apps/<slug>/` by hand; if the `.gitignore` entry is
+   missing (older scaffold), add it yourself.
 2. **Manifest.** Edit `apps/<slug>/app.toml`: display `name`, one-line
    `description` (shows on the dashboard), `icon` = a
    [Lucide](https://lucide.dev/icons) name (unknown names fall back to a
@@ -106,7 +109,9 @@ config, stop: you're off the path (see AGENTS.md).
      scroll, wide tables wrapped in `overflow-x-auto`, overlays capped with
      `dvh`. A view that needs a mouse is a failed build.
 9. **Commit** sources + generated files together, message
-   `<slug>: <what the app does>`.
+   `<slug>: <what the app does>`. `git status` first: no stray compiled
+   binaries (an untracked file named like an app slug in the repo root is
+   a build artifact — delete it, and make sure `.gitignore` covers it).
 
 ## If something needed manual intervention
 

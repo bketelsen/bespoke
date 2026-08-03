@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/bketelsen/bespoke/internal/manifest"
@@ -72,6 +73,12 @@ func cmdNew(args []string) error {
 		fmt.Println("created", path)
 	}
 
+	// A stray `go build ./apps/<slug>` drops a binary named <slug> in the
+	// repo root; ignore it up front so it can never be committed.
+	if err := ignoreRootBinary(slug); err != nil {
+		return err
+	}
+
 	// Generate templ output now if the toolchain is installed, so the app
 	// compiles immediately; otherwise tell the user what to run.
 	if _, err := os.Stat("tools/templ"); err == nil {
@@ -85,6 +92,29 @@ func cmdNew(args []string) error {
 	}
 
 	fmt.Printf("\n%s scaffolded on port %d — next:\n  1. edit %s (name, icon, description)\n  2. just dev   → http://localhost:%d\n", slug, port, filepath.Join(dir, "app.toml"), port)
+	return nil
+}
+
+// ignoreRootBinary appends /<slug> to .gitignore (idempotent).
+func ignoreRootBinary(slug string) error {
+	entry := "/" + slug
+	data, err := os.ReadFile(".gitignore")
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.TrimSpace(line) == entry {
+			return nil
+		}
+	}
+	if len(data) > 0 && data[len(data)-1] != '\n' {
+		data = append(data, '\n')
+	}
+	data = append(data, []byte(entry+"\n")...)
+	if err := os.WriteFile(".gitignore", data, 0o644); err != nil {
+		return err
+	}
+	fmt.Println("added", entry, "to .gitignore")
 	return nil
 }
 
