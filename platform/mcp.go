@@ -80,7 +80,7 @@ func allAppTools(ctx context.Context, root string) []appTool {
 
 // mcpHandler serves the platform MCP endpoint. A server is built per
 // request, scoped to the caller's tailnet identity — tools execute as them.
-func mcpHandler(root string) http.Handler {
+func mcpHandler(root, domain string) http.Handler {
 	return mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
 		login := r.Header.Get("Tailscale-User-Login")
 		if login == "" {
@@ -123,6 +123,31 @@ func mcpHandler(root string) http.Handler {
 				return result, nil
 			})
 		}
+		s.AddTool(&mcp.Tool{
+			Name:        "search",
+			Description: "Search across all your apps' data. Returns matches grouped by app with deep links.",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"q": map[string]any{"type": "string", "description": "search query"},
+				},
+				"required": []string{"q"},
+			},
+		}, func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			var args struct {
+				Q string `json:"q"`
+			}
+			if req.Params.Arguments != nil {
+				_ = json.Unmarshal(req.Params.Arguments, &args)
+			}
+			apps, _, err := manifest.LoadAll(root)
+			if err != nil {
+				return nil, err
+			}
+			dev := os.Getenv("BESPOKE_DEV_USER") != ""
+			out := formatSearchGroups(aggregateSearch(ctx, login, login, args.Q, dev, domain, apps))
+			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: out}}}, nil
+		})
 		return s
 	}, nil)
 }

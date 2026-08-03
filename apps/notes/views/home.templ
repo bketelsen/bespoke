@@ -1,6 +1,8 @@
 package views
 
 import (
+	"fmt"
+
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/ui"
 	"github.com/bketelsen/bespoke/pkg/ui/components/button"
@@ -8,7 +10,7 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/textarea"
 )
 
-type Note struct { Body, CreatedAt string }
+type Note struct { ID int64; Body, CreatedAt string }
 
 templ Home(user auth.User, notes []Note) {
 	@ui.AppShell(ui.ShellProps{Title: "Notes", User: user}) {
@@ -30,12 +32,15 @@ templ NotesLive(notes []Note) {
 			<p class="text-sm text-muted-foreground">No notes yet.</p>
 		}
 		for _, n := range notes {
-			@card.Card() {
-				@card.Content() {
-					<div class="select-text pt-6">@ui.Markdown(n.Body)</div>
-					<p class="mt-3 text-xs text-muted-foreground">{ n.CreatedAt }</p>
+			{{ anchor := fmt.Sprintf("note-%d", n.ID) }}
+			<div id={ anchor }>
+				@card.Card() {
+					@card.Content() {
+						<div class="select-text pt-6">@ui.Markdown(n.Body)</div>
+						<p class="mt-3 text-xs text-muted-foreground">{ n.CreatedAt }</p>
+					}
 				}
-			}
+			</div>
 		}
 	</div>
 }

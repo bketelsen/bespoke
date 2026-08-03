@@ -40,6 +40,7 @@ Docs are split by the question they answer:
 - [0025 — Brave-backed web_search as a gateway tool](adr/0025-brave-web-search-gateway-tool.md)
 - [0026 — App-bundled chat skills via a loader tool](adr/0026-app-bundled-chat-skills.md)
 - [0027 — Version the platform and keep owner instances private](adr/0027-versioned-platform-private-instances.md)
+- [0028 — Dashboard global search via app fan-out](adr/0028-dashboard-global-search-fan-out.md)
 
 ### Design
 
@@ -53,6 +54,7 @@ Docs are split by the question they answer:
 ### Specs
 
 - [App manifest (`app.toml`)](specs/app-manifest.md)
+- [App search endpoint (`GET /_search`)](specs/app-search.md)
 - [`bespoke` CLI](specs/bespoke-cli.md)
 
 ### Plans

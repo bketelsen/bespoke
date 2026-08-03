@@ -94,6 +94,13 @@ them rather than improvising, whichever agent you are:
   serving `GET /_card` (ADR-0017) — a content-only fragment with the user's
   current state ("3 entries today"), cheap queries only, never LLM calls.
   Without one the dashboard falls back to the manifest description.
+- **Global search (ADR-0028):** expose your app's searchable text with
+  `web.Search(mux, provider)` serving `GET /_search?q=` — a user-scoped
+  provider returning `{title, snippet?, url?, timestamp?}` results (cheap DB
+  queries only, never LLM calls). The app joins the dashboard search box and
+  the platform `search` MCP/chat tool automatically. Deep links per result are
+  **preferred/best-effort** — return a specific item URL when you have one, a
+  bare home URL is an acceptable fallback ([spec](docs/specs/app-search.md)).
 - **LLM tools (ADR-0021):** expose every meaningful action as
   `web.Tool(mux, def)` — user-scoped handler, JSON schema, honest
   description (mark destructive ones "only on an explicit user request").

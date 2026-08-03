@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
@@ -23,7 +24,7 @@ import (
 var migrationFS embed.FS
 
 func loadNotes(ctx context.Context, sqldb *sql.DB, login string, limit int) ([]views.Note, error) {
-	rows, err := sqldb.QueryContext(ctx, "SELECT body, created_at FROM notes WHERE login=? ORDER BY id DESC LIMIT ?", login, limit)
+	rows, err := sqldb.QueryContext(ctx, "SELECT id, body, created_at FROM notes WHERE login=? ORDER BY id DESC LIMIT ?", login, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +32,7 @@ func loadNotes(ctx context.Context, sqldb *sql.DB, login string, limit int) ([]v
 	var notes []views.Note
 	for rows.Next() {
 		var n views.Note
-		if err := rows.Scan(&n.Body, &n.CreatedAt); err != nil {
+		if err := rows.Scan(&n.ID, &n.Body, &n.CreatedAt); err != nil {
 			return nil, err
 		}
 		if stamp, err := time.ParseInLocation("2006-01-02 15:04:05", n.CreatedAt, time.UTC); err == nil {
@@ -40,6 +41,57 @@ func loadNotes(ctx context.Context, sqldb *sql.DB, login string, limit int) ([]v
 		notes = append(notes, n)
 	}
 	return notes, rows.Err()
+}
+
+// likeEscape neutralizes LIKE wildcards in q so it matches as a literal
+// substring (pair with ESCAPE '\' in the query).
+func likeEscape(q string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return r.Replace(q)
+}
+
+// truncateRunes caps s at n runes; long results would otherwise blow the
+// fan-out's response size cap and drop the whole app from search.
+func truncateRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + "…"
+}
+
+// searchNotes returns the user's notes whose body contains q (case-
+// insensitive substring), newest first, deep-linked to the note anchor.
+func searchNotes(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.SearchResult, error) {
+	q = strings.TrimSpace(q)
+	if q == "" {
+		return nil, nil
+	}
+	rows, err := sqldb.QueryContext(ctx,
+		`SELECT id, body FROM notes WHERE login=? AND body LIKE '%'||?||'%' ESCAPE '\' ORDER BY id DESC LIMIT 20`,
+		login, likeEscape(q))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []web.SearchResult
+	for rows.Next() {
+		var id int64
+		var body string
+		if err := rows.Scan(&id, &body); err != nil {
+			return nil, err
+		}
+		title := body
+		if i := strings.IndexByte(title, '\n'); i >= 0 {
+			title = title[:i]
+		}
+		out = append(out, web.SearchResult{
+			Title:   truncateRunes(title, 120),
+			Snippet: truncateRunes(body, 200),
+			URL:     fmt.Sprintf("/#note-%d", id),
+		})
+	}
+	return out, rows.Err()
 }
 
 func addNote(ctx context.Context, sqldb *sql.DB, login, body string) error {
@@ -87,6 +139,9 @@ func main() {
 				return nil, err
 			}
 			return views.DashCard(notes), nil
+		})
+		web.Search(mux, func(ctx context.Context, user auth.User, q string) ([]web.SearchResult, error) {
+			return searchNotes(ctx, sqldb, user.Login, q)
 		})
 		web.Intent(mux, "Notes", web.IntentDef{
 			Name: "add-note", Title: "Save as Note", Prompt: "Review the note before saving.",

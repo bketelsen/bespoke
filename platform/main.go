@@ -6,8 +6,10 @@ import (
 	"cmp"
 	"context"
 	"embed"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -73,12 +75,41 @@ func main() {
 						URL:         t.URL,
 					})
 				}
+				host := cmp.Or(os.Getenv("BESPOKE_BIND_IP"), "127.0.0.1")
+				tools = append(tools, llm.Tool{
+					Name:        "search",
+					Description: "Search across all your apps' data. Returns matches grouped by app with deep links.",
+					Schema: map[string]any{
+						"type":       "object",
+						"properties": map[string]any{"q": map[string]any{"type": "string", "description": "search query"}},
+						"required":   []string{"q"},
+					},
+					URL: fmt.Sprintf("http://%s:4000/_tools/search", host),
+				})
 				return tools
 			},
 			llm.WithBuiltins(assistantBuiltinNames()...))
 
 		// External LLM clients: the platform MCP endpoint (ADR-0021).
-		mux.Handle("/mcp", mcpHandler(root))
+		mux.Handle("/mcp", mcpHandler(root, domain))
+
+		mux.HandleFunc("POST /_tools/search", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			var args struct {
+				Q string `json:"q"`
+			}
+			body, _ := io.ReadAll(io.LimitReader(r.Body, 8<<10))
+			_ = json.Unmarshal(body, &args)
+			apps, _, err := manifest.LoadAll(root)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			dev := os.Getenv("BESPOKE_DEV_USER") != ""
+			out := formatSearchGroups(aggregateSearch(r.Context(), user.Login, user.Name, args.Q, dev, domain, apps))
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.Write([]byte(out))
+		})
 
 		// Live card grid (ADR-0022): re-rendered when any app reports a
 		// change for this user via the plane's /notify.
@@ -108,6 +139,28 @@ func main() {
 			user := auth.FromContext(r.Context())
 			cards := fetchCards(r.Context(), user.Login, user.Name, apps)
 			views.Dashboard(user, dev, domain, apps, cards, warnings).Render(r.Context(), w)
+		})
+
+		mux.HandleFunc("GET /search", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			q := strings.TrimSpace(r.URL.Query().Get("q"))
+			dev := os.Getenv("BESPOKE_DEV_USER") != ""
+			var groups []views.Group
+			if q != "" {
+				apps, _, err := manifest.LoadAll(root)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				for _, g := range aggregateSearch(r.Context(), user.Login, user.Name, q, dev, domain, apps) {
+					vg := views.Group{Name: g.Name, Base: g.Base}
+					for _, res := range g.Results {
+						vg.Results = append(vg.Results, views.Result{Title: res.Title, Snippet: res.Snippet, URL: res.URL})
+					}
+					groups = append(groups, vg)
+				}
+			}
+			views.SearchResults(user, dev, domain, q, groups).Render(r.Context(), w)
 		})
 
 		mux.HandleFunc("GET /settings", func(w http.ResponseWriter, r *http.Request) {

@@ -29,7 +29,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Notifications | 1 or 2 | candidate | future `pkg/notify` | Tier depends on delivery mechanism |
 | Scheduled jobs | — | candidate | systemd timers per app first | Escalate only if cross-app coordination appears |
 | Embeddings | 2 | candidate | future `llm.Embed` | Backend ready: nomic-embed-text-v2-moe downloaded on Lemonade |
-| Search | 2 | candidate | future `pkg/search` | Shared index; pairs with embeddings |
+| Global search | — | **live** | `web.Search(mux, provider)` → `GET /_search?q=`; dashboard box + `search` MCP/chat tool | ADR-0028; HTTP fan-out (like cards), grouped by app, never their databases; no central index |
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
 | In-app chat | 1 | **live** | `web.EnableChat(mux, slug, provider)` | ADR-0015; context-stuffed AND agentic — registered `web.Tool`s act automatically (ADR-0021) |

@@ -45,6 +45,14 @@ templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, ca
 		if len(apps) == 0 {
 			<p class="text-muted-foreground">No apps yet.</p>
 		}
+		<form method="get" action="/search" class="mb-6">
+			<input
+				type="search"
+				name="q"
+				placeholder="Search all apps…"
+				class="w-full rounded-md border border-input bg-background px-3 py-2 text-base"
+			/>
+		</form>
 		<div data-init="@get('/_live')">
 			@CardGrid(dev, domain, apps, cards)
 		</div>
