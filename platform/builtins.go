@@ -17,16 +17,16 @@ import (
 	"github.com/github/copilot-sdk/go/rpc"
 )
 
-// assistantBuiltins is the full menu: guarded URL fetch and the read-only
-// GitHub MCP subset the Copilot CLI enables by default. Web search rides
-// web_fetch against a search engine's results page (see webFetchHint) —
-// the runtime's hosted web_search tool is not exposed to SDK sessions
-// (verified against v1.0.8; revisit when it is). Never add shell,
-// filesystem, or session-store tools here — they would execute as
-// platformd's uid on the platform host; agentic coding stays in the
-// unprivileged builder runner (ADR-0023).
+// assistantBuiltins is the full menu: guarded URL fetch, real web search
+// (gateway-implemented against the Brave API, ADR-0025 — the runtime's
+// hosted web_search tool is not exposed to SDK sessions, verified against
+// v1.0.8), and the read-only GitHub MCP subset the Copilot CLI enables by
+// default. Never add shell, filesystem, or session-store tools here — they
+// would execute as platformd's uid on the platform host; agentic coding
+// stays in the unprivileged builder runner (ADR-0023).
 var assistantBuiltins = map[string]bool{
 	"web_fetch":                             true,
+	"web_search":                            true,
 	"github-mcp-server-search_code":         true,
 	"github-mcp-server-get_file_contents":   true,
 	"github-mcp-server-search_users":        true,
@@ -84,12 +84,17 @@ func githubMCPConfig(builtins []string, token string) map[string]copilot.MCPServ
 	}
 }
 
-// webFetchHint is appended to the system prompt when web_fetch is enabled:
-// the model has no hosted search tool, so point it at a results page it can
-// fetch. Without the hint some models just declare they cannot search.
-func webFetchHint(builtins []string) string {
+// webFetchHint is appended to the system prompt when web_fetch is enabled.
+// With a real search tool in the session it just pairs the two; without one
+// it points the model at a results page it can fetch — otherwise some
+// models just declare they cannot search.
+func webFetchHint(builtins []string, hasSearch bool) string {
 	if !slices.Contains(builtins, "web_fetch") {
 		return ""
+	}
+	if hasSearch {
+		return "\n\nWeb access: use web_search to search the public web, then web_fetch " +
+			"to read a promising result in full."
 	}
 	return "\n\nWeb access: the web_fetch tool fetches public URLs. To search the web, " +
 		"fetch https://html.duckduckgo.com/html/?q=<query> and read the results, then " +

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	copilot "github.com/github/copilot-sdk/go"
@@ -14,7 +15,7 @@ func TestCheckBuiltins(t *testing.T) {
 	if err := checkBuiltins(nil); err != nil {
 		t.Fatalf("empty list rejected: %v", err)
 	}
-	for _, bad := range []string{"bash", "apply_patch", "view", "sql", "rg", "web_search", ""} {
+	for _, bad := range []string{"bash", "apply_patch", "view", "sql", "rg", ""} {
 		if err := checkBuiltins([]string{"web_fetch", bad}); err == nil {
 			t.Errorf("checkBuiltins allowed %q", bad)
 		}
@@ -38,11 +39,16 @@ func TestGithubMCPConfig(t *testing.T) {
 }
 
 func TestWebFetchHint(t *testing.T) {
-	if webFetchHint([]string{"github-mcp-server-search_code"}) != "" {
+	if webFetchHint([]string{"github-mcp-server-search_code"}, false) != "" {
 		t.Error("hint added without web_fetch")
 	}
-	if webFetchHint([]string{"web_fetch"}) == "" {
-		t.Error("no hint with web_fetch enabled")
+	noSearch := webFetchHint([]string{"web_fetch"}, false)
+	if !strings.Contains(noSearch, "duckduckgo") {
+		t.Errorf("keyless hint should carry fetch-based search, got %q", noSearch)
+	}
+	withSearch := webFetchHint([]string{"web_fetch"}, true)
+	if withSearch == "" || strings.Contains(withSearch, "duckduckgo") {
+		t.Errorf("with web_search the hint should pair the tools, got %q", withSearch)
 	}
 }
 

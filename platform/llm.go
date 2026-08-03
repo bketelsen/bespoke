@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -28,9 +29,10 @@ import (
 )
 
 type llmGateway struct {
-	model   string
-	briefs  *sql.DB // platformd's db; per-user brief injection (ADR-0019)
-	ghToken string  // hosted GitHub MCP auth (ADR-0024); "" = GitHub builtins degrade away
+	model    string
+	briefs   *sql.DB // platformd's db; per-user brief injection (ADR-0019)
+	ghToken  string  // hosted GitHub MCP auth (ADR-0024); "" = GitHub builtins degrade away
+	braveKey string  // Brave Search API key (ADR-0025); "" = web_search degrades to fetch
 
 	mu     sync.RWMutex
 	client *copilot.Client
@@ -71,6 +73,7 @@ func newLLMGateway() *llmGateway {
 	return &llmGateway{
 		model:    os.Getenv("BESPOKE_LLM_MODEL"), // empty = CLI default
 		ghToken:  githubToken(),
+		braveKey: braveKey(),
 		status:   "LLM gateway starting…",
 		lastDone: time.Now(),
 	}
@@ -179,6 +182,18 @@ func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools 
 		return "", fmt.Errorf("gateway unavailable: %s", status)
 	}
 
+	// web_search is gateway-implemented (ADR-0025): swap the name out of
+	// the runtime-builtin list and serve the tool ourselves. Without a key
+	// it drops away and the web_fetch hint carries search instead.
+	hasSearch := false
+	if slices.Contains(builtins, "web_search") {
+		builtins = slices.DeleteFunc(slices.Clone(builtins), func(n string) bool { return n == "web_search" })
+		if g.braveKey != "" {
+			tools = append(tools, braveSearchTool(g.braveKey))
+			hasSearch = true
+		}
+	}
+
 	allowed := make([]string, 0, len(tools)+len(builtins)) // empty → inference only
 	for _, t := range tools {
 		allowed = append(allowed, t.Name)
@@ -187,7 +202,7 @@ func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools 
 	perms := denyAll
 	if len(builtins) > 0 {
 		perms = builtinPermissions(builtins)
-		system += webFetchHint(builtins)
+		system += webFetchHint(builtins, hasSearch)
 	}
 	cfg := &copilot.SessionConfig{
 		ClientName:              "bespoke",

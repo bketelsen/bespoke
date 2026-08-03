@@ -43,11 +43,15 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   hosts, no sandbox bypass) and the read-only GitHub MCP subset (session
   gets the hosted `api.githubcopilot.com/mcp/` server, token from
   `BESPOKE_GITHUB_TOKEN`/`GITHUB_TOKEN`/`gh auth token`; no token → those
-  tools quietly vanish). Web search rides `web_fetch` via a system-prompt
-  hint — the runtime's hosted `web_search` is not exposed to SDK sessions
-  (verified v1.0.8). Anything outside the menu is rejected; shell and
-  filesystem builtins are never eligible. Today only platformd's dashboard
-  chat opts in (all of the menu); per-app chats stay app-tools-only.
+  tools quietly vanish). `web_search` is gateway-implemented against the
+  Brave Search API
+  ([ADR-0025](../adr/0025-brave-web-search-gateway-tool.md); key from
+  `BESPOKE_BRAVE_API_KEY`) — the runtime's hosted `web_search` is not
+  exposed to SDK sessions (verified v1.0.8); with no key, search degrades
+  to `web_fetch` against a results page via a system-prompt hint.
+  Anything outside the menu is rejected; shell and filesystem builtins
+  are never eligible. Today only platformd's dashboard chat opts in (all
+  of the menu); per-app chats stay app-tools-only.
 - **`pkg/llm` interface (provider-neutral):** `llm.New(app)` →
   `Complete(ctx, prompt, ...opts)`, `CompleteJSON(ctx, prompt, &out, ...opts)`
   (JSON-only instruction + fence stripping), `Healthy(ctx)`, with options
@@ -97,6 +101,10 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
 - Soft dependency: a GitHub token for the dashboard chat's GitHub tools
   (ADR-0024) — `BESPOKE_GITHUB_TOKEN` in the env file, or `gh` signed in as
   the platform user. Missing token only removes those tools.
+- Soft dependency: `BESPOKE_BRAVE_API_KEY` in the env file for real web
+  search (ADR-0025); missing key degrades `web_search` to fetch-based
+  search. Add both to `~/bespoke/env` on the app host and restart
+  platformd.
 - platformd checks `GetAuthStatus` at startup and every 5 minutes; failures
   surface as a dashboard warning banner, and `/llm/healthz` returns 503.
   The gateway starting/down never blocks the dashboard.
