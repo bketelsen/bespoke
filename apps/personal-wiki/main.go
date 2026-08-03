@@ -73,6 +73,10 @@ func main() {
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
+			if err := ensureIndex(r.Context(), sqldb, user.Login); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 			alpha := r.URL.Query().Get("sort") == "alpha"
 			q := r.URL.Query().Get("q")
 			pages, err := loadPages(r.Context(), sqldb, user.Login, alpha, q)
@@ -85,7 +89,23 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			views.Home(user, pages, recent, alpha, q).Render(r.Context(), w)
+			var indexID int64
+			if err := sqldb.QueryRowContext(r.Context(),
+				"SELECT id FROM pages WHERE login = ? AND title = ?", user.Login, indexTitle).Scan(&indexID); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			index, err := loadPage(r.Context(), sqldb, user.Login, indexID)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			graph, err := loadGraph(r.Context(), sqldb, user.Login)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			views.Home(user, index, orphanPages(graph), pages, recent, alpha, q).Render(r.Context(), w)
 		})
 
 		mux.HandleFunc("GET /new", func(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +155,12 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			views.View(user, page, backlinks).Render(r.Context(), w)
+			graph, err := loadGraph(r.Context(), sqldb, user.Login)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			views.View(user, page, breadcrumb(graph, page.Title), backlinks).Render(r.Context(), w)
 		})
 
 		mux.HandleFunc("GET /page/{id}/edit", func(w http.ResponseWriter, r *http.Request) {
@@ -180,8 +205,9 @@ func main() {
 		mux.HandleFunc("POST /page/{id}/delete", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			id := r.PathValue("id")
+			// The Index is the hierarchy root — it cannot be deleted.
 			if _, err := sqldb.ExecContext(r.Context(),
-				"DELETE FROM pages WHERE id = ? AND login = ?", id, user.Login); err != nil {
+				"DELETE FROM pages WHERE id = ? AND login = ? AND title != ?", id, user.Login, indexTitle); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -307,6 +333,16 @@ func upsertPage(ctx context.Context, sqldb *sql.DB, login, title, body string, t
 }
 
 func updatePage(ctx context.Context, sqldb *sql.DB, login string, id int64, title, body string, tags []string) error {
+	// The Index anchors the hierarchy; its body is editable but its title
+	// is load-bearing (breadcrumbs, ensureIndex) and cannot change.
+	var current string
+	if err := sqldb.QueryRowContext(ctx,
+		"SELECT title FROM pages WHERE id = ? AND login = ?", id, login).Scan(&current); err != nil {
+		return err
+	}
+	if current == indexTitle && title != indexTitle {
+		return fmt.Errorf("the %s page cannot be renamed", indexTitle)
+	}
 	res, err := sqldb.ExecContext(ctx,
 		"UPDATE pages SET title = ?, body = ?, updated_at = datetime('now') WHERE id = ? AND login = ?",
 		title, body, id, login)
@@ -527,32 +563,20 @@ func localStamp(created string) string {
 	return t.Local().Format("Mon Jan 2 2006, 3:04 PM")
 }
 
-// chatContext feeds the in-app chat (ADR-0015): page titles + tags so the
-// model can answer "what do I know about X" and point to search/get_page.
+// chatContext feeds the in-app chat (ADR-0015): the wiki's hierarchy as an
+// indented tree (children = [[links]], rooted at Index) plus orphans, so
+// the model authors into the structure instead of a flat pile of titles.
 func chatContext(ctx context.Context, sqldb *sql.DB, login string) (string, error) {
-	rows, err := sqldb.QueryContext(ctx,
-		"SELECT id, title FROM pages WHERE login = ? ORDER BY updated_at DESC LIMIT 200", login)
+	if err := ensureIndex(ctx, sqldb, login); err != nil {
+		return "", err
+	}
+	graph, err := loadGraph(ctx, sqldb, login)
 	if err != nil {
 		return "", err
 	}
-	defer rows.Close()
 	var b strings.Builder
-	b.WriteString("Personal wiki pages (title only — use search_pages/get_page tools for content):\n")
-	n := 0
-	for rows.Next() {
-		var id int64
-		var title string
-		if err := rows.Scan(&id, &title); err != nil {
-			return "", err
-		}
-		fmt.Fprintf(&b, "#%d %s\n", id, title)
-		n++
-	}
-	if err := rows.Err(); err != nil {
-		return "", err
-	}
-	if n == 0 {
-		b.WriteString("(no pages yet)\n")
-	}
+	b.WriteString("Wiki hierarchy — indentation shows parent → child via [[links]], rooted at the required Index page. " +
+		"Titles only; use get_page for content. New pages must be linked from a parent to join the hierarchy.\n\n")
+	b.WriteString(hierarchyText(graph))
 	return b.String(), nil
 }

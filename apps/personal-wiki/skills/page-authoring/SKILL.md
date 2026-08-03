@@ -20,14 +20,23 @@ a primary author: create pages with `create_page` and revise them with
   exists, say so and show what's there (`get_page`) instead of inventing a
   variant title.
 
-## Linking
+## Linking and the hierarchy
 
+- The wiki is a hierarchy rooted at the required [[Index]] page: a page's
+  children are whatever its body `[[links]]` to. Every page must be
+  reachable from the Index — after `create_page`, ALWAYS link the new
+  page from its parent (a section page, or the Index itself) with
+  `update_page`, or it shows up as an orphan on the home page.
 - Link liberally with `[[Title]]` anywhere in a body. Every concept that
   deserves its own page someday should be a link today — the wiki
   auto-creates an empty stub page for any `[[Title]]` that doesn't exist
   yet, and backlinks appear on the target page automatically.
 - Before writing, `search_pages` for related pages and link to what
-  already exists using their exact titles.
+  already exists using their exact titles. The chat context shows the
+  current hierarchy tree — place new pages under the section where they
+  belong rather than piling everything onto the Index.
+- The Index is a curated table of contents: short, sectioned, links-only
+  where possible. It cannot be renamed or deleted.
 
 ## Structure
 

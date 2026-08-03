@@ -29,6 +29,12 @@ Brian's single-user reference wiki for jotting and looking up notes, browsing by
 - Viewing a page updates last_viewed_at (drives "recently viewed" resurfacing)
 - Edit/delete anytime, permanent delete (no trash)
 
+## Hierarchy
+- A root page titled "Index" is required: auto-created, undeletable, unrenameable. It is the wiki's table of contents.
+- The hierarchy is derived, not stored: a page's children are the pages its body `[[links]]` to, and its place is its shortest link path from Index (shown as breadcrumbs on the page view).
+- Home renders the Index page as the lead card; pages not reachable from Index are surfaced there as orphans to attach or absorb.
+- Every new page should be linked from a parent (or the Index) — chat context presents the hierarchy tree so the LLM authors into it.
+
 ## Non-goals
 - No real-time collaboration or sharing
 - No version history

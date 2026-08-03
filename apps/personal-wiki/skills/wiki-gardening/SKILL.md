@@ -12,6 +12,11 @@ propose it with the page link (`/page/<id>`) instead.
 
 ## Procedure
 
+0. **Attach orphans.** The chat context's hierarchy tree lists orphans —
+   pages not reachable from [[Index]] via links. For each: link it from
+   the section page where it belongs (or the Index) with `update_page`,
+   or fold its content into an existing page and propose deleting the
+   remnant. An empty orphans list is the first mark of a healthy wiki.
 1. **Find stubs.** Stubs are pages auto-created by `[[links]]` with empty
    bodies. `get_page` on titles that look bare; a stub returns no body
    text. Fill each stub with `update_page` — even two good sentences and

@@ -9,8 +9,17 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/card"
 )
 
-templ View(user auth.User, p Page, backlinks []PageSummary) {
+templ View(user auth.User, p Page, crumbs []PageSummary, backlinks []PageSummary) {
 	@ui.AppShell(ui.ShellProps{Title: p.Title, User: user}) {
+		if len(crumbs) > 0 {
+			<nav class="mb-3 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+				for _, c := range crumbs {
+					<a href={ templ.SafeURL(fmt.Sprintf("/page/%d", c.ID)) } class="text-primary hover:underline">{ c.Title }</a>
+					<span>›</span>
+				}
+				<span class="min-w-0 truncate">{ p.Title }</span>
+			</nav>
+		}
 		@card.Card() {
 			@card.Header() {
 				<div class="flex flex-wrap items-center justify-between gap-2">
@@ -21,11 +30,13 @@ templ View(user auth.User, p Page, backlinks []PageSummary) {
 						@button.Button(button.Props{Href: fmt.Sprintf("/page/%d/edit", p.ID), Variant: button.VariantOutline, Size: button.SizeSm}) {
 							Edit
 						}
-						<form method="post" action={ templ.SafeURL(fmt.Sprintf("/page/%d/delete", p.ID)) }>
-							@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantDestructive, Size: button.SizeSm}) {
-								Delete
-							}
-						</form>
+						if p.Title != "Index" {
+							<form method="post" action={ templ.SafeURL(fmt.Sprintf("/page/%d/delete", p.ID)) }>
+								@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantDestructive, Size: button.SizeSm}) {
+									Delete
+								}
+							</form>
+						}
 					</div>
 				</div>
 				if len(p.Tags) > 0 {

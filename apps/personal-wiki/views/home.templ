@@ -11,7 +11,7 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/input"
 )
 
-templ Home(user auth.User, pages []PageSummary, recent []PageSummary, alpha bool, q string) {
+templ Home(user auth.User, index Page, orphans []PageSummary, pages []PageSummary, recent []PageSummary, alpha bool, q string) {
 	@ui.AppShell(ui.ShellProps{Title: "Personal Wiki", User: user}) {
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<form method="get" action="/" class="flex-1">
@@ -21,6 +21,37 @@ templ Home(user auth.User, pages []PageSummary, recent []PageSummary, alpha bool
 				New page
 			}
 		</div>
+		if q == "" {
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						<div class="flex items-center justify-between gap-2">
+							@card.Title() {
+								Index
+							}
+							@button.Button(button.Props{Href: fmt.Sprintf("/page/%d/edit", index.ID), Variant: button.VariantOutline, Size: button.SizeSm}) {
+								Edit
+							}
+						</div>
+					}
+					@card.Content() {
+						@ui.Markdown(index.RenderedBody)
+					}
+				}
+			</div>
+			if len(orphans) > 0 {
+				<div class="mt-6">
+					<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Not in the hierarchy yet</p>
+					<div class="mt-2 flex flex-wrap gap-2">
+						for _, p := range orphans {
+							<a href={ templ.SafeURL(fmt.Sprintf("/page/%d", p.ID)) } class="rounded-md border border-dashed bg-card px-3 py-1.5 text-sm hover:bg-accent">
+								{ p.Title }
+							</a>
+						}
+					</div>
+				</div>
+			}
+		}
 		if len(recent) > 0 {
 			<div class="mt-6">
 				<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recently viewed</p>
