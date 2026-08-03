@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// lastInputs records the most recent input batch the fake Lemonade saw, so
+// tests can assert on model-specific task prefixes.
+var lastInputs []string
+
 // fakeLemonade serves an OpenAI-compatible /embeddings endpoint returning a
 // distinct vector per input, deliberately in reverse index order to prove
 // the gateway reorders by the index field.
@@ -34,6 +38,7 @@ func fakeLemonade(t *testing.T) *httptest.Server {
 		for i := len(req.Input) - 1; i >= 0; i-- {
 			data = append(data, datum{Index: i, Embedding: []float32{float32(i), 1}})
 		}
+		lastInputs = req.Input
 		json.NewEncoder(w).Encode(map[string]any{"data": data})
 	}))
 	t.Cleanup(srv.Close)
@@ -72,6 +77,36 @@ func TestEmbedGateway(t *testing.T) {
 		if len(v) != 2 || v[0] != float32(i) {
 			t.Errorf("embedding %d out of order or malformed: %v", i, v)
 		}
+	}
+}
+
+func TestEmbedGatewayNomicPrefixes(t *testing.T) {
+	srv := fakeLemonade(t)
+	g := &embedGateway{base: srv.URL, model: "nomic-embed-text-v2-moe", hc: http.DefaultClient}
+
+	if rec := embedRequest(t, g, `{"app":"notes","kind":"query","texts":["milk"]}`); rec.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(lastInputs) != 1 || lastInputs[0] != "search_query: milk" {
+		t.Errorf("query prefix missing: %q", lastInputs)
+	}
+	if rec := embedRequest(t, g, `{"app":"notes","texts":["milk"]}`); rec.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(lastInputs) != 1 || lastInputs[0] != "search_document: milk" {
+		t.Errorf("document prefix missing: %q", lastInputs)
+	}
+
+	g.model = "some-other-model"
+	if rec := embedRequest(t, g, `{"app":"notes","kind":"query","texts":["milk"]}`); rec.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(lastInputs) != 1 || lastInputs[0] != "milk" {
+		t.Errorf("non-nomic model should get no prefix: %q", lastInputs)
+	}
+
+	if rec := embedRequest(t, g, `{"app":"notes","kind":"nonsense","texts":["milk"]}`); rec.Code != http.StatusBadRequest {
+		t.Errorf("bad kind: want 400, got %d", rec.Code)
 	}
 }
 

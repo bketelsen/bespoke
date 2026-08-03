@@ -23,10 +23,15 @@ func TestEmbed(t *testing.T) {
 		}
 		var req struct {
 			App   string   `json:"app"`
+			Kind  string   `json:"kind"`
 			Texts []string `json:"texts"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.App != "test" {
 			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		if req.Kind != "document" && req.Kind != "query" {
+			http.Error(w, "bad kind "+req.Kind, http.StatusBadRequest)
 			return
 		}
 		vecs := make([][]float32, len(req.Texts))
@@ -41,12 +46,20 @@ func TestEmbed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 2 || got[1][0] != 1 {
-		t.Fatalf("unexpected embeddings: %v", got)
+	if got.Model != "m" || len(got.Vectors) != 2 || got.Vectors[1][0] != 1 {
+		t.Fatalf("unexpected embeddings: %+v", got)
 	}
 
-	if got, err := embedClient(srv.URL).Embed(context.Background(), nil); got != nil || err != nil {
-		t.Errorf("empty input: want nil, nil; got %v, %v", got, err)
+	qv, err := embedClient(srv.URL).EmbedQuery(context.Background(), "find me")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(qv.Vectors) != 1 {
+		t.Fatalf("query: want 1 vector, got %+v", qv)
+	}
+
+	if got, err := embedClient(srv.URL).Embed(context.Background(), nil); err != nil || len(got.Vectors) != 0 {
+		t.Errorf("empty input: want empty result, got %+v, %v", got, err)
 	}
 }
 

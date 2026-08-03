@@ -18,16 +18,37 @@ import (
 // the surrounding feature (ADR-0029).
 var ErrEmbedUnavailable = errors.New("embeddings unavailable")
 
-// Embed returns one vector per text, in input order, via the gateway's
-// Lemonade-backed embeddings endpoint (ADR-0029). Rank with llm.Cosine.
-// Mechanical like Classify — no options, never user-brief-tagged. At most
-// 64 texts of 8KB each per call; embedding is best-effort by design, so a
-// failed Embed should never fail the write that triggered it.
-func (c *Client) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+// Embedded is the result of an embedding call: one vector per input text,
+// in input order, plus the backend model that produced them. Store Model
+// alongside vectors — a model change invalidates them (ADR-0029).
+type Embedded struct {
+	Model   string
+	Vectors [][]float32
+}
+
+// Embed embeds documents for storage and later ranking with llm.Cosine
+// (ADR-0029). Mechanical like Classify — no options, never
+// user-brief-tagged. At most 64 texts of 8KB each per call; embedding is
+// best-effort by design, so a failed Embed should never fail the write
+// that triggered it. Returns ErrEmbedUnavailable (wrapped) when the
+// gateway has no backend.
+func (c *Client) Embed(ctx context.Context, texts []string) (*Embedded, error) {
+	return c.embed(ctx, "document", texts)
+}
+
+// EmbedQuery embeds a search query for ranking against stored document
+// vectors (retrieval models treat queries and documents asymmetrically;
+// the gateway applies the model's task prefixes). One text in, one vector
+// out at Vectors[0].
+func (c *Client) EmbedQuery(ctx context.Context, q string) (*Embedded, error) {
+	return c.embed(ctx, "query", []string{q})
+}
+
+func (c *Client) embed(ctx context.Context, kind string, texts []string) (*Embedded, error) {
 	if len(texts) == 0 {
-		return nil, nil
+		return &Embedded{}, nil
 	}
-	body, _ := json.Marshal(map[string]any{"app": c.app, "texts": texts})
+	body, _ := json.Marshal(map[string]any{"app": c.app, "kind": kind, "texts": texts})
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.base+"/llm/embed", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -47,6 +68,7 @@ func (c *Client) Embed(ctx context.Context, texts []string) ([][]float32, error)
 		return nil, fmt.Errorf("llm gateway: %s: %s", resp.Status, strings.TrimSpace(string(msg)))
 	}
 	var out struct {
+		Model      string      `json:"model"`
 		Embeddings [][]float32 `json:"embeddings"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
@@ -55,7 +77,7 @@ func (c *Client) Embed(ctx context.Context, texts []string) ([][]float32, error)
 	if len(out.Embeddings) != len(texts) {
 		return nil, fmt.Errorf("llm gateway: got %d embeddings for %d texts", len(out.Embeddings), len(texts))
 	}
-	return out.Embeddings, nil
+	return &Embedded{Model: out.Model, Vectors: out.Embeddings}, nil
 }
 
 // Cosine returns the cosine similarity of two vectors in [-1, 1], or 0 for

@@ -64,11 +64,14 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   Streaming is deferred until the first app needs it (the SDK supports
   message deltas; add a `/llm/stream` SSE endpoint then).
 - **Embeddings ([ADR-0029](../adr/0029-embeddings-via-llm-gateway.md)):**
-  `POST /llm/embed` on the same plane — `{app, texts[]}` in, `{model,
-  embeddings[][]}` out (≤64 texts of ≤8KB per call), backed by Lemonade's
-  OpenAI-compatible `/embeddings` (`BESPOKE_LEMONADE_URL`, model from
-  `BESPOKE_EMBED_MODEL`, default `nomic-embed-text-v2-moe`). Client side:
-  `Embed(ctx, texts)` plus the pure ranking helper `llm.Cosine(a, b)`.
+  `POST /llm/embed` on the same plane — `{app, kind?, texts[]}` in,
+  `{model, embeddings[][]}` out (≤64 texts of ≤8KB per call), backed by
+  Lemonade's OpenAI-compatible `/embeddings` (`BESPOKE_LEMONADE_URL`, model
+  from `BESPOKE_EMBED_MODEL`, default `nomic-embed-text-v2-moe`). The
+  gateway applies model-specific retrieval prefixes per `kind` (documents
+  vs queries), keeping apps model-blind. Client side: `Embed(ctx, texts)` /
+  `EmbedQuery(ctx, q)` → `*llm.Embedded{Model, Vectors}` plus the pure
+  ranking helper `llm.Cosine(a, b)`.
   **No stub mode** — without a backend the endpoint 503s and `pkg/llm`
   returns `llm.ErrEmbedUnavailable`; apps degrade to lexical paths. Vectors
   are stored per-app (SQLite BLOBs, brute-force cosine — no C extensions),

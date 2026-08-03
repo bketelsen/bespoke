@@ -46,10 +46,18 @@ func (g *embedGateway) register(mux *http.ServeMux) {
 		}
 		var req struct {
 			App   string   `json:"app"`
+			Kind  string   `json:"kind"` // "document" (default) or "query"
 			Texts []string `json:"texts"`
 		}
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil || len(req.Texts) == 0 {
 			http.Error(w, "bad request: need {app, texts}", http.StatusBadRequest)
+			return
+		}
+		if req.Kind == "" {
+			req.Kind = "document"
+		}
+		if req.Kind != "document" && req.Kind != "query" {
+			http.Error(w, `kind must be "document" or "query"`, http.StatusBadRequest)
 			return
 		}
 		if len(req.Texts) > embedMaxTexts {
@@ -63,9 +71,9 @@ func (g *embedGateway) register(mux *http.ServeMux) {
 			}
 		}
 		start := time.Now()
-		vecs, err := g.embed(r.Context(), req.Texts)
-		log.Printf("embed app=%s texts=%d dur=%s err=%v",
-			req.App, len(req.Texts), time.Since(start).Round(time.Millisecond), err)
+		vecs, err := g.embed(r.Context(), req.Kind, req.Texts)
+		log.Printf("embed app=%s kind=%s texts=%d dur=%s err=%v",
+			req.App, req.Kind, len(req.Texts), time.Since(start).Round(time.Millisecond), err)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
@@ -76,8 +84,20 @@ func (g *embedGateway) register(mux *http.ServeMux) {
 
 // embed calls Lemonade's OpenAI-compatible embeddings endpoint and returns
 // one vector per input, in input order (the response's index field is
-// authoritative, not its array position).
-func (g *embedGateway) embed(ctx context.Context, texts []string) ([][]float32, error) {
+// authoritative, not its array position). Nomic models want retrieval task
+// prefixes — the gateway adds them so apps stay model-blind.
+func (g *embedGateway) embed(ctx context.Context, kind string, texts []string) ([][]float32, error) {
+	if strings.HasPrefix(g.model, "nomic-embed") {
+		prefix := "search_document: "
+		if kind == "query" {
+			prefix = "search_query: "
+		}
+		prefixed := make([]string, len(texts))
+		for i, t := range texts {
+			prefixed[i] = prefix + t
+		}
+		texts = prefixed
+	}
 	body, _ := json.Marshal(map[string]any{"model": g.model, "input": texts})
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.base+"/embeddings", bytes.NewReader(body))
 	if err != nil {

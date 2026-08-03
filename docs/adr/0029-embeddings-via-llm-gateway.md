@@ -27,9 +27,12 @@ The LLM gateway grows an embeddings endpoint, and apps consume it only
 through `pkg/llm`:
 
 - platformd serves **`POST /llm/embed`** on the internal 4001 plane
-  (ADR-0012): request `{app, texts[]}`, response `{model, embeddings[][]}`,
-  one vector per input text, order preserved. Bounded: at most 64 texts per
-  call, 8KB per text.
+  (ADR-0012): request `{app, kind?, texts[]}`, response `{model,
+  embeddings[][]}`, one vector per input text, order preserved. Bounded: at
+  most 64 texts per call, 8KB per text. `kind` is `"document"` (default) or
+  `"query"` — retrieval models treat the two asymmetrically, and the
+  gateway applies model-specific task prefixes (nomic's `search_document: `
+  / `search_query: `) so apps stay model-blind.
 - The backend is **Lemonade's OpenAI-compatible `/embeddings`** endpoint
   (`BESPOKE_LEMONADE_URL`, the same env the audio gateway uses), model from
   `BESPOKE_EMBED_MODEL` (default `nomic-embed-text-v2-moe`). Apps never see
@@ -38,10 +41,11 @@ through `pkg/llm`:
   `pkg/llm` surfaces `llm.ErrEmbedUnavailable`; fake vectors would silently
   poison stored indexes. Callers MUST degrade — semantic features switch
   off, lexical paths keep working.
-- **`pkg/llm` interface:** `Embed(ctx, texts) ([][]float32, error)` on the
-  existing client, plus the pure helper `llm.Cosine(a, b)` so every app
-  ranks the same way. No options: embeddings are mechanical, never
-  user-brief-tagged.
+- **`pkg/llm` interface:** `Embed(ctx, texts)` for documents and
+  `EmbedQuery(ctx, q)` for queries, both returning `*llm.Embedded{Model,
+  Vectors}` — apps store `Model` beside vectors and re-embed on mismatch —
+  plus the pure helper `llm.Cosine(a, b)` so every app ranks the same way.
+  No options: embeddings are mechanical, never user-brief-tagged.
 - **Vectors live in each app's own SQLite** as BLOB columns, embedded at
   write time (and backfilled opportunistically), compared brute-force with
   cosine in Go. No central vector store, no shared index — the same
@@ -69,8 +73,8 @@ through `pkg/llm`:
   they are sub-second and interruption-safe, so deploys need not wait on
   them.
 - A future model change (`BESPOKE_EMBED_MODEL`) silently invalidates stored
-  vectors — apps SHOULD store the model name alongside vectors and re-embed
-  on mismatch.
+  vectors — apps MUST store `Embedded.Model` alongside vectors, filter
+  ranking to matching-model rows, and let their re-embed sweep converge.
 
 ## Alternatives considered
 
