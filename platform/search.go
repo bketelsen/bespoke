@@ -27,13 +27,14 @@ var searchClient = &http.Client{Timeout: 900 * time.Millisecond}
 type SearchGroup struct {
 	Slug    string
 	Name    string
+	Base    string
 	Results []web.SearchResult
 }
 
 // aggregateSearch fans out q to every app's /_search, forwarding identity.
 // Groups are returned only for apps that produced at least one result, in
 // the input order (fan-out yields no cross-app ranking).
-func aggregateSearch(ctx context.Context, login, name, q string, apps []manifest.App) []SearchGroup {
+func aggregateSearch(ctx context.Context, login, name, q string, dev bool, domain string, apps []manifest.App) []SearchGroup {
 	host := cmp.Or(os.Getenv("BESPOKE_BIND_IP"), "127.0.0.1")
 
 	type slot struct {
@@ -70,7 +71,12 @@ func aggregateSearch(ctx context.Context, login, name, q string, apps []manifest
 			if len(payload.Results) == 0 {
 				return
 			}
-			slots[i] = slot{SearchGroup{Slug: app.Slug, Name: app.Name, Results: payload.Results}, true}
+			slots[i] = slot{SearchGroup{
+				Slug:    app.Slug,
+				Name:    app.Name,
+				Base:    appBase(dev, domain, app),
+				Results: payload.Results,
+			}, true}
 		}(i, app)
 	}
 	wg.Wait()
@@ -84,6 +90,23 @@ func aggregateSearch(ctx context.Context, login, name, q string, apps []manifest
 	return groups
 }
 
+func appBase(dev bool, domain string, app manifest.App) string {
+	if dev {
+		return fmt.Sprintf("http://localhost:%d/", app.Port)
+	}
+	return fmt.Sprintf("https://%s.%s/", app.Slug, domain)
+}
+
+func joinURL(base, rel string) string {
+	if base == "" {
+		return ""
+	}
+	if rel == "" {
+		rel = "/"
+	}
+	return strings.TrimSuffix(base, "/") + rel
+}
+
 // formatSearchGroups renders grouped results as text for the search tool —
 // each app's heading then "title — url" lines, so an LLM can cite deep links.
 func formatSearchGroups(groups []SearchGroup) string {
@@ -94,8 +117,8 @@ func formatSearchGroups(groups []SearchGroup) string {
 	for _, g := range groups {
 		fmt.Fprintf(&b, "## %s\n", g.Name)
 		for _, r := range g.Results {
-			if r.URL != "" {
-				fmt.Fprintf(&b, "- %s — %s\n", r.Title, r.URL)
+			if href := joinURL(g.Base, r.URL); href != "" {
+				fmt.Fprintf(&b, "- %s — %s\n", r.Title, href)
 			} else {
 				fmt.Fprintf(&b, "- %s\n", r.Title)
 			}

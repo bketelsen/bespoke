@@ -39,7 +39,7 @@ func TestAggregateSearch(t *testing.T) {
 	todo := startSearchApp(t, "todo", "Todo", []web.SearchResult{{Title: "buy milk", URL: "/task/7"}})
 	empty := startSearchApp(t, "empty", "Empty", nil)
 
-	groups := aggregateSearch(context.Background(), "me@x", "Me", "milk",
+	groups := aggregateSearch(context.Background(), "me@x", "Me", "milk", false, "x.example",
 		[]manifest.App{notes, todo, empty})
 
 	if len(groups) != 2 {

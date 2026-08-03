@@ -81,6 +81,11 @@ config, stop: you're off the path (see AGENTS.md).
    6a. **Dashboard card**: `web.DashboardCard(mux, provider)` returning a
    small templ fragment of the user's live state (apps/journal `DashCard`
    is the reference) — cheap queries only, no LLM calls, no AppShell.
+   6a-search. **Global search**: `web.Search(mux, provider)` serving
+   `GET /_search?q=` with a user-scoped provider returning
+   `[]web.SearchResult{Title, Snippet?, URL?, Timestamp?}` — cheap DB
+   queries only, no LLM. Joins dashboard search and the platform search
+   tool automatically; deep links are preferred, with home URL fallback.
    6b. **Intents (ADR-0018)**: declare `[[intents]]` for anything other
    apps might feed this one + `web.Intent(mux, ...)`; then REVIEW EXISTING
    APPS for natural integrations both ways (event banners via

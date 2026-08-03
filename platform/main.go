@@ -91,7 +91,7 @@ func main() {
 			llm.WithBuiltins(assistantBuiltinNames()...))
 
 		// External LLM clients: the platform MCP endpoint (ADR-0021).
-		mux.Handle("/mcp", mcpHandler(root))
+		mux.Handle("/mcp", mcpHandler(root, domain))
 
 		mux.HandleFunc("POST /_tools/search", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
@@ -105,7 +105,8 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			out := formatSearchGroups(aggregateSearch(r.Context(), user.Login, user.Name, args.Q, apps))
+			dev := os.Getenv("BESPOKE_DEV_USER") != ""
+			out := formatSearchGroups(aggregateSearch(r.Context(), user.Login, user.Name, args.Q, dev, domain, apps))
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Write([]byte(out))
 		})
@@ -151,15 +152,8 @@ func main() {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-				for _, g := range aggregateSearch(r.Context(), user.Login, user.Name, q, apps) {
-					vg := views.Group{Name: g.Name}
-					// Resolve the app's base URL for deep links.
-					for _, a := range apps {
-						if a.Slug == g.Slug {
-							vg.Base = string(views.AppBase(dev, domain, a))
-							break
-						}
-					}
+				for _, g := range aggregateSearch(r.Context(), user.Login, user.Name, q, dev, domain, apps) {
+					vg := views.Group{Name: g.Name, Base: g.Base}
 					for _, res := range g.Results {
 						vg.Results = append(vg.Results, views.Result{Title: res.Title, Snippet: res.Snippet, URL: res.URL})
 					}
