@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -52,10 +53,15 @@ func cmdDeploy(args []string) error {
 	if err := generate(cfg, apps); err != nil {
 		return err
 	}
+	modfile, cleanupModfile, err := prepareBuildModfile()
+	if err != nil {
+		return err
+	}
+	defer cleanupModfile()
 
 	build := func(slug, pkg string) error {
 		fmt.Printf("==> build %s (linux/%s)\n", slug, cfg.GoArch)
-		cmd := exec.Command("go", "build", "-o", "dist/bin/"+slug, pkg)
+		cmd := exec.Command("go", "build", "-mod=mod", "-modfile="+modfile, "-o", "dist/bin/"+slug, pkg)
 		cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS=linux", "GOARCH="+cfg.GoArch)
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 		return cmd.Run()
@@ -145,6 +151,13 @@ echo "LLM gateway still busy after 180s; deploying anyway" >&2`, cfg.SelfieTSIP)
 		}
 	}
 
+	// Reconcile the installed registry after quiescing. Removed apps are
+	// stopped and their generated runtime artifacts are deleted, but their
+	// databases are deliberately preserved under ~/bespoke/data.
+	if err := retireRemovedApps(cfg.SelfieSSH, apps); err != nil {
+		return err
+	}
+
 	restart := func(slug string, port int) error {
 		fmt.Printf("==> restart %s\n", slug)
 		// Swap in the new binary, keep the old as .prev, roll back if
@@ -193,6 +206,66 @@ exit 1`, slug, cfg.SelfieTSIP, port)
 
 	fmt.Printf("==> deployed. Dashboard: https://%s\n", cfg.Domain)
 	return nil
+}
+
+func prepareBuildModfile() (string, func(), error) {
+	mod, err := os.ReadFile("go.mod")
+	if err != nil {
+		return "", nil, fmt.Errorf("read go.mod: %w", err)
+	}
+	f, err := os.CreateTemp(".", ".bespoke-deploy-*.mod")
+	if err != nil {
+		return "", nil, fmt.Errorf("create deploy modfile: %w", err)
+	}
+	modfile, err := filepath.Abs(f.Name())
+	if err == nil {
+		_, err = f.Write(mod)
+	}
+	closeErr := f.Close()
+	if err == nil {
+		err = closeErr
+	}
+	sumfile := strings.TrimSuffix(modfile, ".mod") + ".sum"
+	cleanup := func() {
+		_ = os.Remove(modfile)
+		_ = os.Remove(sumfile)
+	}
+	if err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("write deploy modfile: %w", err)
+	}
+	if sum, readErr := os.ReadFile("go.sum"); readErr == nil {
+		if err := os.WriteFile(sumfile, sum, 0o600); err != nil {
+			cleanup()
+			return "", nil, fmt.Errorf("write deploy sumfile: %w", err)
+		}
+	} else if !os.IsNotExist(readErr) {
+		cleanup()
+		return "", nil, fmt.Errorf("read go.sum: %w", readErr)
+	}
+	return modfile, cleanup, nil
+}
+
+func retireRemovedApps(host string, apps []manifest.App) error {
+	desired := make([]string, 0, len(apps))
+	for _, app := range apps {
+		desired = append(desired, app.Slug)
+	}
+	script := fmt.Sprintf(`desired=' %s '
+for manifest in "$HOME"/bespoke/apps/*/app.toml; do
+  [ -e "$manifest" ] || continue
+  slug=$(basename "$(dirname "$manifest")")
+  case "$desired" in
+    *" $slug "*) continue ;;
+  esac
+  echo "==> retire $slug (database preserved)"
+  systemctl --user disable --now "bespoke-$slug.service" >/dev/null 2>&1 || true
+  rm -f "$HOME/.config/systemd/user/bespoke-$slug.service" \
+    "$HOME/bespoke/bin/$slug" "$HOME/bespoke/bin/$slug.prev" "$manifest"
+  rmdir "$(dirname "$manifest")" 2>/dev/null || true
+done
+systemctl --user daemon-reload`, strings.Join(desired, " "))
+	return run("ssh", host, script)
 }
 
 func run(name string, args ...string) error {

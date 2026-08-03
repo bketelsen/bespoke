@@ -81,7 +81,9 @@ guard).
 
 1. Regenerate artifacts (`gen`).
 2. Cross-compile each target with `CGO_ENABLED=0 GOOS=linux GOARCH=<deploy.env>`;
-   `platformd`, `bespoke`, and `builder-runner` always build.
+   `platformd`, `bespoke`, and `builder-runner` always build. Dependency
+   resolution uses an ephemeral copy of the instance module files, so
+   platform-only dependencies never change the instance's `go.sum`.
 3. rsync binaries to a staging dir (`~/bespoke/bin.new/`), manifests, units,
    instance `assets/styles.css`, and litestream config to the app host; create
    `~/bespoke/env` if missing
@@ -95,13 +97,16 @@ guard).
    the 4001 plane (over ssh — the ACL blocks it remotely) until
    `inflight == 0`, up to 180s, so restarts never kill an in-flight
    completion. An unreachable gateway proceeds immediately.
-6. Per app: keep the old binary as `.prev`, swap in the new one,
+6. Reconcile the installed registry: stop apps absent from the current
+   manifests and remove their generated unit, deployed manifest, and binaries.
+   Retired apps' SQLite databases are always preserved.
+7. Per app: keep the old binary as `.prev`, swap in the new one,
    `daemon-reload` + `enable --now` + restart the unit (a brand-new app
    starts with no manual step), then poll
    `http://<selfie-ts-ip>:<port>/healthz` — 20 attempts, 1s curl timeout,
    0.5s spacing (≈10–30s wall clock); on failure restore `.prev`, restart,
    exit non-zero.
-7. `--edge`: push `dist/gen/bespoke.caddy` to the edge host (sudo tee) and
+8. `--edge`: push `dist/gen/bespoke.caddy` to the edge host (sudo tee) and
    reload Caddy. Required on first deploy and whenever apps are added or
    removed.
 
