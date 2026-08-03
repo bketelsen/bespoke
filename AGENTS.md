@@ -74,12 +74,18 @@ them rather than improvising, whichever agent you are:
   by default. The 16px-input rule in `design/input.css` is load-bearing —
   never remove or override it. A view that needs a mouse is a failed build.
 - LLM inference only via `llm.New(slug)` → `Complete`/`CompleteJSON`/
-  `Classify` ([design](docs/design/llm-gateway.md)); never call a model
-  provider or the Copilot SDK from an app. Expect ~1.5s per call — design
-  features accordingly. Local dev needs platformd running (`just dev`) and
-  the `copilot` CLI authenticated. Tag user-facing completions with
-  `llm.WithUser(user.Login)` so the gateway injects the user's brief
-  (ADR-0019) — chat does this automatically; omit it for mechanical calls.
+  `Classify`/`Embed` ([design](docs/design/llm-gateway.md)); never call a
+  model provider or the Copilot SDK from an app. Expect ~1.5s per
+  completion — design features accordingly. Local dev needs platformd
+  running (`just dev`) and the `copilot` CLI authenticated. Tag user-facing
+  completions with `llm.WithUser(user.Login)` so the gateway injects the
+  user's brief (ADR-0019) — chat does this automatically; omit it for
+  mechanical calls. Embeddings (ADR-0029) are Lemonade-backed with NO
+  stub: handle `llm.ErrEmbedUnavailable` by degrading (lexical search
+  keeps working), store vectors in the app's own SQLite as BLOBs with
+  brute-force `llm.Cosine`, embed on write (best-effort — a failed embed
+  never fails the write), and in a search provider embed only the query,
+  never the corpus.
   Runtime builtins (web fetch/search, read-only GitHub) are a
   gateway-curated allowlist reserved for the dashboard chat via
   `llm.WithBuiltins` (ADR-0024) — apps don't opt in without a new ADR.

@@ -47,8 +47,13 @@ Each result:
   empty). Malformed, slow (beyond platformd's timeout), oversized (beyond
   platformd's cap), or absent responses cause the app to be dropped from
   results — never an error surfaced to the user.
-- Providers MUST be cheap database queries; they MUST NOT call the LLM gateway
-  or other network services.
+- Providers MUST be cheap database queries; they MUST NOT run LLM
+  completions or call other network services. Sole carve-out
+  ([ADR-0029](../adr/0029-embeddings-via-llm-gateway.md)): one `llm.Embed`
+  call to embed **the query text only** — corpus embedding happens at write
+  time, never during a search request — and the provider MUST still answer
+  within platformd's timeout, falling back to lexical results when
+  embeddings are unavailable (`llm.ErrEmbedUnavailable`) or slow.
 - An app that does not register `/_search` is silently absent from search.
 
 ## Derived artifacts
@@ -60,6 +65,8 @@ Each result:
 
 ## References
 
-- Rationale: [ADR-0028](../adr/0028-dashboard-global-search-fan-out.md)
+- Rationale: [ADR-0028](../adr/0028-dashboard-global-search-fan-out.md);
+  query-embedding carve-out:
+  [ADR-0029](../adr/0029-embeddings-via-llm-gateway.md)
 - Context: [design/internal-services.md](../design/internal-services.md),
   [specs/app-manifest.md](app-manifest.md)

@@ -28,7 +28,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Files/blobs | 2 | candidate | future `pkg/files` | When two apps first share uploads (ADR-0006) |
 | Notifications | 1 or 2 | candidate | future `pkg/notify` | Tier depends on delivery mechanism |
 | Scheduled jobs | — | candidate | systemd timers per app first | Escalate only if cross-app coordination appears |
-| Embeddings | 2 | candidate | future `llm.Embed` | Backend ready: nomic-embed-text-v2-moe downloaded on Lemonade |
+| Embeddings | 2 | **live** | `llm.Embed(ctx, texts)` / `llm.EmbedQuery(ctx, q)` + `llm.Cosine` → gateway `/llm/embed` | ADR-0029; Lemonade-backed (nomic-embed-text-v2-moe, task prefixes applied by the gateway), no stub — `llm.ErrEmbedUnavailable` without a backend; vectors + model stored per-app as SQLite BLOBs |
 | Global search | — | **live** | `web.Search(mux, provider)` → `GET /_search?q=`; dashboard box + `search` MCP/chat tool | ADR-0028; HTTP fan-out (like cards), grouped by app, never their databases; no central index |
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
 | Private/local completion | 2 | candidate | future `llm` option (e.g. `WithLocal()`) | Route privacy-sensitive prompts to Lemonade instead of Copilot |
@@ -91,7 +91,9 @@ The gateway pattern (ADR-0009/0012) means backends are invisible to apps —
   **transcription works** (Whisper-Large-v3-Turbo; the first call after
   idle loads the model and is slow — budget for it), **TTS works**
   (kokoro-v1 generated real audio), and `nomic-embed-text-v2-moe-GGUF` is
-  downloaded for future `llm.Embed`. Transcription accepts **WAV only** —
+  downloaded and serving `llm.Embed`
+  ([ADR-0029](../adr/0029-embeddings-via-llm-gateway.md)). Transcription
+  accepts **WAV only** —
   the pkg/ui recorder encodes WAV client-side for exactly this reason.
 
 ## Adding a capability (decision tree)

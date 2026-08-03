@@ -313,10 +313,11 @@ func copilotTools(tools []wireTool, login string) []copilot.Tool {
 
 // serveInternal runs the internal-services listener (the 4001 plane,
 // ADR-0012) — never routed by Caddy.
-func serveInternal(addr string, llm *llmGateway, audio *audioGateway) {
+func serveInternal(addr string, llm *llmGateway, audio *audioGateway, embed *embedGateway) {
 	mux := http.NewServeMux()
 	llm.register(mux)
 	audio.register(mux)
+	embed.register(mux)
 	// Change notifications from apps (ADR-0022): wake the dashboard's
 	// /_live subscribers so cards refresh on any app's mutation.
 	mux.HandleFunc("POST /notify", func(w http.ResponseWriter, r *http.Request) {

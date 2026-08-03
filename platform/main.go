@@ -48,9 +48,10 @@ func main() {
 	gw.briefs = sqldb // gateway injects per-user briefs (ADR-0019)
 	go gw.start()
 	agw := newAudioGateway()
+	egw := newEmbedGateway()
 
 	web.Serve("platformd", 4000, func(mux *http.ServeMux) {
-		go serveInternal(*internal, gw, agw) // after flag.Parse (inside Serve)
+		go serveInternal(*internal, gw, agw, egw) // after flag.Parse (inside Serve)
 
 		// The all-apps chat (ADR-0020): context aggregated from every
 		// chat-enabled app over the app contract — never their databases.
