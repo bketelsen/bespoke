@@ -63,6 +63,17 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   [internal-services.md](internal-services.md).
   Streaming is deferred until the first app needs it (the SDK supports
   message deltas; add a `/llm/stream` SSE endpoint then).
+- **Embeddings ([ADR-0029](../adr/0029-embeddings-via-llm-gateway.md)):**
+  `POST /llm/embed` on the same plane — `{app, texts[]}` in, `{model,
+  embeddings[][]}` out (≤64 texts of ≤8KB per call), backed by Lemonade's
+  OpenAI-compatible `/embeddings` (`BESPOKE_LEMONADE_URL`, model from
+  `BESPOKE_EMBED_MODEL`, default `nomic-embed-text-v2-moe`). Client side:
+  `Embed(ctx, texts)` plus the pure ranking helper `llm.Cosine(a, b)`.
+  **No stub mode** — without a backend the endpoint 503s and `pkg/llm`
+  returns `llm.ErrEmbedUnavailable`; apps degrade to lexical paths. Vectors
+  are stored per-app (SQLite BLOBs, brute-force cosine — no C extensions),
+  embedded at write time. Embed calls are not counted in `/llm/activity`
+  quiesce: sub-second and interruption-safe.
 - **Model selection** is gateway config: `BESPOKE_LLM_MODEL` env on platformd
   (empty = CLI default). Apps never specify a model.
 - **User brief injection ([ADR-0019](../adr/0019-user-brief.md)):** requests
@@ -73,7 +84,9 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   [Lemonade](https://lemonade-server.ai/) server runs locally on selfie
   (OpenAI-compatible). The audio gateway uses it in production — Whisper
   transcription in, kokoro TTS out — behind the same plane
-  ([ADR-0014](../adr/0014-audio-service-transcription.md)). Text completion
+  ([ADR-0014](../adr/0014-audio-service-transcription.md)), and text
+  embeddings via `/llm/embed`
+  ([ADR-0029](../adr/0029-embeddings-via-llm-gateway.md)). Text completion
   on Lemonade remains a candidate: when adopted it slots in behind the same
   `pkg/llm` seam, with a future explicit privacy option (e.g. `WithLocal()`,
   not yet implemented) for prompts that must not leave the house. See the
@@ -105,6 +118,9 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   search (ADR-0025); missing key degrades `web_search` to fetch-based
   search. Add both to `~/bespoke/env` on the app host and restart
   platformd.
+- Soft dependency: `BESPOKE_LEMONADE_URL` for embeddings (ADR-0029, same
+  env the audio gateway uses); missing it makes `/llm/embed` return 503
+  and apps fall back to lexical search.
 - platformd checks `GetAuthStatus` at startup and every 5 minutes; failures
   surface as a dashboard warning banner, and `/llm/healthz` returns 503.
   The gateway starting/down never blocks the dashboard.
