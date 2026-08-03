@@ -29,7 +29,7 @@ Each result:
 | Field | Type | Required | Constraints |
 | --- | --- | --- | --- |
 | `title` | string | yes | Human-readable label for the hit |
-| `snippet` | string | no | Matched text / context; may be markdown |
+| `snippet` | string | no | Matched text / context; rendered as plain text, keep it short (a line or two) — oversized responses are dropped |
 | `url` | string | no | App-relative path; platformd resolves to the app's base URL. Omitted or `/` means "home" |
 | `timestamp` | string (RFC 3339) | no | Used only for the app's own ordering |
 

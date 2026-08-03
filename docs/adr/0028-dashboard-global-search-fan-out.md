@@ -66,7 +66,8 @@ groups the results. Rules:
 
 ## References
 
-- Builds on: [ADR-0012](0012-internal-services-two-tier.md),
+- Builds on: [ADR-0007](0007-sqlite-per-app-litestream.md),
+  [ADR-0012](0012-internal-services-two-tier.md),
   [ADR-0017](0017-app-provided-dashboard-cards.md),
   [ADR-0020](0020-dashboard-chat-aggregated-context.md),
   [ADR-0021](0021-tools-agentic-chat-mcp.md)
