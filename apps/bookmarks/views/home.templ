@@ -1,0 +1,90 @@
+package views
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/badge"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+)
+
+// Bookmark is a saved link: title + tags only (README non-goals: no notes).
+type Bookmark struct {
+	ID        int64
+	URL       string
+	Title     string
+	Tags      []string
+	CreatedAt string
+}
+
+templ Home(user auth.User, bms []Bookmark, allTags []string, activeTag string) {
+	@ui.AppShell(ui.ShellProps{Title: "Bookmarks", User: user}) {
+		<div class="flex items-center justify-between gap-3">
+			<h1 class="text-lg font-semibold">Bookmarks</h1>
+			@button.Button(button.Props{Href: "/add"}) {
+				@icon.Plus(icon.Props{Class: "size-4"})
+				Add link
+			}
+		</div>
+		if len(allTags) > 0 {
+			<div class="mt-3 flex flex-wrap gap-2">
+				for _, t := range allTags {
+					if t == activeTag {
+						<a href="/" class="inline-flex">
+							@badge.Badge(badge.Props{Variant: badge.VariantDefault}) {
+								{ t }
+							}
+						</a>
+					} else {
+						<a href={ templ.SafeURL("/?tag=" + t) } class="inline-flex">
+							@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+								{ t }
+							}
+						</a>
+					}
+				}
+			</div>
+		}
+		<div data-init="@get('/_live')">
+			@BookmarksLive(bms, activeTag)
+		</div>
+	}
+}
+
+// BookmarksLive is the live region (ADR-0022): patched over SSE on any
+// change to this user's bookmarks. Tag filtering is client-navigated via
+// ?tag=, so the live patch always shows the unfiltered set — acceptable
+// since a change while filtered is rare and a page reload restores the
+// filter.
+templ BookmarksLive(bms []Bookmark, activeTag string) {
+	<div id="bookmarks-live" class="mt-4 space-y-2">
+		if len(bms) == 0 {
+			<p class="mt-4 text-muted-foreground">No bookmarks yet — add your first link above.</p>
+		}
+		for _, b := range bms {
+			@bookmarkRow(b)
+		}
+	</div>
+}
+
+templ bookmarkRow(b Bookmark) {
+	<div class="group flex items-center gap-2 rounded-lg border bg-card px-4 py-3">
+		<a href={ templ.SafeURL(b.URL) } target="_blank" rel="noopener noreferrer" class="min-w-0 flex-1">
+			<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+				<span class="min-w-0 break-words font-medium text-foreground hover:underline">{ b.Title }</span>
+				for _, t := range b.Tags {
+					@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "shrink-0"}) {
+						{ t }
+					}
+				}
+			</div>
+			<div class="truncate text-xs text-muted-foreground">{ b.URL }</div>
+		</a>
+		<span class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+			@button.Button(button.Props{Href: fmt.Sprintf("/bookmarks/%d/edit", b.ID), Variant: button.VariantGhost, Size: button.SizeIcon, Class: "size-8 text-muted-foreground pointer-coarse:size-8"}) {
+				@icon.Pencil(icon.Props{Class: "size-3.5"})
+			}
+		</span>
+	</div>
+}

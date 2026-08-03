@@ -1,0 +1,10 @@
+name        = "Bookmarks"
+slug        = "bookmarks"
+port        = 4109
+icon        = "bookmark"
+description = "Quick-access saved links with titles and tags"
+
+[[intents]]
+name    = "save-link"
+title   = "Save Link"
+accepts = "text"
