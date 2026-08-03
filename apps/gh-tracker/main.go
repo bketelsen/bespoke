@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/bketelsen/bespoke/apps/gh-tracker/views"
@@ -29,6 +30,27 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Background refresh (ADR-0022): GitHub data changes without any user
+	// mutation, so a live region alone never wakes — this loop refreshes
+	// stale caches and notifies only when something was actually refetched.
+	go func() {
+		for range time.Tick(5 * time.Minute) {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			logins, err := distinctLogins(ctx, sqldb)
+			if err != nil {
+				log.Println("refresh: logins:", err)
+				cancel()
+				continue
+			}
+			for _, login := range logins {
+				if _, refreshed, err := loadProjectGroups(ctx, sqldb, login); err == nil && refreshed {
+					web.Changed(login)
+				}
+			}
+			cancel()
+		}
+	}()
+
 	web.Run("gh-tracker", func(mux *http.ServeMux) {
 		web.DashboardCard(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
 			count, err := openCounts(ctx, sqldb, user.Login)
@@ -41,7 +63,7 @@ func main() {
 		// Live projects region (ADR-0022): patched on any project/token change
 		// or background refresh.
 		web.Live(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
-			groups, err := loadProjectGroups(ctx, sqldb, user.Login)
+			groups, _, err := loadProjectGroups(ctx, sqldb, user.Login)
 			if err != nil {
 				return nil, err
 			}
@@ -50,7 +72,7 @@ func main() {
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
-			groups, err := loadProjectGroups(r.Context(), sqldb, user.Login)
+			groups, _, err := loadProjectGroups(r.Context(), sqldb, user.Login)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return

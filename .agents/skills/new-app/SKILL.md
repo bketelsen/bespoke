@@ -65,11 +65,16 @@ config, stop: you're off the path (see AGENTS.md).
    register `web.Skills(mux, fs)` before `EnableChat` — chat surfaces get
    a `load_skill` tool. Skills may only reference tools the app
    registers (apps/personal-wiki is the reference).
-   6-live. **Live region (ADR-0022)**: render the dynamic part of the page
-   as an id-stable fragment, mount `web.Live(mux, fragment)`, wrap with
-   `data-init="@get('/_live')"`, and call `web.Changed(user.Login)`
-   after EVERY mutation — handlers, tools, and intents (journal/todo are
-   references). A page that goes stale after a chat action is a bug.
+   6-live. **Live region (ADR-0022) — NOT optional, spec or no spec**:
+   render the dynamic part of the page as an id-stable fragment, mount
+   `web.Live(mux, fragment)`, wrap with `data-init="@get('/_live')"`, and
+   call `web.Changed(user.Login)` after EVERY mutation — handlers, tools,
+   and intents (journal/todo are references). A page that goes stale
+   after a chat action is a bug. This is the most commonly skipped step:
+   if `grep -r web.Live apps/<slug>` finds nothing, the build is not
+   done. Data that changes without a user mutation (external APIs,
+   timers) needs its refresher to call `web.Changed` too — a live region
+   nothing ever wakes is still a stale page.
    6a. **Dashboard card**: `web.DashboardCard(mux, provider)` returning a
    small templ fragment of the user's live state (apps/journal `DashCard`
    is the reference) — cheap queries only, no LLM calls, no AppShell.
@@ -88,6 +93,13 @@ config, stop: you're off the path (see AGENTS.md).
      through AppShell; the dashboard at `http://localhost:4000` lists it;
      `curl http://localhost:<port>/healthz` says ok. Exercise each route you
      added (create/read at minimum) with curl and confirm the data persists.
+   - **Live pass (ADR-0022):** with `just dev` running,
+     `curl -m 3 http://localhost:<port>/_live` must return HTTP 200 and
+     hold the stream open (it patches on change, not on connect) — a 404
+     means the live region was never mounted (step 6-live). Full proof:
+     stream `/_live` in the background, perform one mutation via curl,
+     and confirm a fragment patch arrives. Then check every POST handler,
+     tool, and intent in the diff calls `web.Changed`.
    - **Mobile pass (ADR-0016):** walk every view mentally (or in devtools) at
      375px/coarse pointer — no hover-only controls (`pointer-coarse:`
      present on any hover-revealed element), no fixed widths that force page

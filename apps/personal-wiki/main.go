@@ -42,8 +42,48 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// loadHome gathers everything the home page's live region shows; shared
+	// by the page handler and the /_live provider (ADR-0022).
+	loadHome := func(ctx context.Context, login string) (views.Page, []views.PageSummary, []views.PageSummary, []views.PageSummary, error) {
+		if err := ensureIndex(ctx, sqldb, login); err != nil {
+			return views.Page{}, nil, nil, nil, err
+		}
+		var indexID int64
+		if err := sqldb.QueryRowContext(ctx,
+			"SELECT id FROM pages WHERE login = ? AND title = ?", login, indexTitle).Scan(&indexID); err != nil {
+			return views.Page{}, nil, nil, nil, err
+		}
+		index, err := loadPage(ctx, sqldb, login, indexID)
+		if err != nil {
+			return views.Page{}, nil, nil, nil, err
+		}
+		graph, err := loadGraph(ctx, sqldb, login)
+		if err != nil {
+			return views.Page{}, nil, nil, nil, err
+		}
+		pages, err := loadPages(ctx, sqldb, login, false, "")
+		if err != nil {
+			return views.Page{}, nil, nil, nil, err
+		}
+		recent, err := loadRecentlyViewed(ctx, sqldb, login, 5)
+		if err != nil {
+			return views.Page{}, nil, nil, nil, err
+		}
+		return index, orphanPages(graph), pages, recent, nil
+	}
+
 	web.Run("personal-wiki", func(mux *http.ServeMux) {
 		registerTools(mux, sqldb) // before EnableChat so chat sees them
+
+		// Live home region (ADR-0022): Index, orphans, recents, and the page
+		// list re-render on any mutation — chat edits update the open page.
+		web.Live(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
+			index, orphans, pages, recent, err := loadHome(ctx, user.Login)
+			if err != nil {
+				return nil, err
+			}
+			return views.HomeLive(index, orphans, pages, recent), nil
+		})
 		skills, _ := fs.Sub(skillFS, "skills")
 		if err := web.Skills(mux, skills); err != nil { // ADR-0026: page-authoring, wiki-gardening
 			log.Fatal(err)
@@ -73,39 +113,22 @@ func main() {
 
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
-			if err := ensureIndex(r.Context(), sqldb, user.Login); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
 			alpha := r.URL.Query().Get("sort") == "alpha"
 			q := r.URL.Query().Get("q")
-			pages, err := loadPages(r.Context(), sqldb, user.Login, alpha, q)
+			index, orphans, pages, recent, err := loadHome(r.Context(), user.Login)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			recent, err := loadRecentlyViewed(r.Context(), sqldb, user.Login, 5)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+			// Search and A–Z views list pages with request state the live
+			// region doesn't carry; reload just the list for those.
+			if q != "" || alpha {
+				if pages, err = loadPages(r.Context(), sqldb, user.Login, alpha, q); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
-			var indexID int64
-			if err := sqldb.QueryRowContext(r.Context(),
-				"SELECT id FROM pages WHERE login = ? AND title = ?", user.Login, indexTitle).Scan(&indexID); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			index, err := loadPage(r.Context(), sqldb, user.Login, indexID)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			graph, err := loadGraph(r.Context(), sqldb, user.Login)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			views.Home(user, index, orphanPages(graph), pages, recent, alpha, q).Render(r.Context(), w)
+			views.Home(user, index, orphans, pages, recent, alpha, q).Render(r.Context(), w)
 		})
 
 		mux.HandleFunc("GET /new", func(w http.ResponseWriter, r *http.Request) {

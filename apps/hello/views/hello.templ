@@ -20,10 +20,20 @@ templ Home(user auth.User, visits int) {
 				}
 			}
 			@card.Content() {
-				@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
-					{ fmt.Sprintf("visit #%d", visits) }
-				}
+				<div data-init="@get('/_live')">
+					@CountLive(visits)
+				</div>
 			}
 		}
 	}
+}
+
+// CountLive is the live region (ADR-0022): re-rendered whenever any visit
+// lands, so a second tab or device updates this one in place.
+templ CountLive(visits int) {
+	<div id="visits-live">
+		@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+			{ fmt.Sprintf("visit #%d", visits) }
+		}
+	</div>
 }

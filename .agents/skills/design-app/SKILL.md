@@ -66,7 +66,9 @@ new-app step 1 if building immediately):
 
 ## Platform surfaces
 <Dashboard card: what one glance shows. Intents declared/consumed (from
-angle 6). Tools the chat/MCP get — and any deliberately withheld.>
+angle 6). Tools the chat/MCP get — and any deliberately withheld. Live
+region: which part of the page updates in place (ADR-0022 makes this
+mandatory — name the region even if it's just "the list").>
 
 ## Services
 <pkg/llm, pkg/audio (voice in / TTS), or "none". Note latency-driven UX

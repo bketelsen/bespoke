@@ -70,7 +70,7 @@ SPEC_READY slug=<short-kebab-slug>
 ...
 
 ## Platform surfaces
-<dashboard card, chat tools, intents>
+<dashboard card, chat tools, intents, live-updating region (mandatory — name it)>
 
 ## Non-goals
 ...
