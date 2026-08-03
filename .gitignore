@@ -17,6 +17,9 @@ tools/
 /builder-runner
 /bespoke
 /platform
+# /platform is for a stray binary; re-include the source directory so new
+# files under platform/ aren't silently ignored.
+!/platform/
 /platformd
 /testapp
 deploy/deploy.env
