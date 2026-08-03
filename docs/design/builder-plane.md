@@ -47,9 +47,12 @@ deploy watcher (bjk, systemd --user path unit + oneshot, generated)
   state.
 - **Deploy watcher** (`bespoke gen`-generated `bespoke-deploywatch.path` +
   `.service` under `bjk`): on a deploy request, fetches the bundle into
-  the canonical on-host clone, runs `just check` (nothing agent-produced
-  is trusted before this), pushes `main`, polls `GET /llm/activity` until
-  the gateway is idle (bounded wait + grace), then `bespoke deploy <slug>
+  the canonical on-host clone — fast-forward when the bundle extends
+  main, otherwise its commits are rebased onto current main (runs clone
+  at approve time, so unrelated pushes mid-run leave the bundle stale,
+  not wrong) — runs `just check` (nothing agent-produced is trusted
+  before this), pushes `main`, polls `GET /llm/activity` until the
+  gateway is idle (bounded wait + grace), then `bespoke deploy <slug>
   --edge`, and writes `<run>.result.json`.
 - **Gateway activity endpoint** (`platform/llm.go`): `GET /llm/activity`
   on the 4001 plane → `{"inflight": n, "idle_seconds": s}` counting
@@ -107,7 +110,9 @@ JSON. Shared binaries (`bespoke`, `builder-runner`, `copilot`) live in
   (builder app shows "queued" with age; `systemctl --user status` under
   `builder`). Watcher dead → same, deploy side, under `bjk`. Bundle that
   fails `just check` → result file `ok:false` with the check output;
-  nothing was pushed or deployed.
+  nothing was pushed or deployed. Bundle whose rebase onto current main
+  conflicts → `ok:false` ("rebuild against the new main"); the clone is
+  left clean.
 - **One run at a time:** the runner processes requests serially; the
   builder app enforces a single active run in its own state.
 

@@ -15,8 +15,9 @@ import (
 // docs/design/builder-plane.md): `bespoke deploywatch` runs on the app host
 // as the platform user, triggered by bespoke-deploywatch.path whenever a
 // request lands in the deploy spool. Nothing the agent produced is trusted:
-// the bundle is fast-forwarded into the canonical clone, `just check` must
-// pass, and only then is the commit pushed and the narrow deploy run.
+// the bundle is fast-forwarded into the canonical clone (rebased onto main
+// first when other work landed mid-run), `just check` must pass, and only
+// then is the commit pushed and the narrow deploy run.
 
 func spoolDir() string {
 	if s := os.Getenv("BESPOKE_SPOOL"); s != "" {
@@ -125,21 +126,9 @@ func processDeploy(spool, path string) {
 	}
 
 	logEvent("verifying bundle for " + req.Slug)
-	if out, err := git("bundle", "verify", bundle); err != nil {
-		fail("bundle verify: " + out)
-		return
-	}
-	if out, err := git("fetch", bundle, "main"); err != nil {
-		fail("bundle fetch: " + out)
-		return
-	}
-	// The agent's history must extend ours — no rewrites, no merges.
-	if _, err := git("merge-base", "--is-ancestor", "HEAD", "FETCH_HEAD"); err != nil {
-		fail("bundle does not fast-forward from current main")
-		return
-	}
-	if out, err := git("merge", "--ff-only", "FETCH_HEAD"); err != nil {
-		fail("fast-forward: " + out)
+	if err := applyBundle(git, bundle, logEvent); err != nil {
+		rollback()
+		fail(err.Error())
 		return
 	}
 
@@ -169,6 +158,39 @@ func processDeploy(spool, path string) {
 		Run: req.Run, OK: true, Detail: "deployed",
 		DeployedAt: time.Now().Format(time.RFC3339),
 	})
+}
+
+// applyBundle brings the bundle's commits onto HEAD. The agent's history
+// must extend ours — no rewrites, no merges — so the clean case is a plain
+// fast-forward. A bundle whose base is behind main isn't wrong, just stale
+// (something landed on main while the run was building): its commits are
+// rebased onto current main and `just check` re-judges the result.
+// Conflicts fail the run — the app must be rebuilt against the new main.
+// The clone is left cherry-pick-clean on failure; the caller resets HEAD.
+func applyBundle(git func(...string) (string, error), bundle string, logEvent func(string)) error {
+	if out, err := git("bundle", "verify", bundle); err != nil {
+		return fmt.Errorf("bundle verify: %s", out)
+	}
+	if out, err := git("fetch", bundle, "main"); err != nil {
+		return fmt.Errorf("bundle fetch: %s", out)
+	}
+	if _, err := git("merge-base", "--is-ancestor", "HEAD", "FETCH_HEAD"); err == nil {
+		if out, err := git("merge", "--ff-only", "FETCH_HEAD"); err != nil {
+			return fmt.Errorf("fast-forward: %s", out)
+		}
+		return nil
+	}
+	base, err := git("merge-base", "HEAD", "FETCH_HEAD")
+	if err != nil {
+		return fmt.Errorf("bundle shares no history with main: %s", base)
+	}
+	count, _ := git("rev-list", "--count", base+"..FETCH_HEAD")
+	logEvent("bundle is behind main; rebasing " + count + " commit(s) onto current main")
+	if out, err := git("cherry-pick", base+"..FETCH_HEAD"); err != nil {
+		_, _ = git("cherry-pick", "--abort")
+		return fmt.Errorf("bundle conflicts with current main; rebuild against the new main:\n%s", tail(out, 1000))
+	}
+	return nil
 }
 
 func writeResult(runDir string, res deployResult) {
