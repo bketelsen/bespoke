@@ -13,7 +13,7 @@ Motivated by [ADR-0028](../adr/0028-dashboard-global-search-fan-out.md).
 forwarded by platformd exactly as for `/_card`). Registered with:
 
 ```go
-web.Search(mux, func(user auth.User, q string) []web.SearchResult { ... })
+web.Search(mux, func(ctx context.Context, user auth.User, q string) ([]web.SearchResult, error) { ... })
 ```
 
 Response body is JSON:
