@@ -15,3 +15,9 @@ func appURL(dev bool, domain string, app manifest.App) templ.SafeURL {
 	}
 	return templ.SafeURL(fmt.Sprintf("https://%s.%s/", app.Slug, domain))
 }
+
+// AppBase is appURL exported for the search handler, which resolves each
+// result's app-relative URL against its app's base.
+func AppBase(dev bool, domain string, app manifest.App) templ.SafeURL {
+	return appURL(dev, domain, app)
+}

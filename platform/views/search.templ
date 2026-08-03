@@ -1,0 +1,67 @@
+package views
+
+import (
+	"strings"
+
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+)
+
+type Result struct{ Title, Snippet, URL string }
+
+type Group struct {
+	Name    string
+	Base    string
+	Results []Result
+}
+
+// resultHref joins an app's base URL with a result's app-relative URL.
+func resultHref(base, rel string) string {
+	if rel == "" {
+		rel = "/"
+	}
+	return strings.TrimSuffix(base, "/") + rel
+}
+
+templ SearchResults(user auth.User, dev bool, domain string, q string, groups []Group) {
+	@ui.AppShell(ui.ShellProps{Title: "Search", User: user}) {
+		<form method="get" action="/search" class="mb-6">
+			<input
+				type="search"
+				name="q"
+				value={ q }
+				placeholder="Search all apps…"
+				class="w-full rounded-md border border-input bg-background px-3 py-2 text-base"
+				autofocus
+			/>
+		</form>
+		if q == "" {
+			<p class="text-muted-foreground">Type a query to search across your apps.</p>
+		} else if len(groups) == 0 {
+			<p class="text-muted-foreground">No results for "{ q }".</p>
+		} else {
+			<div class="space-y-6">
+				for _, g := range groups {
+					<section>
+						<h2 class="mb-2 text-sm font-semibold text-muted-foreground">{ g.Name } ({ len(g.Results) })</h2>
+						<div class="space-y-2">
+							for _, res := range g.Results {
+								@card.Card() {
+									@card.Content(card.ContentProps{Class: "py-3"}) {
+										<a href={ templ.SafeURL(resultHref(g.Base, res.URL)) } class="block">
+											<span class="font-medium">{ res.Title }</span>
+											if res.Snippet != "" {
+												<span class="mt-1 block text-sm text-muted-foreground">{ res.Snippet }</span>
+											}
+										</a>
+									}
+								}
+							}
+						</div>
+					</section>
+				}
+			</div>
+		}
+	}
+}

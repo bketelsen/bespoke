@@ -110,6 +110,35 @@ func main() {
 			views.Dashboard(user, dev, domain, apps, cards, warnings).Render(r.Context(), w)
 		})
 
+		mux.HandleFunc("GET /search", func(w http.ResponseWriter, r *http.Request) {
+			user := auth.FromContext(r.Context())
+			q := strings.TrimSpace(r.URL.Query().Get("q"))
+			dev := os.Getenv("BESPOKE_DEV_USER") != ""
+			var groups []views.Group
+			if q != "" {
+				apps, _, err := manifest.LoadAll(root)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				for _, g := range aggregateSearch(r.Context(), user.Login, user.Name, q, apps) {
+					vg := views.Group{Name: g.Name}
+					// Resolve the app's base URL for deep links.
+					for _, a := range apps {
+						if a.Slug == g.Slug {
+							vg.Base = string(views.AppBase(dev, domain, a))
+							break
+						}
+					}
+					for _, res := range g.Results {
+						vg.Results = append(vg.Results, views.Result{Title: res.Title, Snippet: res.Snippet, URL: res.URL})
+					}
+					groups = append(groups, vg)
+				}
+			}
+			views.SearchResults(user, dev, domain, q, groups).Render(r.Context(), w)
+		})
+
 		mux.HandleFunc("GET /settings", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
 			var name, brief string

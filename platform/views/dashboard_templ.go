@@ -235,7 +235,7 @@ func Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, car
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " <div data-init=\"@get('/_live')\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " <form method=\"get\" action=\"/search\" class=\"mb-6\"><input type=\"search\" name=\"q\" placeholder=\"Search all apps…\" class=\"w-full rounded-md border border-input bg-background px-3 py-2 text-base\"></form><div data-init=\"@get('/_live')\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -313,7 +313,7 @@ func Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, car
 						var templ_7745c5c3_Var14 string
 						templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(w)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/dashboard.templ`, Line: 62, Col: 9}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `platform/views/dashboard.templ`, Line: 70, Col: 9}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 						if templ_7745c5c3_Err != nil {
