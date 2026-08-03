@@ -1,0 +1,43 @@
+package views
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/ui"
+	"github.com/bketelsen/bespoke/pkg/ui/components/button"
+	"github.com/bketelsen/bespoke/pkg/ui/components/card"
+	"github.com/bketelsen/bespoke/pkg/ui/components/input"
+	"github.com/bketelsen/bespoke/pkg/ui/components/textarea"
+)
+
+templ Edit(user auth.User, p Page) {
+	@ui.AppShell(ui.ShellProps{Title: "Personal Wiki", User: user}) {
+		<form method="post" action={ templ.SafeURL(fmt.Sprintf("/page/%d/edit", p.ID)) }>
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Edit page
+					}
+				}
+				@card.Content(card.ContentProps{Class: "space-y-3"}) {
+					@input.Input(input.Props{Name: "title", Value: p.Title})
+					@textarea.Textarea(textarea.Props{Name: "body", Value: p.Body, Rows: 12, AutoResize: true})
+					@input.Input(input.Props{Name: "tags", Value: p.TagsRaw, Placeholder: "tags, comma separated"})
+				}
+				@card.Footer(card.FooterProps{Class: "justify-end gap-2"}) {
+					@button.Button(button.Props{Href: fmt.Sprintf("/page/%d", p.ID), Variant: button.VariantGhost}) {
+						Cancel
+					}
+					@button.Button(button.Props{Type: button.TypeSubmit}) {
+						Save
+					}
+				}
+			}
+		</form>
+		<form method="post" action={ templ.SafeURL(fmt.Sprintf("/page/%d/delete", p.ID)) } class="mt-3">
+			@button.Button(button.Props{Type: button.TypeSubmit, Variant: button.VariantDestructive}) {
+				Delete
+			}
+		</form>
+	}
+}

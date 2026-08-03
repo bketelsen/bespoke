@@ -1,0 +1,10 @@
+name        = "Personal Wiki"
+slug        = "personal-wiki"
+port        = 4108
+icon        = "book-open-text"
+description = "Notes, tags, and linked pages for quick reference"
+
+[[intents]]
+name    = "add-page"
+title   = "Add to Wiki"
+accepts = "text"
