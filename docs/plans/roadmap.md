@@ -158,6 +158,26 @@ apps deploy to `selfie`, builds happen on the dev machine)
     route). Journal is also the designated first consumer for the audio
     service (voice capture) once the Lemonade backlog clears.
 
+## Phase 7 — Public platform, private instances
+
+Split owner material from the public module and establish tagged releases
+([ADR-0027](../adr/0027-versioned-platform-private-instances.md),
+[architecture](../design/architecture.md),
+[CLI spec](../specs/bespoke-cli.md),
+[manifest spec](../specs/app-manifest.md)).
+
+- Public repository retains synthetic Notes and Todo showcases.
+- `bespoke init` creates a version-pinned private instance; upgrade and UI
+  commands preserve owner-controlled files.
+- GoReleaser, SVU, GitHub Releases, and `bketelsen/homebrew-tap` provide a
+  repeatable bootstrap and release path.
+- Personal apps, theme, and deployment identity migrate only after the private
+  destination passes the same check and deploy gates.
+
+Done when `v0.1.0` initializes a clean instance, the Homebrew cask reports the
+same version, Notes/Todo intents work in both public and generated instances,
+and the private owner instance deploys without personal app source in public HEAD.
+
 ## Later / ideas
 
 - Internal services, built on demand per the

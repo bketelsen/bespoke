@@ -1,0 +1,13 @@
+package views
+
+templ DashCard(notes []Note) {
+	if len(notes) == 0 {
+		<p class="text-sm text-muted-foreground">No notes yet.</p>
+	} else {
+		<ul class="space-y-1">
+			for _, n := range notes {
+				<li class="truncate text-sm">{ n.Body }</li>
+			}
+		</ul>
+	}
+}

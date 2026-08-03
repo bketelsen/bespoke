@@ -54,6 +54,21 @@ caddy:
 caddy-push:
     scripts/build-caddy.sh --push
 
+# Print the next semantic version inferred from conventional commits
+next-version:
+    svu next
+
+# Check, tag, and push the next release (initial v0.1.0 is bootstrapped manually)
+bump:
+    just check
+    goreleaser check
+    test -z "$(git status --porcelain)" || (echo "working tree is not clean" >&2; exit 1)
+    version=$(svu next); git tag -a "$version" -m "Version $version"; git push origin "$version"
+
+# Build unpublished release artifacts and the generated Homebrew cask
+release-snapshot:
+    goreleaser release --snapshot --clean --skip=publish
+
 # Remove local build output and app data
 clean:
     rm -rf dist data

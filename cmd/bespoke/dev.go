@@ -37,9 +37,13 @@ func cmdDev(args []string) error {
 		name, pkg string
 		port      int
 	}
-	procs := []proc{{"platformd", "./platform", 4000}}
+	procs := []proc{{"platformd", frameworkPackage("./platform"), 4000}}
 	for _, a := range apps {
-		procs = append(procs, proc{a.Slug, "./apps/" + a.Slug, a.Port})
+		pkg := "./apps/" + a.Slug
+		if a.Package != "" {
+			pkg = a.Package
+		}
+		procs = append(procs, proc{a.Slug, pkg, a.Port})
 	}
 
 	var cmds []*exec.Cmd

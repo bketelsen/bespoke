@@ -19,6 +19,7 @@ type App struct {
 	Port        int      `toml:"port"`
 	Icon        string   `toml:"icon"`
 	Description string   `toml:"description"`
+	Package     string   `toml:"package"`
 	Intents     []Intent `toml:"intents"`
 }
 
@@ -77,8 +78,8 @@ func Load(root, slug string) (App, error) {
 	return app, nil
 }
 
-// LoadAll scans root/apps/*/app.toml. Invalid or missing manifests never fail
-// the scan; they are reported as warnings so the dashboard can surface them.
+// LoadAll scans root/apps/*/app.toml. Directories without a manifest are
+// ignored; invalid manifests become warnings so the dashboard can surface them.
 func LoadAll(root string) (apps []App, warnings []string, err error) {
 	dirs, err := filepath.Glob(filepath.Join(root, "apps", "*"))
 	if err != nil {
@@ -91,6 +92,9 @@ func LoadAll(root string) (apps []App, warnings []string, err error) {
 			continue
 		}
 		path := filepath.Join(dir, "app.toml")
+		if _, statErr := os.Stat(path); os.IsNotExist(statErr) {
+			continue // packaged app source may live under apps without being enabled
+		}
 		var app App
 		if _, decErr := toml.DecodeFile(path, &app); decErr != nil {
 			warnings = append(warnings, fmt.Sprintf("%s: %v", dir, decErr))

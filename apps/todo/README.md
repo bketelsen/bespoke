@@ -29,7 +29,7 @@ Tasks with optional due dates, priorities, and one level of subtasks.
   `GET`/`POST /tasks/{id}/edit` — edit description/due/priority (pencil on
   each row). `POST /tasks/{id}/delete` — delete (and subtasks).
 - Completing a task via the toggle redirects to `/?did=<description>` and
-  shows a done banner offering **"Journal it →"** — journal's `add-entry`
+  shows a done banner offering **"Save as Note →"** — Notes' `add-note`
   intent discovered live from the registry (`ui.IntentsFrom`, ADR-0018).
 
 ## Platform surfaces

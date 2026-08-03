@@ -1,0 +1,10 @@
+name        = "Notes"
+slug        = "notes"
+port        = 4102
+icon        = "notebook-pen"
+description = "A simple stream of notes"
+
+[[intents]]
+name    = "add-note"
+title   = "Save as Note"
+accepts = "text"

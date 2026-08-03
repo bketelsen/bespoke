@@ -1,9 +1,12 @@
 # Spec: App Manifest (`app.toml`)
 
-Every app directory `apps/<slug>/` MUST contain an `app.toml`. The manifest is
+Every app directory `<instance>/apps/<slug>/` MUST contain an `app.toml`. The manifest is
 the **single source of truth**: platformd's registry, the dashboard, generated
 Caddy routes, systemd units, and Litestream config are all derived from
 scanning `apps/*/app.toml`. There is no separate registration step or database.
+The instance boundary is defined by
+[ADR-0027](../adr/0027-versioned-platform-private-instances.md); the manifest
+wire contract itself is unchanged.
 
 ## Fields
 
@@ -14,22 +17,23 @@ scanning `apps/*/app.toml`. There is no separate registration step or database.
 | `port` | integer | yes | Loopback port in `4101–4999` (validation rejects outside the range); unique across apps — a duplicate is warned and the later app dropped from the registry; assigned sequentially by `bespoke new`; never hand-picked |
 | `icon` | string | yes | Iconify icon name, or a path to a PNG inside the app directory |
 | `description` | string | yes | One line, shown on the dashboard |
+| `package` | string | no | Go package containing an optional platform-distributed app; omitted for ordinary instance-local apps |
 | `[[intents]]` | table array | no | Cross-app actions this app accepts — see [Intents](#intents-intents) below |
 
 ## Example
 
-The live journal manifest, verbatim:
+A local Notes app manifest:
 
 ```toml
-name        = "Journal"
-slug        = "journal"
+name        = "Notes"
+slug        = "notes"
 port        = 4102
 icon        = "notebook-pen"
-description = "One stream for everything — notes, work log, reflections"
+description = "A searchable stream of short notes"
 
 [[intents]]
-name    = "add-entry"
-title   = "Add to Journal"
+name    = "add-note"
+title   = "Add to Notes"
 accepts = "text"
 ```
 
@@ -47,12 +51,14 @@ accepts = "text"
 
 - `slug` is immutable after creation (it names the subdomain, DB, and unit).
   Renaming an app is: new app, migrate data, retire old.
-- A directory under `apps/` without a valid `app.toml` is ignored by platformd
-  and flagged as a warning on the dashboard.
+- A directory under `apps/` without `app.toml` is ignored; this permits the
+  platform module to ship opt-in app packages. A present but invalid manifest
+  is ignored and flagged as a warning on the dashboard.
 - Reserved: port `4000` and the apex subdomain (platformd), and port `4001`
   (platformd's internal LLM gateway listener — never routed by Caddy).
-- The manifest deliberately does not record language/runtime: the contract is
-  only "HTTP on `port`, honor the auth header"
+- The runtime contract is only "HTTP on `port`, honor the auth header." The
+  optional `package` is a Go build-source override used by
+  platform-distributed first-party apps; it does not change that contract
   ([ADR-0005](../adr/0005-process-per-app.md)).
 
 ## App HTTP contract
@@ -85,3 +91,10 @@ Optional repeated table declaring cross-app actions
 
 Every declared intent MUST be mounted with `web.Intent` — the declaration
 is the promise other apps' chrome relies on.
+
+## References
+
+- Rationale: [ADR-0005](../adr/0005-process-per-app.md),
+  [ADR-0018](../adr/0018-cross-app-intents.md),
+  [ADR-0027](../adr/0027-versioned-platform-private-instances.md)
+- Context: [architecture](../design/architecture.md)

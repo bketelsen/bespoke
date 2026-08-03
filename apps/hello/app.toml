@@ -1,5 +1,0 @@
-name        = "Hello"
-slug        = "hello"
-port        = 4101
-icon        = "hand"
-description = "Phase 1 proof: renders your Tailscale identity through the full stack"

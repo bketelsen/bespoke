@@ -27,7 +27,7 @@ them rather than improvising, whichever agent you are:
 
 ## Code conventions (live — the code exists)
 
-- An app is `apps/<slug>/`: `app.toml` manifest, `main.go` calling
+- In an instance, an app is `apps/<slug>/`: `app.toml` manifest, `main.go` calling
   `web.Run(slug, register)`, handlers, `migrations/*.sql`. Nothing else. See
   [apps/hello](apps/hello/main.go) for the canonical shape.
 - Identity only via `auth.FromContext` (handlers are already behind
@@ -39,7 +39,8 @@ them rather than improvising, whichever agent you are:
   dependencies anywhere.
 - Ports come from manifests ([spec](docs/specs/app-manifest.md)); never
   hardcode a listen address — `bespoke new` assigns them.
-- Create apps with `just new <slug>`; run everything locally with `just dev`
+- Create instances with a released `bespoke init`; create apps with
+  `just new <slug>`; run everything locally with `just dev`
   (platformd + every manifest app on `127.0.0.1`, fake identity via
   `BESPOKE_DEV_USER`, dashboard links point at localhost ports). New apps
   join `dev` automatically — the manifests are the registry.
@@ -48,12 +49,12 @@ them rather than improvising, whichever agent you are:
   GENERATED into `dist/gen/` — never write them by hand.
 - UI: pages are templ views composing `pkg/ui` — `ui.AppShell` wraps every
   page; vendored components live in `pkg/ui/components` and are NEVER
-  hand-edited (`./tools/templui add <name>` to vendor more; run
-  `scripts/setup-tools.sh` once first). The look lives only in
-  `design/input.css`. After changing any `.templ` file or the theme, run
-  `scripts/build-ui.sh` and COMMIT the generated `*_templ.go` and
-  `pkg/ui/assets/styles.css` — builds and deploys must not need the UI
-  toolchain.
+  hand-edited (`./tools/templui add <name>` to vendor more in the platform).
+  Platform structure and invariants live in `design/base.css`; an owner's look
+  lives in the private instance's `design/theme.css`. After changing `.templ`
+  or theme files, run `just ui` and COMMIT generated `*_templ.go` plus the
+  compiled stylesheet (`pkg/ui/assets/styles.css` in this showcase,
+  `assets/styles.css` in an instance). Builds and deploys need no UI toolchain.
 - Live UI updates (ADR-0022): call `web.Changed(user.Login)` after EVERY
   mutation (handlers, tools, intents — no exceptions), expose the page's
   dynamic region as an id-stable fragment, and mount it with
@@ -131,6 +132,18 @@ them rather than improvising, whichever agent you are:
 - Run `just check` (vet + tests + golangci-lint + `go mod tidy -diff` + the
   CGO-free linux cross-compile) before calling any change done. CI runs the
   same recipe, so a local pass is a CI pass.
+
+## Repository boundary and releases
+
+- This public repository is the versioned platform and a runnable Notes/Todo
+  showcase. Personal apps, owner theme, deployment identity, and owner agent
+  context belong in a private instance created by `bespoke init` (ADR-0027).
+- Do not add personal applications to this repository. Public `apps/` must be
+  synthetic showcases or explicitly platform-distributed first-party apps.
+- Releases use conventional commits, SVU, and GoReleaser. `just next-version`
+  previews; `just bump` checks, tags, and pushes. Never hand-edit a published
+  tag or the generated Homebrew cask.
+- Native Windows is unsupported; use WSL2.
 
 ## Documentation rules (enforced)
 

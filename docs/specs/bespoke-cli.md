@@ -5,7 +5,33 @@ humans alike use it (the [Justfile](../../Justfile) recipes wrap it);
 hand-editing generated artifacts (Caddy routes, systemd units, Litestream
 config) is forbidden by convention. Source: `cmd/bespoke`.
 
+The CLI is released with the public platform module and normally runs from a
+private instance through Go's `tool` directive
+([ADR-0027](../adr/0027-versioned-platform-private-instances.md)).
+
 ## Commands
+
+### `bespoke init <dir> --module <path> [--platform-version <v>] [--with-builder]`
+
+Create a new instance in an absent or empty directory. The generated module
+pins the running CLI's release, registers that CLI as a Go tool, and includes
+Notes and Todo, theme tokens, agent instructions, and deployment scaffolding.
+A development build without release metadata requires `--platform-version`.
+
+### `bespoke upgrade <version|latest>`
+
+Update the instance's Bespoke requirement and tool, run `go mod tidy`, and
+refresh platform-managed agent files without changing owner-controlled files.
+
+### `bespoke ui`
+
+Generate local templ output, scan both platform and instance templates with
+Tailwind, and write the committed `assets/styles.css`.
+
+### `bespoke version [--json]`
+
+Print release version, commit, build date, and builder. JSON uses `version`,
+`commit`, `date`, and `built_by`.
 
 ### `bespoke new <slug>`
 
@@ -57,7 +83,8 @@ guard).
 2. Cross-compile each target with `CGO_ENABLED=0 GOOS=linux GOARCH=<deploy.env>`;
    `platformd`, `bespoke`, and `builder-runner` always build.
 3. rsync binaries to a staging dir (`~/bespoke/bin.new/`), manifests, units,
-   and litestream config to the app host; create `~/bespoke/env` if missing
+   instance `assets/styles.css`, and litestream config to the app host; create
+   `~/bespoke/env` if missing
    with `BESPOKE_BIND_IP`, `BESPOKE_DOMAIN`,
    `BESPOKE_LLM_URL=http://<selfie-ts-ip>:4001`, `BESPOKE_ROOT`, and
    `BESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1`.
@@ -120,6 +147,7 @@ deletes a database anywhere. Prints the reminder to run
 - Rationale: [ADR-0005](../adr/0005-process-per-app.md),
   [ADR-0007](../adr/0007-sqlite-per-app-litestream.md),
   [ADR-0011](../adr/0011-split-host-deployment.md),
-  [ADR-0023](../adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md)
+  [ADR-0023](../adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md),
+  [ADR-0027](../adr/0027-versioned-platform-private-instances.md)
 - Context: [design/architecture.md](../design/architecture.md)
 - Built in: [roadmap — Phase 4](../plans/roadmap.md)

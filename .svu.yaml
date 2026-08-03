@@ -1,0 +1,9 @@
+verbose: false
+tag.pattern: ""
+tag.prefix: "v"
+tag.mode: all
+log.directory:
+  - "."
+metadata: ""
+always: true
+v0: true

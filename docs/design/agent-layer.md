@@ -25,7 +25,7 @@ invariants an agent may never route around:
   ([ADR-0008](../adr/0008-go-templ-datastar-frontend.md),
   [ADR-0010](../adr/0010-templui-component-base.md)).
 - Never hand-edit vendored templUI files in `pkg/ui` — customization goes in
-  the theme (`design/input.css`) or wrapper components.
+  the instance theme (`design/theme.css`) or wrapper components.
 - Apps listen on loopback only, on the port assigned in their manifest.
 - Deploy exclusively via the `bespoke` CLI
   ([spec](../specs/bespoke-cli.md)); never hand-edit Caddy config, systemd
@@ -63,8 +63,9 @@ invariants an agent may never route around:
   tokens; always `build-ui` + commit generated output; never fork styling
   into an app.
 - **[make-it-your-own](../../.agents/skills/make-it-your-own/SKILL.md)**
-  (canonical file: root `MAKE-IT-YOUR-OWN.md`) — the forking interview:
-  swap the owner's apps, theme, domain, and deployment for a new owner's.
+  (canonical file: root `MAKE-IT-YOUR-OWN.md`) — create a private instance,
+  choose deployment and inference settings, and pin a platform release
+  ([ADR-0027](../adr/0027-versioned-platform-private-instances.md)).
 
 Planned: a resident maintenance agent on a schedule (dependency bumps, backup
 verification, log triage) — stolen from the

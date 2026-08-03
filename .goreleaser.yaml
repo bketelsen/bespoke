@@ -1,0 +1,92 @@
+version: 2
+
+project_name: bespoke
+
+snapshot:
+  version_template: "{{ .ShortCommit }}-snapshot"
+
+builds:
+  - id: bespoke
+    main: ./cmd/bespoke
+    binary: bespoke
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - >-
+        -s -w
+        -X main.version={{ .Version }}
+        -X main.commit={{ .Commit }}
+        -X main.date={{ .CommitDate }}
+        -X main.builtBy=goreleaser
+
+archives:
+  - id: bespoke
+    ids:
+      - bespoke
+    formats:
+      - tar.gz
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^test:"
+      - "^chore"
+      - "^Merge "
+      - "go mod tidy"
+  groups:
+    - title: New Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 100
+    - title: Bug Fixes
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 200
+    - title: Documentation
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 300
+    - title: Other Work
+      order: 999
+
+homebrew_casks:
+  - name: bespoke
+    ids:
+      - bespoke
+    binaries:
+      - bespoke
+    directory: Casks
+    homepage: https://github.com/bketelsen/bespoke
+    description: A personal platform for one-off, just-for-me apps
+    license: MIT
+    skip_upload: auto
+    url:
+      verified: github.com/bketelsen/bespoke/
+    commit_msg_template: "chore: update bespoke cask to {{ .Tag }}"
+    repository:
+      owner: bketelsen
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: actions@github.com
+
+release:
+  mode: replace
+  footer: |
+    **Full Changelog**: https://github.com/bketelsen/bespoke/compare/{{ .PreviousTag }}...{{ .Tag }}

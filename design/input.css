@@ -1,8 +1,8 @@
 /* Bespoke design system — the visual identity (ADR-0010).
  *
- * This file is the ONLY place the look of the platform is defined: every app
- * compiles against these tokens via pkg/ui. Change them here, redeploy, and
- * every app updates. Apps never write CSS.
+ * This file defines the public default theme. Instance repositories import the
+ * platform's design/base.css and override these tokens in design/theme.css, so
+ * private apps and branding never need to enter this repository.
  *
  * Compiled with the Tailwind v4 standalone binary (no Node):
  *     scripts/build-ui.sh

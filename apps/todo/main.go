@@ -113,7 +113,7 @@ func main() {
 			web.Changed(user.Login)
 			dest := "/"
 			if completed != "" {
-				// Event → intent (ADR-0018): the view offers "Journal it?".
+				// Event → intent (ADR-0018): the view offers "Save as Note?".
 				dest = "/?did=" + url.QueryEscape(completed)
 			}
 			http.Redirect(w, r, dest, http.StatusSeeOther)

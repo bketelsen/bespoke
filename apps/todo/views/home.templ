@@ -98,18 +98,18 @@ templ TasksLive(tasks []Task) {
 }
 
 // doneBanner is the event→intent idiom (ADR-0018): completing a task offers
-// journaling it, via journal's declared add-entry intent from the registry.
+// saving it, via Notes' declared add-note intent from the registry.
 templ doneBanner(desc string) {
-	{{ journalIntent := findIntent(ctx, "journal", "add-entry") }}
+	{{ notesIntent := findIntent(ctx, "notes", "add-note") }}
 	<div class="mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-4 py-3">
 		@icon.CircleCheckBig(icon.Props{Class: "size-4 shrink-0 text-primary"})
 		<span class="min-w-0 flex-1 break-words text-sm">Completed: { desc }</span>
-		if journalIntent != "" {
+		if notesIntent != "" {
 			<a
-				href={ templ.SafeURL(journalIntent + "?text=" + url.QueryEscape("Completed: "+desc)) }
+				href={ templ.SafeURL(notesIntent + "?text=" + url.QueryEscape("Completed: "+desc)) }
 				class="shrink-0 text-sm text-primary hover:underline"
 			>
-				Journal it →
+				Save as Note →
 			</a>
 		}
 		<a href="/" class="shrink-0 text-sm text-muted-foreground hover:text-foreground" title="dismiss">✕</a>

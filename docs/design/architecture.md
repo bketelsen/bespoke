@@ -68,13 +68,21 @@ docs; the reference deployment lives at `bespoke.ketelsen.cloud`.)
    ([ADR-0011](../adr/0011-split-host-deployment.md)). Local dev binds
    loopback and fakes the header.
 
-## Repo layout
+## Platform and instance repositories
+
+The public platform is a versioned Go module; each owner keeps applications,
+theme, deployment identity, and agent context in one private instance module
+([ADR-0027](../adr/0027-versioned-platform-private-instances.md)). A public
+checkout remains runnable with synthetic Notes and Todo apps. `bespoke init`
+creates the normal owner layout and pins a tagged platform release.
+
+## Public repository layout
 
 ```
 bespoke/
 ├── AGENTS.md            # conventions as law (ADR-0013); CLAUDE.md/GEMINI.md/
 │                        #   .github/copilot-instructions.md are symlinks to it
-├── MAKE-IT-YOUR-OWN.md  # the forking skill (also symlinked into skills)
+├── MAKE-IT-YOUR-OWN.md  # private-instance onboarding
 ├── .agents/skills/      # design-app, new-app, new-component, make-it-your-own
 │                        #   (.claude/skills is a symlink here)
 ├── .github/             # CI (runs `just check`), issue/PR templates, dependabot
@@ -88,7 +96,7 @@ bespoke/
 ├── platform/            # platformd: apex (dashboard/chat/MCP/settings)
 │                        #   + internal plane (LLM/audio/notify)
 ├── pkg/                 # auth, db, web, ui, llm, audio (ADR-0006)
-├── design/              # input.css theme (ADR-0010)
+├── design/              # versioned base CSS + showcase defaults
 ├── apps/
 │   └── <slug>/
 │       ├── app.toml     # manifest, incl. [[intents]] (specs/app-manifest.md)
@@ -101,8 +109,9 @@ bespoke/
 └── data/                # SQLite + blobs (gitignored, Litestream-replicated)
 ```
 
-Single Go module monorepo — one dependency graph
-([ADR-0006](../adr/0006-library-first-shared-services.md)).
+The private instance keeps the canonical `apps/<slug>` layout plus
+`design/theme.css`, committed `assets/styles.css`, deployment configuration,
+and its own module path. It depends on this public module at an explicit tag.
 
 ## Shared framework (`pkg/*`)
 
@@ -136,11 +145,11 @@ Single Go module monorepo — one dependency graph
 - `design/input.css`: the bespoke theme — CSS variables (oklch colors, radius,
   typography), light/dark. This file is the visual identity; change it and
   every app restyles.
-- CSS is compiled by the Tailwind v4 **standalone binary**
-  (`scripts/build-ui.sh`); the compiled stylesheet and generated templ code
-  are committed and embedded via go:embed, served by every app at
-  `/_bespoke/` — builds and deploys need no UI toolchain, and there is still
-  no Node anywhere.
+- CSS is compiled by the Tailwind v4 **standalone binary**. Platform base CSS
+  carries components and invariants; instance `design/theme.css` carries owner
+  tokens. Generated templ code and `assets/styles.css` are committed. Apps serve
+  the instance stylesheet from `BESPOKE_ROOT`, falling back to the versioned
+  embedded stylesheet; builds and deploys need no UI toolchain.
 - Apps compose `pkg/ui`; Tailwind utilities for layout only, theme tokens
   only, no custom CSS files.
 - The AppShell is platform chrome
@@ -171,3 +180,8 @@ receives binaries. Details in the [CLI spec](../specs/bespoke-cli.md).
 CI (`.github/workflows/ci.yml`) runs `just check` — vet, tests,
 golangci-lint, `go mod tidy -diff`, and the same CGO-free cross-compile the
 deploy uses — so the local gate and the merge gate are one recipe.
+
+Tagged releases are selected with SVU and published with GoReleaser
+([ADR-0027](../adr/0027-versioned-platform-private-instances.md)). Archives
+contain the bootstrap CLI for Linux and macOS; the Go module tag supplies the
+platform code used by private instances and deployments.

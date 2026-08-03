@@ -308,7 +308,7 @@ func TasksLive(tasks []Task) templ.Component {
 }
 
 // doneBanner is the event→intent idiom (ADR-0018): completing a task offers
-// journaling it, via journal's declared add-entry intent from the registry.
+// saving it, via Notes' declared add-note intent from the registry.
 func doneBanner(desc string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -330,7 +330,7 @@ func doneBanner(desc string) templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		journalIntent := findIntent(ctx, "journal", "add-entry")
+		notesIntent := findIntent(ctx, "notes", "add-note")
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-4 py-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -356,21 +356,21 @@ func doneBanner(desc string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if journalIntent != "" {
+		if notesIntent != "" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 templ.SafeURL
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(journalIntent + "?text=" + url.QueryEscape("Completed: "+desc)))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(notesIntent + "?text=" + url.QueryEscape("Completed: "+desc)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/todo/views/home.templ`, Line: 109, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/todo/views/home.templ`, Line: 109, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" class=\"shrink-0 text-sm text-primary hover:underline\">Journal it →</a> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" class=\"shrink-0 text-sm text-primary hover:underline\">Save as Note →</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

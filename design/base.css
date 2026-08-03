@@ -1,0 +1,4 @@
+/* Versioned platform CSS entrypoint. Instances import this first, then their
+ * owner-controlled design/theme.css. The defaults and load-bearing mobile
+ * rules remain in input.css for the public showcase and fallback stylesheet. */
+@import "./input.css";

@@ -50,7 +50,11 @@ func cmdNew(args []string) error {
 		return fmt.Errorf("port range 4101-4999 exhausted")
 	}
 
-	data := map[string]any{"Slug": slug, "Port": port}
+	module, err := currentModule()
+	if err != nil {
+		return err
+	}
+	data := map[string]any{"Slug": slug, "Port": port, "Module": module}
 	files := map[string]*template.Template{
 		filepath.Join(dir, "app.toml"):                    scaffoldManifest,
 		filepath.Join(dir, "main.go"):                     scaffoldMain,
@@ -135,7 +139,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bketelsen/bespoke/apps/{{.Slug}}/views"
+	"{{.Module}}/apps/{{.Slug}}/views"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/db"
 	"github.com/bketelsen/bespoke/pkg/web"

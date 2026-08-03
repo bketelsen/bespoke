@@ -17,6 +17,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/a-h/templ"
 	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
@@ -29,7 +30,21 @@ var assetsFS embed.FS
 // at /_bespoke/ on every app, outside auth (static assets, tailnet-only).
 func Handler() http.Handler {
 	sub, _ := fs.Sub(assetsFS, "assets")
-	return http.StripPrefix("/_bespoke/", http.FileServerFS(sub))
+	embedded := http.StripPrefix("/_bespoke/", http.FileServerFS(sub))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// The instance owns the compiled stylesheet because Tailwind must scan
+		// its private templates. Only this exact file is served from disk; JS
+		// and every other asset remain versioned and embedded in the platform.
+		if r.URL.Path == "/_bespoke/styles.css" {
+			root := cmp.Or(os.Getenv("BESPOKE_ROOT"), ".")
+			path := filepath.Join(root, "assets", "styles.css")
+			if _, err := os.Stat(path); err == nil {
+				http.ServeFile(w, r, path)
+				return
+			}
+		}
+		embedded.ServeHTTP(w, r)
+	})
 }
 
 // AppIcon renders a Lucide icon by name, falling back to a generic icon for

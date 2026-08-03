@@ -63,19 +63,23 @@ func cmdDeploy(args []string) error {
 	if err := os.MkdirAll("dist/bin", 0o755); err != nil {
 		return err
 	}
-	if err := build("platformd", "./platform"); err != nil {
+	if err := build("platformd", frameworkPackage("./platform")); err != nil {
 		return err
 	}
 	// The CLI itself and the builder runner ship too (ADR-0023): the deploy
 	// watcher and build runner on the app host run these binaries.
-	if err := build("bespoke", "./cmd/bespoke"); err != nil {
+	if err := build("bespoke", frameworkPackage("./cmd/bespoke")); err != nil {
 		return err
 	}
-	if err := build("builder-runner", "./cmd/builder-runner"); err != nil {
+	if err := build("builder-runner", frameworkPackage("./cmd/builder-runner")); err != nil {
 		return err
 	}
 	for _, a := range targets {
-		if err := build(a.Slug, "./apps/"+a.Slug); err != nil {
+		pkg := "./apps/" + a.Slug
+		if a.Package != "" {
+			pkg = a.Package
+		}
+		if err := build(a.Slug, pkg); err != nil {
 			return err
 		}
 	}
@@ -90,6 +94,14 @@ func cmdDeploy(args []string) error {
 	}
 	if err := run("rsync", "-az", "--include=*/", "--include=app.toml", "--exclude=*", "apps/", cfg.SelfieSSH+":bespoke/apps/"); err != nil {
 		return err
+	}
+	if _, err := os.Stat("assets/styles.css"); err == nil {
+		if err := run("ssh", cfg.SelfieSSH, "mkdir -p ~/bespoke/assets"); err != nil {
+			return err
+		}
+		if err := run("rsync", "-az", "assets/styles.css", cfg.SelfieSSH+":bespoke/assets/styles.css"); err != nil {
+			return err
+		}
 	}
 	if err := run("rsync", "-az", "dist/gen/units/", cfg.SelfieSSH+":.config/systemd/user/"); err != nil {
 		return err
