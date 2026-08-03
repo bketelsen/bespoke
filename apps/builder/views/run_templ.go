@@ -16,6 +16,13 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/input"
 )
 
+func sayPlaceholder(status string) string {
+	if status == "ready" {
+		return "request a change to the spec…"
+	}
+	return "your answer…"
+}
+
 func RunPage(user auth.User, d RunDetail, appURL string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -56,7 +63,7 @@ func RunPage(user auth.User, d RunDetail, appURL string) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue("@get('/runs/" + d.ID + "/live')")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 14, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 21, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -74,7 +81,7 @@ func RunPage(user auth.User, d RunDetail, appURL string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if d.Status == "interviewing" {
+			if d.Status == "interviewing" || d.Status == "ready" {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form method=\"post\" action=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -82,7 +89,7 @@ func RunPage(user auth.User, d RunDetail, appURL string) templ.Component {
 				var templ_7745c5c3_Var4 templ.SafeURL
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/runs/" + d.ID + "/say"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 18, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 25, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -92,7 +99,7 @@ func RunPage(user auth.User, d RunDetail, appURL string) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = input.Input(input.Props{Name: "body", Placeholder: "your answer…", Class: "flex-1"}).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = input.Input(input.Props{Name: "body", Placeholder: sayPlaceholder(d.Status), Class: "flex-1"}).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -191,7 +198,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(d.Idea)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 35, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 42, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -217,7 +224,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(d.Detail)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 39, Col: 103}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 46, Col: 103}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -240,7 +247,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 					var templ_7745c5c3_Var11 templ.SafeURL
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(appURL))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 44, Col: 37}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 51, Col: 37}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -253,7 +260,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(appURL)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 44, Col: 79}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 51, Col: 79}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -359,7 +366,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 						var templ_7745c5c3_Var16 string
 						templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(d.Slug)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 68, Col: 23}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 75, Col: 23}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 						if templ_7745c5c3_Err != nil {
@@ -413,7 +420,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 						var templ_7745c5c3_Var18 templ.SafeURL
 						templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/runs/" + d.ID + "/approve"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 76, Col: 78}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 83, Col: 78}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 						if templ_7745c5c3_Err != nil {
@@ -445,7 +452,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</form><p class=\"mt-2 text-xs text-muted-foreground\">This is the only gate: after approval it builds, tests, commits to main, and deploys on its own.</p>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</form><p class=\"mt-2 text-xs text-muted-foreground\">This is the only gate: after approval it builds, tests, commits to main, and deploys on its own. Not quite right? Reply below and the designer will revise the spec.</p>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -544,7 +551,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 						var templ_7745c5c3_Var24 string
 						templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(e.TS)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 99, Col: 72}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 107, Col: 72}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 						if templ_7745c5c3_Err != nil {
@@ -557,7 +564,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 						var templ_7745c5c3_Var25 string
 						templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(e.Kind)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 100, Col: 51}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 108, Col: 51}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 						if templ_7745c5c3_Err != nil {
@@ -570,7 +577,7 @@ func RunLive(d RunDetail, appURL string) templ.Component {
 						var templ_7745c5c3_Var26 string
 						templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(e.Body)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 101, Col: 77}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `apps/builder/views/run.templ`, Line: 109, Col: 77}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 						if templ_7745c5c3_Err != nil {

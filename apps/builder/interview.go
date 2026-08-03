@@ -47,6 +47,10 @@ Rules:
   the moment of use, what one record is, the first screen, lifecycle
   (edit/delete/resurfacing), and 2-3 explicit non-goals.
 - If the user says "just build it", stop asking and write the spec.
+- After you deliver a spec the user may reply with feedback instead of
+  approving. Fold it in and resend the COMPLETE revised spec via the same
+  SPEC_READY protocol — never a diff, never a fragment. Keep the slug
+  unless the feedback asks for a different one.
 - Apps are single-user, mobile-first, one SQLite database, optional LLM
   features (~1.5s/call), optional voice capture. No sharing, no export, no
   auth choices — the platform handles identity.
@@ -103,6 +107,14 @@ func nextTurn(ctx context.Context, ai *llm.Client, db *sql.DB, runID, login stri
 	}
 	if err := rows.Err(); err != nil {
 		return "", err
+	}
+	// The spec itself never enters the messages table (the stored assistant
+	// turn is a one-line pointer at the spec card), so on a revision turn the
+	// designer needs it restated here.
+	var slug, spec string
+	_ = db.QueryRowContext(ctx, "SELECT slug, spec FROM runs WHERE id = ?", runID).Scan(&slug, &spec)
+	if spec != "" {
+		fmt.Fprintf(&b, "The draft spec you already delivered (slug=%s):\n\n%s\n\n", slug, spec)
 	}
 	b.WriteString("Reply with your next single question, or the finished spec per the protocol.")
 	return ai.Complete(ctx, b.String(), llm.WithSystem(interviewSystem()), llm.WithUser(login))

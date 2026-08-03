@@ -104,7 +104,7 @@ func storeReply(ctx context.Context, db *sql.DB, runID, login, reply string) err
 			return err
 		}
 		_, err := db.ExecContext(ctx, "INSERT INTO messages (run_id, role, body) VALUES (?,?,?)",
-			runID, "assistant", "Spec is ready below — approve it and I'll build "+slug+".")
+			runID, "assistant", "Spec is ready below — approve it and I'll build "+slug+", or tell me what to change.")
 		return err
 	}
 	_, err := db.ExecContext(ctx,

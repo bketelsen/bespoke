@@ -140,7 +140,7 @@ func main() {
 				http.NotFound(w, r)
 				return
 			}
-			if status != "interviewing" || body == "" {
+			if (status != "interviewing" && status != "ready") || body == "" {
 				http.Redirect(w, r, "/runs/"+id, http.StatusSeeOther)
 				return
 			}
@@ -148,6 +148,15 @@ func main() {
 				"INSERT INTO messages (run_id, role, body) VALUES (?,?,?)", id, "user", body); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
+			}
+			// Feedback on a ready spec reopens the interview; the run goes
+			// back through the spec gate when the revision lands.
+			if status == "ready" {
+				if _, err := sqldb.ExecContext(r.Context(), `UPDATE runs SET status = 'interviewing',
+					updated_at = datetime('now') WHERE id = ?`, id); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
 			reply, err := nextTurn(r.Context(), ai, sqldb, id, user.Login)
 			if err != nil {

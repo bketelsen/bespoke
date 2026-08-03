@@ -8,15 +8,22 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/input"
 )
 
+func sayPlaceholder(status string) string {
+	if status == "ready" {
+		return "request a change to the spec…"
+	}
+	return "your answer…"
+}
+
 templ RunPage(user auth.User, d RunDetail, appURL string) {
 	@ui.AppShell(ui.ShellProps{Title: "Builder", User: user}) {
 		<a href="/" class="text-sm text-primary hover:underline">← All runs</a>
 		<div class="mt-3" data-init={ "@get('/runs/" + d.ID + "/live')" }>
 			@RunLive(d, appURL)
 		</div>
-		if d.Status == "interviewing" {
+		if d.Status == "interviewing" || d.Status == "ready" {
 			<form method="post" action={ templ.SafeURL("/runs/" + d.ID + "/say") } class="mt-4 flex gap-2">
-				@input.Input(input.Props{Name: "body", Placeholder: "your answer…", Class: "flex-1"})
+				@input.Input(input.Props{Name: "body", Placeholder: sayPlaceholder(d.Status), Class: "flex-1"})
 				@button.Button(button.Props{Type: button.TypeSubmit}) {
 					Send
 				}
@@ -80,6 +87,7 @@ templ RunLive(d RunDetail, appURL string) {
 						</form>
 						<p class="mt-2 text-xs text-muted-foreground">
 							This is the only gate: after approval it builds, tests, commits to main, and deploys on its own.
+							Not quite right? Reply below and the designer will revise the spec.
 						</p>
 					}
 				}
