@@ -39,6 +39,9 @@ func main() {
 		web.DashboardCard(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
 			return dashCard(ctx, sqldb, user.Login)
 		})
+		web.Search(mux, func(ctx context.Context, user auth.User, q string) ([]web.SearchResult, error) {
+			return searchTasks(ctx, sqldb, user.Login, q)
+		})
 
 		// Live tasks region (ADR-0022): patched on any task change.
 		web.Live(mux, func(ctx context.Context, user auth.User) (templ.Component, error) {
@@ -172,6 +175,46 @@ func main() {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 	})
+}
+
+// searchTasks returns the user's tasks whose description contains q (case-
+// insensitive substring), deep-linked to the task anchor.
+func searchTasks(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.SearchResult, error) {
+	q = strings.TrimSpace(q)
+	if q == "" {
+		return nil, nil
+	}
+	rows, err := sqldb.QueryContext(ctx, `
+		SELECT id, description, COALESCE(due,''), priority, done
+		FROM tasks WHERE login=? AND description LIKE '%'||?||'%' COLLATE NOCASE
+		ORDER BY done, id DESC LIMIT 20`, login, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []web.SearchResult
+	for rows.Next() {
+		var id int64
+		var desc, due, prio string
+		var done int
+		if err := rows.Scan(&id, &desc, &due, &prio, &done); err != nil {
+			return nil, err
+		}
+		state := "open"
+		if done == 1 {
+			state = "done"
+		}
+		snippet := fmt.Sprintf("%s · priority %s", state, prio)
+		if due != "" {
+			snippet += " · due " + due
+		}
+		out = append(out, web.SearchResult{
+			Title:   desc,
+			Snippet: snippet,
+			URL:     fmt.Sprintf("/#task-%d", id),
+		})
+	}
+	return out, rows.Err()
 }
 
 func createTask(r *http.Request, sqldb *sql.DB, login string, parent int64) error {

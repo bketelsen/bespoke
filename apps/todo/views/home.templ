@@ -79,7 +79,7 @@ templ TasksLive(tasks []Task) {
 			<p class="mt-4 text-muted-foreground">Nothing here — add the first task above.</p>
 		}
 		for _, t := range tasks {
-			<div class="rounded-lg border bg-card px-4 py-3">
+			<div id={ fmt.Sprintf("task-%d", t.ID) } class="rounded-lg border bg-card px-4 py-3">
 				@taskRow(t, false)
 				<div class="ml-7 mt-1 space-y-1">
 					for _, s := range t.Subtasks {
