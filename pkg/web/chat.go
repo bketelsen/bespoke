@@ -51,8 +51,10 @@ func EnableChat(mux *http.ServeMux, slug string, provider ChatProvider) {
 	})
 }
 
-// EnableChatWithTools is EnableChat with an explicit tool source.
-func EnableChatWithTools(mux *http.ServeMux, slug string, provider ChatProvider, toolSource ToolSource) {
+// EnableChatWithTools is EnableChat with an explicit tool source. Extra
+// llm options are applied to every chat completion — platformd's dashboard
+// chat uses this for llm.WithBuiltins (ADR-0024); apps normally pass none.
+func EnableChatWithTools(mux *http.ServeMux, slug string, provider ChatProvider, toolSource ToolSource, extra ...llm.Option) {
 	chatEnabled.Store(true)
 	ai := llm.New(slug)
 	voice := audio.New(slug)
@@ -162,6 +164,7 @@ func EnableChatWithTools(mux *http.ServeMux, slug string, provider ChatProvider,
 		if len(tools) > 0 {
 			opts = append(opts, llm.WithTools(tools))
 		}
+		opts = append(opts, extra...)
 		text, err := ai.Complete(r.Context(), b.String(), opts...)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)

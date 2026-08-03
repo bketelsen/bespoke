@@ -52,7 +52,9 @@ func main() {
 
 		// The all-apps chat (ADR-0020): context aggregated from every
 		// chat-enabled app over the app contract — never their databases.
-		// Agentic across ALL apps' tools (ADR-0021), namespaced per app.
+		// Agentic across ALL apps' tools (ADR-0021), namespaced per app,
+		// plus the curated assistant builtins — web search, guarded URL
+		// fetch, read-only GitHub — on this surface only (ADR-0024).
 		web.EnableChatWithTools(mux, "dashboard",
 			func(ctx context.Context, user auth.User) (string, error) {
 				apps, _, err := manifest.LoadAll(root)
@@ -72,7 +74,8 @@ func main() {
 					})
 				}
 				return tools
-			})
+			},
+			llm.WithBuiltins(assistantBuiltinNames()...))
 
 		// External LLM clients: the platform MCP endpoint (ADR-0021).
 		mux.Handle("/mcp", mcpHandler(root))

@@ -46,11 +46,12 @@ type Tool struct {
 }
 
 type request struct {
-	App    string `json:"app"`
-	System string `json:"system,omitempty"`
-	Prompt string `json:"prompt"`
-	Login  string `json:"login,omitempty"`
-	Tools  []Tool `json:"tools,omitempty"`
+	App      string   `json:"app"`
+	System   string   `json:"system,omitempty"`
+	Prompt   string   `json:"prompt"`
+	Login    string   `json:"login,omitempty"`
+	Tools    []Tool   `json:"tools,omitempty"`
+	Builtins []string `json:"builtins,omitempty"`
 }
 
 // WithSystem adds system instructions to a completion.
@@ -69,6 +70,14 @@ func WithUser(login string) Option {
 // mode, ADR-0021). Requires WithUser — tools execute as that user.
 func WithTools(tools []Tool) Option {
 	return func(r *request) { r.Tools = tools }
+}
+
+// WithBuiltins re-enables curated runtime builtins for assistant surfaces
+// (ADR-0024) — e.g. "web_search", "web_fetch", and the read-only GitHub
+// tools. The gateway rejects names outside its allowlist, so this is a
+// request, not a grant. Requires WithUser, like tools.
+func WithBuiltins(names ...string) Option {
+	return func(r *request) { r.Builtins = append(r.Builtins, names...) }
 }
 
 // Complete returns the model's text response for prompt.

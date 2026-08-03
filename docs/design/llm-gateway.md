@@ -28,18 +28,32 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
   session with skills, config discovery, file hooks, git context, the
   session store, and embedding retrieval disabled, permission requests
   denied, and a scratch working directory so repo instructions never leak
-  into app inference. The session is deleted after the response. Builtin
-  tools stay off always; **app tools are the one opt-in**
+  into app inference. The session is deleted after the response.
+  **App tools are one opt-in**
   ([ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)): a request carrying
   tool definitions gets exactly those tools (`AvailableTools` locks the
   list), the gateway executes calls by POSTing the app's `/_tools/<name>`
   with the requesting user's identity, and tool requests without
   `llm.WithUser` are rejected. Timeouts: 120s plain, 300s agentic.
+- **Curated builtins are the other opt-in
+  ([ADR-0024](../adr/0024-assistant-builtins-dashboard-chat.md)):**
+  `llm.WithBuiltins` re-enables names from a gateway-hardcoded menu —
+  `web_fetch` (URL permission requests approved only for the public
+  internet: no loopback/private/link-local, no tailnet-ish or dotless
+  hosts, no sandbox bypass) and the read-only GitHub MCP subset (session
+  gets the hosted `api.githubcopilot.com/mcp/` server, token from
+  `BESPOKE_GITHUB_TOKEN`/`GITHUB_TOKEN`/`gh auth token`; no token → those
+  tools quietly vanish). Web search rides `web_fetch` via a system-prompt
+  hint — the runtime's hosted `web_search` is not exposed to SDK sessions
+  (verified v1.0.8). Anything outside the menu is rejected; shell and
+  filesystem builtins are never eligible. Today only platformd's dashboard
+  chat opts in (all of the menu); per-app chats stay app-tools-only.
 - **`pkg/llm` interface (provider-neutral):** `llm.New(app)` →
   `Complete(ctx, prompt, ...opts)`, `CompleteJSON(ctx, prompt, &out, ...opts)`
   (JSON-only instruction + fence stripping), `Healthy(ctx)`, with options
-  `WithSystem(s)`, `WithUser(login)`, and `WithTools([]llm.Tool{Name,
-  Description, Schema, URL})`.
+  `WithSystem(s)`, `WithUser(login)`, `WithTools([]llm.Tool{Name,
+  Description, Schema, URL})`, and `WithBuiltins(names...)`
+  ([ADR-0024](../adr/0024-assistant-builtins-dashboard-chat.md)).
   Higher-level capability helpers (`Classify`, future `Summarize`/`Extract`)
   are tier-1 methods on the same client — see
   [internal-services.md](internal-services.md).
@@ -80,6 +94,9 @@ app ──pkg/llm──► platformd :4001 /llm/* ──Copilot SDK──► cop
 
 - Bootstrap dependency: `copilot` CLI on PATH for the platformd unit, logged
   in as the platform user (`copilot`, then sign in).
+- Soft dependency: a GitHub token for the dashboard chat's GitHub tools
+  (ADR-0024) — `BESPOKE_GITHUB_TOKEN` in the env file, or `gh` signed in as
+  the platform user. Missing token only removes those tools.
 - platformd checks `GetAuthStatus` at startup and every 5 minutes; failures
   surface as a dashboard warning banner, and `/llm/healthz` returns 503.
   The gateway starting/down never blocks the dashboard.

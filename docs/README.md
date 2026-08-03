@@ -36,6 +36,7 @@ Docs are split by the question they answer:
 - [0021 — App tools: agentic chat and the MCP surface](adr/0021-tools-agentic-chat-mcp.md)
 - [0022 — Live updates: Datastar SSE over a change hub](adr/0022-live-updates.md)
 - [0023 — Builder plane: unprivileged agent user, spooled deploys](adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md)
+- [0024 — Curated runtime builtins for the dashboard chat](adr/0024-assistant-builtins-dashboard-chat.md)
 
 ### Design
 

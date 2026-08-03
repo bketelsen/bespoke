@@ -7,6 +7,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -26,8 +28,9 @@ import (
 )
 
 type llmGateway struct {
-	model  string
-	briefs *sql.DB // platformd's db; per-user brief injection (ADR-0019)
+	model   string
+	briefs  *sql.DB // platformd's db; per-user brief injection (ADR-0019)
+	ghToken string  // hosted GitHub MCP auth (ADR-0024); "" = GitHub builtins degrade away
 
 	mu     sync.RWMutex
 	client *copilot.Client
@@ -67,9 +70,27 @@ func (g *llmGateway) briefFor(ctx context.Context, login string) string {
 func newLLMGateway() *llmGateway {
 	return &llmGateway{
 		model:    os.Getenv("BESPOKE_LLM_MODEL"), // empty = CLI default
+		ghToken:  githubToken(),
 		status:   "LLM gateway starting…",
 		lastDone: time.Now(),
 	}
+}
+
+// githubToken finds the token for the hosted GitHub MCP server:
+// BESPOKE_GITHUB_TOKEN or GITHUB_TOKEN from the env file, else the local
+// `gh` CLI's stored auth (covers dev and any host where the platform user
+// has gh signed in). Empty means the GitHub builtins quietly contribute
+// nothing — the session still works.
+func githubToken() string {
+	if t := cmp.Or(os.Getenv("BESPOKE_GITHUB_TOKEN"), os.Getenv("GITHUB_TOKEN")); t != "" {
+		return t
+	}
+	out, err := exec.Command("gh", "auth", "token").Output()
+	if err != nil {
+		log.Println("llm: no GitHub token (set BESPOKE_GITHUB_TOKEN or sign in gh) — GitHub assistant tools disabled")
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }
 
 // begin/end bracket one /llm/complete request, tool round-trips included.
@@ -146,10 +167,11 @@ var denyAll = func(_ copilot.PermissionRequest, _ copilot.PermissionInvocation) 
 	return &rpc.PermissionDecisionDeniedInteractivelyByUser{}, nil
 }
 
-// complete runs one locked-down session: inference-only by default, or
-// agentic over exactly the provided tools (ADR-0021) — builtins stay
-// unavailable either way.
-func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools []copilot.Tool) (string, error) {
+// complete runs one locked-down session: inference-only by default,
+// agentic over exactly the provided tools (ADR-0021), plus any curated
+// runtime builtins the request re-enabled (ADR-0024) — everything else
+// stays unavailable.
+func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools []copilot.Tool, builtins []string) (string, error) {
 	g.mu.RLock()
 	client, status := g.client, g.status
 	g.mu.RUnlock()
@@ -157,16 +179,23 @@ func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools 
 		return "", fmt.Errorf("gateway unavailable: %s", status)
 	}
 
-	allowed := make([]string, 0, len(tools)) // empty → inference only
+	allowed := make([]string, 0, len(tools)+len(builtins)) // empty → inference only
 	for _, t := range tools {
 		allowed = append(allowed, t.Name)
+	}
+	allowed = append(allowed, builtins...)
+	perms := denyAll
+	if len(builtins) > 0 {
+		perms = builtinPermissions(builtins)
+		system += webFetchHint(builtins)
 	}
 	cfg := &copilot.SessionConfig{
 		ClientName:              "bespoke",
 		Model:                   g.model,
 		Tools:                   tools,
 		AvailableTools:          allowed,
-		OnPermissionRequest:     denyAll,
+		MCPServers:              githubMCPConfig(builtins, g.ghToken),
+		OnPermissionRequest:     perms,
 		EnableSkills:            copilot.Bool(false),
 		EnableConfigDiscovery:   copilot.Bool(false),
 		EnableSessionStore:      copilot.Bool(false),
@@ -204,11 +233,12 @@ func (g *llmGateway) complete(ctx context.Context, system, prompt string, tools 
 
 // completeRequest is the wire format shared with pkg/llm.
 type completeRequest struct {
-	App    string     `json:"app"`
-	System string     `json:"system,omitempty"`
-	Prompt string     `json:"prompt"`
-	Login  string     `json:"login,omitempty"` // set via llm.WithUser → brief injection
-	Tools  []wireTool `json:"tools,omitempty"` // agentic mode (ADR-0021)
+	App      string     `json:"app"`
+	System   string     `json:"system,omitempty"`
+	Prompt   string     `json:"prompt"`
+	Login    string     `json:"login,omitempty"`    // set via llm.WithUser → brief injection
+	Tools    []wireTool `json:"tools,omitempty"`    // agentic mode (ADR-0021)
+	Builtins []string   `json:"builtins,omitempty"` // curated runtime builtins (ADR-0024)
 }
 
 type wireTool struct {
@@ -321,10 +351,14 @@ func (g *llmGateway) register(mux *http.ServeMux) {
 			http.Error(w, "bad request: need {app, prompt}", http.StatusBadRequest)
 			return
 		}
+		if err := checkBuiltins(req.Builtins); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		g.begin()
 		defer g.end()
 		timeout := 120 * time.Second
-		if len(req.Tools) > 0 {
+		if len(req.Tools) > 0 || len(req.Builtins) > 0 {
 			timeout = 300 * time.Second // agentic loops take multiple turns
 			if req.Login == "" {
 				http.Error(w, "tools require a tagged user (llm.WithUser)", http.StatusBadRequest)
@@ -338,9 +372,9 @@ func (g *llmGateway) register(mux *http.ServeMux) {
 			system = brief + "\n" + system
 		}
 		start := time.Now()
-		text, err := g.complete(ctx, system, req.Prompt, copilotTools(req.Tools, req.Login))
-		log.Printf("llm app=%s prompt=%dB tools=%d out=%dB dur=%s err=%v",
-			req.App, len(req.Prompt), len(req.Tools), len(text), time.Since(start).Round(time.Millisecond), err)
+		text, err := g.complete(ctx, system, req.Prompt, copilotTools(req.Tools, req.Login), req.Builtins)
+		log.Printf("llm app=%s prompt=%dB tools=%d builtins=%d out=%dB dur=%s err=%v",
+			req.App, len(req.Prompt), len(req.Tools), len(req.Builtins), len(text), time.Since(start).Round(time.Millisecond), err)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return

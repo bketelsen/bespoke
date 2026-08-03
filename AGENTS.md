@@ -79,6 +79,9 @@ them rather than improvising, whichever agent you are:
   the `copilot` CLI authenticated. Tag user-facing completions with
   `llm.WithUser(user.Login)` so the gateway injects the user's brief
   (ADR-0019) — chat does this automatically; omit it for mechanical calls.
+  Runtime builtins (web fetch/search, read-only GitHub) are a
+  gateway-curated allowlist reserved for the dashboard chat via
+  `llm.WithBuiltins` (ADR-0024) — apps don't opt in without a new ADR.
 - The AppShell provides platform chrome automatically (ADR-0015): the app
   switcher needs nothing from you; in-app LLM chat is one call —
   `web.EnableChat(mux, slug, provider)` where provider returns the user's
