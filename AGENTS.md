@@ -99,6 +99,11 @@ them rather than improvising, whichever agent you are:
   Registered tools make the app's chat agentic, join the dashboard chat as
   `<slug>_<name>`, and appear on the platform MCP endpoint automatically.
   Respect app specs: journal is append-only, so it has no update tool.
+- **App skills (ADR-0026):** package procedural chat knowledge as
+  `skills/<name>/SKILL.md` (agent-skill frontmatter) registered with
+  `web.Skills(mux, fs)` — every surface holding the app's tools gets a
+  `load_skill` tool carrying the index. Skills must only reference
+  tools the app actually registers.
 - **Cross-app intents (ADR-0018):** declare an `[[intents]]` in `app.toml`
   for anything other apps might feed this one (text → entry/task/etc.) and
   mount it with `web.Intent(mux, appTitle, def)`. The selection popover

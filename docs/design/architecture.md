@@ -110,7 +110,7 @@ Single Go module monorepo — one dependency graph
 | --- | --- |
 | `pkg/auth` | Tailscale header middleware, `FromContext(ctx)` |
 | `pkg/db` | `Open(slug, migrations)`: opens `data/<slug>.db`, WAL, embedded migrations |
-| `pkg/web` | Server scaffold (routing, logging, graceful shutdown, healthz, asset serving) **plus the whole app contract**: `EnableChat`/`EnableChatWithTools` (ADR-0015/0021), `Tool` (ADR-0021), `Intent` (ADR-0018), `DashboardCard` (ADR-0017), `Live`/`Changed` (ADR-0022), Datastar SSE helpers. Binds loopback in dev, selfie's tailscale IP in prod (`BESPOKE_BIND_IP`) |
+| `pkg/web` | Server scaffold (routing, logging, graceful shutdown, healthz, asset serving) **plus the whole app contract**: `EnableChat`/`EnableChatWithTools` (ADR-0015/0021), `Tool` (ADR-0021), `Skills` (ADR-0026), `Intent` (ADR-0018), `DashboardCard` (ADR-0017), `Live`/`Changed` (ADR-0022), Datastar SSE helpers. Binds loopback in dev, selfie's tailscale IP in prod (`BESPOKE_BIND_IP`) |
 | `pkg/ui` | Vendored templUI components + Bespoke wrappers (AppShell chrome, VoiceButton, Markdown, intents popover) implementing the design system |
 | `pkg/llm` | Provider-neutral gateway client: `Complete`/`CompleteJSON`/`Classify`, `WithSystem`/`WithUser`/`WithTools` — the last making chats agentic |
 | `pkg/audio` | `Transcribe` + `Speak` via the audio gateway (ADR-0014) — speech in and out for any app |

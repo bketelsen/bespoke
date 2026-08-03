@@ -59,6 +59,12 @@ config, stop: you're off the path (see AGENTS.md).
    user request"). Register tools BEFORE `EnableChat` so chat sees them;
    they also join dashboard chat and MCP automatically. Respect the spec:
    an append-only app gets no update tool.
+   6-skills. **Skills (ADR-0026, optional)**: when chat needs procedural
+   knowledge ("how to write a good entry here"), bundle
+   `skills/<name>/SKILL.md` files (same frontmatter as this file) and
+   register `web.Skills(mux, fs)` before `EnableChat` — chat surfaces get
+   a `load_skill` tool. Skills may only reference tools the app
+   registers (apps/personal-wiki is the reference).
    6-live. **Live region (ADR-0022)**: render the dynamic part of the page
    as an id-stable fragment, mount `web.Live(mux, fragment)`, wrap with
    `data-init="@get('/_live')"`, and call `web.Changed(user.Login)`

@@ -38,6 +38,7 @@ Docs are split by the question they answer:
 - [0023 — Builder plane: unprivileged agent user, spooled deploys](adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md)
 - [0024 — Curated runtime builtins for the dashboard chat](adr/0024-assistant-builtins-dashboard-chat.md)
 - [0025 — Brave-backed web_search as a gateway tool](adr/0025-brave-web-search-gateway-tool.md)
+- [0026 — App-bundled chat skills via a loader tool](adr/0026-app-bundled-chat-skills.md)
 
 ### Design
 

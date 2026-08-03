@@ -27,6 +27,9 @@ import (
 //go:embed migrations/*.sql
 var migrationFS embed.FS
 
+//go:embed skills
+var skillFS embed.FS
+
 const sqliteTime = "2006-01-02 15:04:05"
 
 // linkPattern matches [[Title]] wiki-links in page bodies.
@@ -41,6 +44,10 @@ func main() {
 
 	web.Run("personal-wiki", func(mux *http.ServeMux) {
 		registerTools(mux, sqldb) // before EnableChat so chat sees them
+		skills, _ := fs.Sub(skillFS, "skills")
+		if err := web.Skills(mux, skills); err != nil { // ADR-0026: page-authoring, wiki-gardening
+			log.Fatal(err)
+		}
 		web.EnableChat(mux, "personal-wiki", func(ctx context.Context, user auth.User) (string, error) {
 			return chatContext(ctx, sqldb, user.Login)
 		})
