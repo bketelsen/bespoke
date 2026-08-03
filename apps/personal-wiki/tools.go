@@ -50,6 +50,60 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 	})
 
 	web.Tool(mux, web.ToolDef{
+		Name: "update_page",
+		Description: "Edit an existing wiki page found by exact title: replace its body, rename it, " +
+			"and/or replace its tags. Omitted fields keep their current value. " +
+			"Fetch the page with get_page first so edits build on what's there.",
+		Schema: obj(map[string]any{
+			"title":     map[string]any{"type": "string", "description": "Exact title of the page to edit."},
+			"new_title": map[string]any{"type": "string", "description": "Rename the page (must not collide)."},
+			"body":      map[string]any{"type": "string", "description": "Full replacement markdown body."},
+			"tags":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Full replacement tag list."},
+		}, "title"),
+		Handler: func(ctx context.Context, user auth.User, args json.RawMessage) (string, error) {
+			var a struct {
+				Title    string    `json:"title"`
+				NewTitle *string   `json:"new_title"`
+				Body     *string   `json:"body"`
+				Tags     *[]string `json:"tags"`
+			}
+			if err := json.Unmarshal(args, &a); err != nil || strings.TrimSpace(a.Title) == "" {
+				return "", fmt.Errorf("title is required")
+			}
+			if a.NewTitle == nil && a.Body == nil && a.Tags == nil {
+				return "", fmt.Errorf("nothing to change: provide new_title, body, and/or tags")
+			}
+			var id int64
+			err := sqldb.QueryRowContext(ctx,
+				"SELECT id FROM pages WHERE login = ? AND title = ?", user.Login, strings.TrimSpace(a.Title)).Scan(&id)
+			if err == sql.ErrNoRows {
+				return "", fmt.Errorf("no page titled %q", a.Title)
+			} else if err != nil {
+				return "", err
+			}
+			cur, err := loadPage(ctx, sqldb, user.Login, id)
+			if err != nil {
+				return "", err
+			}
+			title, body, tags := cur.Title, cur.Body, cur.Tags
+			if a.NewTitle != nil && strings.TrimSpace(*a.NewTitle) != "" {
+				title = strings.TrimSpace(*a.NewTitle)
+			}
+			if a.Body != nil {
+				body = *a.Body
+			}
+			if a.Tags != nil {
+				tags = *a.Tags
+			}
+			if err := updatePage(ctx, sqldb, user.Login, id, title, body, tags); err != nil {
+				return "", err
+			}
+			web.Changed(user.Login)
+			return fmt.Sprintf("Updated page #%d: %s", id, title), nil
+		},
+	})
+
+	web.Tool(mux, web.ToolDef{
 		Name:        "search_pages",
 		Description: "Search the wiki by title or body text substring. Returns matching page ids, titles, and tags.",
 		Schema: obj(map[string]any{

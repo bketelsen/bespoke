@@ -21,7 +21,7 @@ Brian's single-user reference wiki for jotting and looking up notes, browsing by
 
 ## Platform surfaces
 - Dashboard card: shows recently viewed pages count + quick search
-- Chat tools: create_page(title, body, tags), search_pages(query), get_page(title)
+- Chat tools: create_page(title, body, tags), update_page(title, new_title?, body?, tags?), search_pages(query), get_page(title) — the LLM is a primary author of this wiki, so writing tools cover create and edit; delete stays in the UI
 - Intents: "note that...", "look up...", "add to my wiki"
 
 ## Behavior

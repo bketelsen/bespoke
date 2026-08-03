@@ -5,8 +5,9 @@ description: How to write a good page in this wiki — titles, [[links]], tags, 
 
 # Writing a wiki page
 
-The goal is a densely linked reference wiki, not a pile of notes. When
-creating a page (via `create_page`) or drafting content for the owner:
+The goal is a densely linked reference wiki, not a pile of notes. Chat is
+a primary author: create pages with `create_page` and revise them with
+`update_page`. These conventions apply to both:
 
 ## Titles
 
@@ -40,3 +41,12 @@ creating a page (via `create_page`) or drafting content for the owner:
 - Lowercase, comma-free, few: 1–3 per page. Reuse existing tags —
   `search_pages` results show each page's tags; match them rather than
   minting near-duplicates ("recipe" vs "recipes").
+
+## Revising
+
+- `get_page` first, always — `update_page` replaces the whole body, so
+  edits must carry the existing content forward, links included.
+- Preserve existing `[[links]]` unless removing one is the point of the
+  edit; renaming a page breaks `[[links]]` spelled with the old title, so
+  after a rename, update the pages that linked to it (backlinks are
+  listed on the page view).
