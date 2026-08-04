@@ -42,6 +42,7 @@ Docs are split by the question they answer:
 - [0027 — Version the platform and keep owner instances private](adr/0027-versioned-platform-private-instances.md)
 - [0028 — Dashboard global search via app fan-out](adr/0028-dashboard-global-search-fan-out.md)
 - [0029 — Embeddings via the LLM gateway](adr/0029-embeddings-via-llm-gateway.md)
+- [0030 — Give AppShell explicit content widths](adr/0030-appshell-explicit-content-widths.md)
 
 ### Design
 

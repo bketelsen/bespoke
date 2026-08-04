@@ -67,7 +67,9 @@ apps deploy to `selfie`, builds happen on the dev machine)
 - `design/input.css` bespoke theme (oklch variables, light/dark) — authored
   with Claude.
 - Bespoke wrappers in `pkg/ui`: `AppShell` (nav, auth display, Datastar +
-  component scripts), `Page`.
+  component scripts), `Page`. AppShell later gained opt-in wide and full
+  content areas for workspace views
+  ([ADR-0030](../adr/0030-appshell-explicit-content-widths.md)).
 - Datastar SSE helpers in `pkg/web` (moved from Phase 2 — built alongside the
   first UI that uses them).
 - Dashboard rebuilt on `pkg/ui`.

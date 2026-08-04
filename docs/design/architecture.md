@@ -160,6 +160,12 @@ and its own module path. It depends on this public module at an explicit tag.
   with mic input and a persisted speak toggle — and the selection popover
   offering other apps' intents
   ([ADR-0018](../adr/0018-cross-app-intents.md)).
+- AppShell content width is explicit
+  ([ADR-0030](../adr/0030-appshell-explicit-content-widths.md)): reading width
+  remains the zero-value default, while wide and full widths let workspace-style
+  views use more of the viewport without replacing the shared platform chrome.
+  Width does not imply a responsive pane layout; reusable master/detail and
+  multi-pane behavior belongs in separate `pkg/ui` wrappers.
 - Mobile-first is a standing invariant
   ([ADR-0016](../adr/0016-mobile-first-ui-standard.md)): 375px/coarse-pointer
   usability, enforced partly by the design system (16px input rule,
