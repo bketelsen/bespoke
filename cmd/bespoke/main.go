@@ -28,6 +28,10 @@ Usage:
   bespoke upgrade <version>  update an instance's pinned Bespoke release
   bespoke ui                 generate templ output and instance CSS
   bespoke new <slug>          scaffold a new app and assign its port
+  bespoke search [terms…]     list apps in the unofficial index (ADR-0031)
+  bespoke add <module|name>   install a published app: pin it, write its manifest
+         [--slug <slug>]      install under a different slug than the app asks for
+         [--port <port>]      override the assigned port
   bespoke dev                 run platformd + every app locally, fake identity
   bespoke deploy [slug|--all] build, ship to the app host, restart, health-check
          [--edge]             also push generated Caddy routes to the edge host
@@ -55,6 +59,10 @@ func main() {
 		err = cmdUI(os.Args[2:])
 	case "new":
 		err = cmdNew(os.Args[2:])
+	case "search":
+		err = cmdSearch(os.Args[2:])
+	case "add":
+		err = cmdAdd(os.Args[2:])
 	case "dev":
 		err = cmdDev(os.Args[2:])
 	case "deploy":

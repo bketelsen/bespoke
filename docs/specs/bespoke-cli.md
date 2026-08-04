@@ -52,6 +52,40 @@ Print release version, commit, build date, and builder. JSON uses `version`,
 5. Run `templ generate` for the new view if `tools/templ` is installed, so
    the app compiles immediately; otherwise print the setup commands.
 
+### `bespoke search [terms…]`
+
+List apps in the index — a TOML file in a public repository, not a service
+([ADR-0031](../adr/0031-third-party-app-packages.md)). Every term must match
+the entry's name, module, description, or author, case-insensitively; no terms
+lists everything. `BESPOKE_INDEX` overrides the default index URL, so an owner
+can run their own list or point at a friend's.
+
+The index vouches for nothing, and the command says so on every run.
+
+### `bespoke add <module|name>[@version] [--slug <slug>] [--port <port>]`
+
+Install an app published as its own module. A bare name is looked up in the
+index; anything containing `.` or `/` is a module path, so an app never has to
+be indexed to be installable.
+
+1. Validate `--slug` and `--port` and check the target directory is free.
+   Exit non-zero without touching `go.mod` on any of these.
+2. `go get -tool <module>[@version]` — the `tool` directive is the pin that
+   survives `go mod tidy` for a `main` package nothing imports.
+3. Read `app.toml.example` from the module root: the app's own name, slug,
+   icon, description, and intents. A module without one is an error naming the
+   `package` line to write by hand.
+4. Write `apps/<slug>/app.toml` with the next free port (or `--port`) and
+   validate it through the same loader every other command uses.
+5. Recompile the instance stylesheet if the UI tools are installed — an
+   installed app's templates are new scan roots — otherwise say what to run.
+
+Any failure after step 2 leaves the module pinned and prints the `@none`
+command that removes it, because the module may have been pinned beforehand.
+
+`--slug` exists for collisions between two apps that want the same name; it
+works only if the app's source does not hardcode its slug, which most do.
+
 ### `bespoke dev`
 
 Run platformd plus **every** manifest app locally on `127.0.0.1`, each with

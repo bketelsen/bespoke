@@ -83,6 +83,9 @@ Requirements on the **instance**:
 
 Requirements on the **published app**:
 
+- Ship `app.toml.example` at the module root, declaring everything except the
+  port. `bespoke add` reads it; without one the app can only be installed by
+  hand-writing a manifest.
 - Commit generated `*_templ.go`. Instances never run `templ generate` over the
   read-only module cache.
 - Use Iconify `icon` names. Only `app.toml` is shipped to the app host, so a

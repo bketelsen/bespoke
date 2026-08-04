@@ -46,6 +46,14 @@ other module compiled and ran but rendered unstyled — a silent failure.
   app's source names its own database and process via `db.Open`/`web.Run`, and
   manifest validation requires `slug` to equal the directory name. A published
   app documents the slug it must be installed under.
+- `bespoke add` installs an app and `bespoke search` lists an index of them.
+  The index is one TOML file in a public repository — short name to module
+  path, added by pull request, checked only for "does this resolve". It is a
+  phone book, not a registry: no hosting, no artifacts, no review, and
+  `BESPOKE_INDEX` points the commands at any other list. A module path always
+  works without an index at all.
+- A published app declares its own identity in an `app.toml.example` at its
+  module root. The installing owner supplies the port and nothing else.
 - Installing an app is running its author's code as the instance owner. Apps
   share a UID, a data directory, and the internal services plane; the platform
   makes no isolation claim beyond process-per-app
@@ -70,12 +78,22 @@ other module compiled and ran but rendered unstyled — a silent failure.
 - The same-UID trust model is now load-bearing in a way it was not when every
   app was the owner's own. Per-app systemd hardening, and eventually per-app
   UIDs, become worth their cost; neither is decided here.
+- `bespoke add` makes installing easy enough that people will do it without
+  reading the source. The commands say what they are handing over, which is the
+  most a phone book can honestly do.
+- The index is a single file one person merges to. It is a bottleneck and a
+  point of trust for *discovery*, which is why nothing depends on it: the
+  module path is always the real address.
 
 ## Alternatives considered
 
 - **Prebuilt binaries or OCI artifacts:** the instance compiles precisely so
   one Tailwind pass covers the platform, the owner's theme, and every app;
   shipping binaries ships unthemed apps.
+- **A hosted registry with accounts and review:** infrastructure and a
+  gatekeeper in exchange for a guarantee this deliberately does not offer.
+- **No index at all, only module paths:** correct but undiscoverable; a phone
+  book costs one text file.
 - **A vendoring `bespoke install` that copies source into `apps/`:** upgrades
   become merges and the instance's own apps stop being distinguishable from
   someone else's.
