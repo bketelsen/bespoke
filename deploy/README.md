@@ -114,6 +114,33 @@ systemctl --user restart bespoke-mail
 Upgrading does not move existing secrets for you. Until you move them, they
 stay readable by every app.
 
+#### Migrating to per-app data directories
+
+Hosts created before [ADR-0033](../docs/adr/0033-per-app-data-scope.md) keep
+every database in one flat `~/bespoke/data`. App units now scope themselves to
+`~/bespoke/data/<slug>`, so the files must move once, with the units stopped:
+
+```sh
+cd ~/bespoke
+systemctl --user stop 'bespoke-*.service'
+tar czf ~/bespoke-data-backup-$(date +%Y%m%d%H%M).tar.gz data   # no backup, no migration
+for db in data/*.db; do
+  slug=$(basename "$db" .db)
+  mkdir -p "data/$slug"
+  mv "data/$slug".db* "data/$slug/"
+done
+mv data/mail-attachments data/mail/ 2>/dev/null   # mail keeps attachments beside its database
+```
+
+Then deploy from the dev machine and confirm every app comes back:
+
+```sh
+just deploy            # creates any missing data dirs, ships hardened units
+```
+
+Databases belonging to retired apps stay at the flat path and are ignored;
+`platformd.db` deliberately stays at the root.
+
 For the LLM gateway, install the **`copilot` CLI into `~/.local/bin`** on
 selfie and sign it in (`copilot`, then authenticate) — the generated
 platformd unit puts `~/.local/bin` on PATH for exactly this. Without it

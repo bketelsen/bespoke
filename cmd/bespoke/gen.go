@@ -89,6 +89,21 @@ UMask=0077
 MemoryHigh=512M
 MemoryMax=1G
 TasksMax=128
+
+# Per-app filesystem scope (ADR-0033). The home directory is replaced with an
+# empty tmpfs and only four things are mounted back, so an app cannot see —
+# not merely cannot read — any other app's database. BESPOKE_DATA is what
+# moves this app's storage into its own directory; pkg/db and mail's
+# attachment store both honor it.
+Environment=BESPOKE_DATA=%h/bespoke/data/{{.Slug}}
+ProtectSystem=strict
+ProtectHome=tmpfs
+# Its own binary, every manifest (web.Run reads its port, the app switcher
+# reads them all), the compiled stylesheet, and its own data.
+BindReadOnlyPaths=%h/bespoke/bin/{{.Slug}}
+BindReadOnlyPaths=%h/bespoke/apps
+BindReadOnlyPaths=%h/bespoke/assets
+BindPaths=%h/bespoke/data/{{.Slug}}
 {{end}}
 [Install]
 WantedBy=default.target
@@ -229,12 +244,16 @@ func writeCaddy(cfg config, apps []manifest.App) error {
 var litestreamTmpl = template.Must(template.New("ls").Parse(genHeader + `# Litestream replication for every app database (ADR-0007). Runs on the app
 # host; BESPOKE_DATA_DIR and BESPOKE_REPLICA_URL come from the litestream
 # unit's environment (deploy/README.md).
+#
+# App databases live in a directory per app (ADR-0033); platformd is not
+# scoped and keeps its database at the root. Replica URLs are unchanged by
+# that move, so replication history survives the migration.
 dbs:
   - path: ${BESPOKE_DATA_DIR}/platformd.db
     replicas:
       - url: ${BESPOKE_REPLICA_URL}/platformd
 {{- range .}}
-  - path: ${BESPOKE_DATA_DIR}/{{.Slug}}.db
+  - path: ${BESPOKE_DATA_DIR}/{{.Slug}}/{{.Slug}}.db
     replicas:
       - url: ${BESPOKE_REPLICA_URL}/{{.Slug}}
 {{- end}}

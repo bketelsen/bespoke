@@ -111,6 +111,17 @@ func cmdDeploy(args []string) error {
 			return err
 		}
 	}
+	// Each app's data directory must exist before its unit starts: BindPaths
+	// cannot mount a source that is missing, and the app would fail to start
+	// rather than silently writing somewhere unscoped (ADR-0033).
+	var mkdirs strings.Builder
+	mkdirs.WriteString("mkdir -p")
+	for _, a := range apps {
+		fmt.Fprintf(&mkdirs, " ~/bespoke/data/%s", a.Slug)
+	}
+	if err := run("ssh", cfg.SelfieSSH, mkdirs.String()); err != nil {
+		return err
+	}
 	if err := run("rsync", "-az", "dist/gen/units/", cfg.SelfieSSH+":.config/systemd/user/"); err != nil {
 		return err
 	}

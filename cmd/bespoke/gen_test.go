@@ -105,6 +105,38 @@ func TestOnlyAppUnitsAreMemoryCapped(t *testing.T) {
 	}
 }
 
+// Verified against a live unit on systemd 261: inside the sandbox the data
+// directory contains only the app's own subdirectory, so a sibling's database
+// is absent rather than merely unreadable.
+func TestAppUnitsGetTheirOwnFilesystemScope(t *testing.T) {
+	units := generateUnits(t)
+	app := units["bespoke-notes.service"]
+	for _, want := range []string{
+		"Environment=BESPOKE_DATA=%h/bespoke/data/notes",
+		"ProtectSystem=strict",
+		"ProtectHome=tmpfs",
+		"BindReadOnlyPaths=%h/bespoke/bin/notes",
+		"BindReadOnlyPaths=%h/bespoke/apps",   // web.Run + the app switcher
+		"BindReadOnlyPaths=%h/bespoke/assets", // pkg/ui serves styles.css from disk
+		"BindPaths=%h/bespoke/data/notes",
+	} {
+		if !strings.Contains(app, want) {
+			t.Errorf("app unit missing %q\ngot:\n%s", want, app)
+		}
+	}
+	if strings.Contains(app, "BindPaths=%h/bespoke/data\n") {
+		t.Error("app unit mounts the whole data directory, defeating the scope")
+	}
+
+	// platformd reads every manifest and its own database, and execs copilot
+	// from ~/.local/bin; litestream reads every app database by design.
+	for _, name := range []string{"bespoke-platformd.service", "bespoke-litestream.service"} {
+		if strings.Contains(units[name], "ProtectHome=tmpfs") {
+			t.Errorf("%s should not be filesystem-scoped; it needs the whole tree", name)
+		}
+	}
+}
+
 // The sandbox must not cost platformd the things ADR-0009 needs to exec copilot.
 func TestPlatformdKeepsItsEnvironment(t *testing.T) {
 	units := generateUnits(t)
@@ -120,5 +152,39 @@ func TestPlatformdKeepsItsEnvironment(t *testing.T) {
 	}
 	if !strings.Contains(units["bespoke-notes.service"], "[Install]") {
 		t.Error("app unit lost its [Install] section")
+	}
+}
+
+// Litestream paths must follow the data into per-app directories, while the
+// replica URLs stay put so replication history survives the migration.
+func TestLitestreamFollowsThePerAppLayout(t *testing.T) {
+	dir := t.TempDir()
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(old) })
+	if err := os.MkdirAll("dist/gen", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeLitestream([]manifest.App{{Slug: "notes", Port: 4101}}); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile("dist/gen/litestream.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(body)
+	for _, want := range []string{
+		"path: ${BESPOKE_DATA_DIR}/notes/notes.db",
+		"url: ${BESPOKE_REPLICA_URL}/notes",
+		"path: ${BESPOKE_DATA_DIR}/platformd.db", // not scoped, stays at the root
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("litestream.yml missing %q\ngot:\n%s", want, got)
+		}
 	}
 }
