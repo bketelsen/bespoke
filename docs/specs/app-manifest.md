@@ -70,8 +70,12 @@ package instead of `./apps/<slug>`. This serves both the platform's opt-in apps
 
 Requirements on the **instance**:
 
-- The providing module must be required by the instance's `go.mod`
-  (`go get <module>`), so builds and `bespoke ui` can resolve it.
+- The providing module must be pinned in the instance's `go.mod` with
+  `go get -tool <module>`, so builds and `bespoke ui` can resolve it. A plain
+  `go get` is not enough: no instance source imports an installed app (it is a
+  `main` package, which Go forbids importing), so `go mod tidy` prunes the
+  requirement. The `tool` directive is what survives — the same mechanism that
+  pins the `bespoke` CLI itself.
 - The directory name must be the slug the published app expects — its source
   names its own database and process.
 - The port is the installing owner's to choose, subject to the usual range and

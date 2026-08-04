@@ -30,8 +30,11 @@ other module compiled and ran but rendered unstyled — a silent failure.
 ## Decision
 
 - `package` in `app.toml` may name a package in **any** module, not only the
-  platform's. An instance installs a shared app by requiring its module and
-  writing an `app.toml` naming it; no source is vendored into the instance.
+  platform's. An instance installs a shared app by pinning its module with
+  `go get -tool` and writing an `app.toml` naming it; no source is vendored
+  into the instance. The `tool` directive rather than a plain requirement:
+  nothing in the instance imports a `main` package, so `go mod tidy` prunes
+  anything weaker, and `tool` already pins the CLI the same way.
 - `bespoke ui` derives its Tailwind scan roots from the registry: the
   instance's `apps/` tree plus the module directory of every app with a
   `package`. An unresolvable `package` fails the command rather than producing
