@@ -208,36 +208,30 @@ exit 1`, slug, cfg.SelfieTSIP, port)
 	return nil
 }
 
+// prepareBuildModfile copies the instance's go.mod/go.sum somewhere Go may
+// write during resolution, so builds never dirty the committed files. It lives
+// outside the instance (a dev session holds one open for as long as it runs;
+// inside the repo it would show up in git status and survive a kill -9).
 func prepareBuildModfile() (string, func(), error) {
 	mod, err := os.ReadFile("go.mod")
 	if err != nil {
 		return "", nil, fmt.Errorf("read go.mod: %w", err)
 	}
-	f, err := os.CreateTemp(".", ".bespoke-deploy-*.mod")
+	dir, err := os.MkdirTemp("", "bespoke-build-")
 	if err != nil {
-		return "", nil, fmt.Errorf("create deploy modfile: %w", err)
+		return "", nil, fmt.Errorf("create build modfile: %w", err)
 	}
-	modfile, err := filepath.Abs(f.Name())
-	if err == nil {
-		_, err = f.Write(mod)
-	}
-	closeErr := f.Close()
-	if err == nil {
-		err = closeErr
-	}
-	sumfile := strings.TrimSuffix(modfile, ".mod") + ".sum"
-	cleanup := func() {
-		_ = os.Remove(modfile)
-		_ = os.Remove(sumfile)
-	}
-	if err != nil {
+	cleanup := func() { _ = os.RemoveAll(dir) }
+	modfile := filepath.Join(dir, "go.mod")
+	sumfile := filepath.Join(dir, "go.sum")
+	if err := os.WriteFile(modfile, mod, 0o600); err != nil {
 		cleanup()
-		return "", nil, fmt.Errorf("write deploy modfile: %w", err)
+		return "", nil, fmt.Errorf("write build modfile: %w", err)
 	}
 	if sum, readErr := os.ReadFile("go.sum"); readErr == nil {
 		if err := os.WriteFile(sumfile, sum, 0o600); err != nil {
 			cleanup()
-			return "", nil, fmt.Errorf("write deploy sumfile: %w", err)
+			return "", nil, fmt.Errorf("write build sumfile: %w", err)
 		}
 	} else if !os.IsNotExist(readErr) {
 		cleanup()

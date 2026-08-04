@@ -29,9 +29,11 @@ func TestPrepareBuildModfileIsIsolated(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sumfile := strings.TrimSuffix(modfile, ".mod") + ".sum"
-	if filepath.Dir(modfile) != dir {
-		t.Fatalf("modfile directory = %q, want %q", filepath.Dir(modfile), dir)
+	sumfile := filepath.Join(filepath.Dir(modfile), "go.sum")
+	// Outside the instance: `bespoke dev` holds one open for a whole session,
+	// where an in-repo copy would dirty git status and outlive a kill -9.
+	if strings.HasPrefix(modfile, dir+string(filepath.Separator)) {
+		t.Fatalf("modfile %q was created inside the instance %q", modfile, dir)
 	}
 	if got, err := os.ReadFile(modfile); err != nil || string(got) != "module example.com/instance\n" {
 		t.Fatalf("modfile = %q, %v", got, err)

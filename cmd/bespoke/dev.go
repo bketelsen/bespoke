@@ -46,6 +46,18 @@ func cmdDev(args []string) error {
 		procs = append(procs, proc{a.Slug, pkg, a.Port})
 	}
 
+	// Same isolation deploy uses: an instance's go.sum covers what the
+	// instance itself imports, which excludes platformd's dependencies —
+	// under the default -mod=readonly `go run ./platform` fails on missing
+	// go.sum entries, and `go mod tidy` prunes them straight back out. Build
+	// against a throwaway copy so resolution may write without touching the
+	// instance's committed go.mod/go.sum.
+	modfile, cleanupModfile, err := prepareBuildModfile()
+	if err != nil {
+		return err
+	}
+	defer cleanupModfile()
+
 	var cmds []*exec.Cmd
 	stopAll := func() {
 		for _, c := range cmds {
@@ -56,7 +68,7 @@ func cmdDev(args []string) error {
 		}
 	}
 	for _, p := range procs {
-		c := exec.Command("go", "run", p.pkg)
+		c := exec.Command("go", "run", "-mod=mod", "-modfile="+modfile, p.pkg)
 		c.Env = append(os.Environ(), "BESPOKE_DEV_USER="+devUser)
 		c.Stdout, c.Stderr = os.Stdout, os.Stderr
 		c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
