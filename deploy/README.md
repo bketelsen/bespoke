@@ -126,11 +126,19 @@ systemctl --user stop 'bespoke-*.service'
 tar czf ~/bespoke-data-backup-$(date +%Y%m%d%H%M).tar.gz data   # no backup, no migration
 for db in data/*.db; do
   slug=$(basename "$db" .db)
+  [ "$slug" = platformd ] && continue   # platformd is not scoped; its database stays at the root
   mkdir -p "data/$slug"
   mv "data/$slug".db* "data/$slug/"
 done
 mv data/mail-attachments data/mail/ 2>/dev/null   # mail keeps attachments beside its database
 ```
+
+Secrets move at the same time, out of the shared `env` and into `env.d/`. Note
+that the calendar app falls back to `BESPOKE_MAIL_KEY` and mail's Google OAuth
+client when its own `BESPOKE_CALENDAR_*` values are unset — if you rely on that
+fallback, write the same values into `env.d/calendar` under the `CALENDAR`
+names before removing them from the shared file, or calendar loses access to
+its stored credentials.
 
 Then deploy from the dev machine and confirm every app comes back:
 
