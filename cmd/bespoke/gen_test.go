@@ -182,9 +182,16 @@ func TestLitestreamFollowsThePerAppLayout(t *testing.T) {
 		"path: ${BESPOKE_DATA_DIR}/notes/notes.db",
 		"url: ${BESPOKE_REPLICA_URL}/notes",
 		"path: ${BESPOKE_DATA_DIR}/platformd.db", // not scoped, stays at the root
+		"replica:",                               // v0.5 takes one replica per db...
+		"retention: 168h",                        // ...and its own 24h retention default is too short
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("litestream.yml missing %q\ngot:\n%s", want, got)
 		}
+	}
+	// v0.5 removed the replicas array outright; emitting it silently produces
+	// a config that replicates nothing.
+	if strings.Contains(got, "replicas:") {
+		t.Error("litestream.yml uses the replicas array, removed in v0.5")
 	}
 }

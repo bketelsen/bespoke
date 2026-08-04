@@ -155,9 +155,18 @@ platformd unit puts `~/.local/bin` on PATH for exactly this. Without it
 everything else works but chat/summaries are degraded, with a dashboard
 warning banner explaining why.
 
-For backups (ADR-0007), install [Litestream](https://litestream.io) to
-`/usr/local/bin/litestream`, then write `~/bespoke/env.d/litestream` — **not**
-the shared file, or every app can read and delete your backups:
+For backups (ADR-0007), install [Litestream](https://litestream.io) into
+`~/.local/bin` (no root needed — every Bespoke process is a user unit):
+
+```sh
+V=0.5.15
+curl -fsSL "https://github.com/benbjohnson/litestream/releases/download/v$V/litestream-$V-linux-x86_64.tar.gz" \
+  | tar xz -C /tmp litestream
+install -m 755 /tmp/litestream ~/.local/bin/litestream
+```
+
+Then write `~/bespoke/env.d/litestream` — **not** the shared file, or every app
+can read and delete your backups:
 
 ```sh
 BESPOKE_DATA_DIR=/home/<user>/bespoke/data

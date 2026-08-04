@@ -140,7 +140,9 @@ After=network-online.target
 # delete your backups (ADR-0032).
 EnvironmentFile=%h/bespoke/env
 EnvironmentFile=-%h/bespoke/env.d/litestream
-ExecStart=/usr/local/bin/litestream replicate -config %h/bespoke/litestream.yml
+# ~/.local/bin, like the copilot CLI (ADR-0009): every Bespoke process is a
+# user unit, and nothing else in the system needs root to install.
+ExecStart=%h/.local/bin/litestream replicate -config %h/bespoke/litestream.yml
 Restart=on-failure
 RestartSec=5
 
@@ -242,20 +244,31 @@ func writeCaddy(cfg config, apps []manifest.App) error {
 }
 
 var litestreamTmpl = template.Must(template.New("ls").Parse(genHeader + `# Litestream replication for every app database (ADR-0007). Runs on the app
-# host; BESPOKE_DATA_DIR and BESPOKE_REPLICA_URL come from the litestream
-# unit's environment (deploy/README.md).
+# host; BESPOKE_DATA_DIR, BESPOKE_REPLICA_URL, and any backend credentials come
+# from ~/bespoke/env.d/litestream, never the shared env file (ADR-0032).
 #
 # App databases live in a directory per app (ADR-0033); platformd is not
 # scoped and keeps its database at the root. Replica URLs are unchanged by
 # that move, so replication history survives the migration.
+#
+# Litestream v0.5 takes exactly ONE replica per database — multiple replicas
+# were removed, not merely deprecated. Fan out to a second target on the
+# storage side (NAS-to-NAS replication), not here.
+
+# Litestream's own default retention is 24h: lose a row and notice on Tuesday,
+# and Monday is already gone. A week costs almost nothing at this data size.
+snapshot:
+  interval: 24h
+  retention: 168h
+
 dbs:
   - path: ${BESPOKE_DATA_DIR}/platformd.db
-    replicas:
-      - url: ${BESPOKE_REPLICA_URL}/platformd
+    replica:
+      url: ${BESPOKE_REPLICA_URL}/platformd
 {{- range .}}
   - path: ${BESPOKE_DATA_DIR}/{{.Slug}}/{{.Slug}}.db
-    replicas:
-      - url: ${BESPOKE_REPLICA_URL}/{{.Slug}}
+    replica:
+      url: ${BESPOKE_REPLICA_URL}/{{.Slug}}
 {{- end}}
 `))
 
