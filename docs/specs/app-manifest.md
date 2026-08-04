@@ -17,7 +17,7 @@ wire contract itself is unchanged.
 | `port` | integer | yes | Loopback port in `4101–4999` (validation rejects outside the range); unique across apps — a duplicate is warned and the later app dropped from the registry; assigned sequentially by `bespoke new`; never hand-picked |
 | `icon` | string | yes | Iconify icon name, or a path to a PNG inside the app directory |
 | `description` | string | yes | One line, shown on the dashboard |
-| `package` | string | no | Go package containing an optional platform-distributed app; omitted for ordinary instance-local apps |
+| `package` | string | no | Go package providing the app's source, in any module — the platform's own opt-in apps or a third party's ([ADR-0031](../adr/0031-third-party-app-packages.md)); omitted for ordinary instance-local apps |
 | `[[intents]]` | table array | no | Cross-app actions this app accepts — see [Intents](#intents-intents) below |
 
 ## Example
@@ -57,9 +57,40 @@ accepts = "text"
 - Reserved: port `4000` and the apex subdomain (platformd), and port `4001`
   (platformd's internal LLM gateway listener — never routed by Caddy).
 - The runtime contract is only "HTTP on `port`, honor the auth header." The
-  optional `package` is a Go build-source override used by
-  platform-distributed first-party apps; it does not change that contract
-  ([ADR-0005](../adr/0005-process-per-app.md)).
+  optional `package` is a Go build-source override; it does not change that
+  contract ([ADR-0005](../adr/0005-process-per-app.md)).
+
+## Installed apps (`package`)
+
+An app whose manifest sets `package` has no Go source in the instance: the
+directory holds `app.toml` and nothing else, and `dev`/`deploy` build the named
+package instead of `./apps/<slug>`. This serves both the platform's opt-in apps
+(Builder) and apps published by third parties
+([ADR-0031](../adr/0031-third-party-app-packages.md)).
+
+Requirements on the **instance**:
+
+- The providing module must be required by the instance's `go.mod`
+  (`go get <module>`), so builds and `bespoke ui` can resolve it.
+- The directory name must be the slug the published app expects — its source
+  names its own database and process.
+- The port is the installing owner's to choose, subject to the usual range and
+  uniqueness rules.
+
+Requirements on the **published app**:
+
+- Commit generated `*_templ.go`. Instances never run `templ generate` over the
+  read-only module cache.
+- Use Iconify `icon` names. Only `app.toml` is shipped to the app host, so a
+  PNG icon inside a module cache directory would never arrive.
+- Bundle chat skills with `go:embed` + `web.Skills` (already required by
+  [ADR-0026](../adr/0026-app-bundled-chat-skills.md)) — they travel in the
+  binary.
+- Declare the minimum platform version in the module's own `go.mod`. MVS may
+  raise the installing instance's platform version.
+
+Installing an app runs its author's code as the instance owner, alongside every
+other app's data. The platform vouches for nothing installed this way.
 
 ## App HTTP contract
 

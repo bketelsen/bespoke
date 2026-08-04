@@ -6,8 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"text/template"
+
+	"github.com/bketelsen/bespoke/internal/manifest"
 )
 
 const platformModule = "github.com/bketelsen/bespoke"
@@ -169,13 +172,18 @@ func cmdUI(args []string) error {
 	if err != nil {
 		return fmt.Errorf("locate Bespoke module: %w", err)
 	}
-	base := filepath.Join(strings.TrimSpace(string(moduleDir)), "design", "base.css")
+	platformDir := strings.TrimSpace(string(moduleDir))
+	base := filepath.Join(platformDir, "design", "base.css")
+	roots, err := uiSourceRoots(platformDir)
+	if err != nil {
+		return err
+	}
 	input := filepath.Join("dist", "ui-input.css")
 	if err := os.MkdirAll("dist", 0o755); err != nil {
 		return err
 	}
-	content := fmt.Sprintf("@import %q;\n@import %q;\n@source %q;\n@source %q;\n", base, filepath.Join(mustAbs("design/theme.css")), mustAbs("apps/**/*.templ"), mustAbs("apps/**/*_templ.go"))
-	if err := os.WriteFile(input, []byte(content), 0o644); err != nil {
+	css := uiInputCSS(base, mustAbs("design/theme.css"), roots)
+	if err := os.WriteFile(input, []byte(css), 0o644); err != nil {
 		return err
 	}
 	if err := os.MkdirAll("assets", 0o755); err != nil {
@@ -184,6 +192,68 @@ func cmdUI(args []string) error {
 	cmd = exec.Command(filepath.FromSlash("tools/tailwindcss"), "-i", input, "-o", filepath.FromSlash("assets/styles.css"), "--minify")
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	return cmd.Run()
+}
+
+// uiInputCSS is the generated Tailwind entrypoint: the platform's base layer,
+// then the instance's theme tokens (order matters — tokens override), then one
+// scan glob pair per source root.
+func uiInputCSS(base, theme string, roots []string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "@import %q;\n@import %q;\n", base, theme)
+	for _, root := range roots {
+		fmt.Fprintf(&b, "@source %q;\n@source %q;\n",
+			filepath.Join(root, "**", "*.templ"), filepath.Join(root, "**", "*_templ.go"))
+	}
+	return b.String()
+}
+
+// uiSourceRoots lists the trees Tailwind must scan for utility classes: the
+// instance's own apps, plus the source module of every app installed from
+// another module (`package` in app.toml). Classes Tailwind never sees are
+// pruned from assets/styles.css, so an unscanned app renders unstyled — the
+// failure is silent, which is why a package that cannot be resolved is a hard
+// error here. The platform's own templates are already scanned by
+// design/input.css, so its module is skipped.
+func uiSourceRoots(platformDir string) ([]string, error) {
+	apps, warnings, err := manifest.LoadAll(".")
+	if err != nil {
+		return nil, err
+	}
+	for _, w := range warnings {
+		fmt.Fprintln(os.Stderr, "warning:", w)
+	}
+	roots := []string{mustAbs("apps")}
+	skip := []string{platformDir, mustAbs(".")}
+	for _, a := range apps {
+		if a.Package == "" {
+			continue
+		}
+		dir, err := packageModuleDir(a.Package)
+		if err != nil {
+			return nil, fmt.Errorf("app %s: %w", a.Slug, err)
+		}
+		if dir == "" || slices.Contains(skip, dir) || slices.Contains(roots, dir) {
+			continue
+		}
+		roots = append(roots, dir)
+	}
+	return roots, nil
+}
+
+// packageModuleDir resolves the on-disk module directory providing a package.
+// The module directory rather than the package directory: a shared app's
+// templates may sit above its main package, and scanning a little extra costs
+// nothing while missing a template costs the app its styling.
+func packageModuleDir(pkg string) (string, error) {
+	cmd := exec.Command("go", "list", "-f", "{{with .Module}}{{.Dir}}{{else}}{{.Dir}}{{end}}", pkg)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("locate package %s (is it required? try `go get %s`): %w: %s",
+			pkg, pkg, err, strings.TrimSpace(stderr.String()))
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 func mustAbs(path string) string {

@@ -25,8 +25,12 @@ refresh platform-managed agent files without changing owner-controlled files.
 
 ### `bespoke ui`
 
-Generate local templ output, scan both platform and instance templates with
-Tailwind, and write the committed `assets/styles.css`.
+Generate local templ output, then scan the platform's templates, the instance's
+`apps/` tree, and the source module of every installed app (`package` in
+`app.toml` — [ADR-0031](../adr/0031-third-party-app-packages.md)) with Tailwind
+before writing the committed `assets/styles.css`. A `package` that cannot be
+resolved fails the command: an unscanned template silently loses every class it
+uses, and the app renders unstyled.
 
 ### `bespoke version [--json]`
 
