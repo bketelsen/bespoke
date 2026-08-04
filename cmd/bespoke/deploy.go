@@ -91,7 +91,9 @@ func cmdDeploy(args []string) error {
 	}
 
 	fmt.Println("==> sync to", cfg.SelfieSSH)
-	if err := run("ssh", cfg.SelfieSSH, "mkdir -p ~/bespoke/bin.new ~/bespoke/apps ~/.config/systemd/user"); err != nil {
+	// env.d holds per-unit secrets (ADR-0032) and is never synced from here —
+	// it is created empty and owner-only, and filled in on the host.
+	if err := run("ssh", cfg.SelfieSSH, "mkdir -p ~/bespoke/bin.new ~/bespoke/apps ~/.config/systemd/user ~/bespoke/env.d && chmod 700 ~/bespoke/env.d"); err != nil {
 		return err
 	}
 	// Binaries stage into bin.new; the restart step swaps with rollback.

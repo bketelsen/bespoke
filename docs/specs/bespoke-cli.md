@@ -101,7 +101,7 @@ Requires `deploy/deploy.env` (domain, hosts) — a fresh clone must copy
 
 | Artifact | Content |
 | --- | --- |
-| `dist/gen/units/bespoke-<slug>.service` | systemd user unit per app + platformd + litestream; the platformd unit additionally sets `BESPOKE_ROOT`, a PATH including `~/.local/bin` (so the gateway can exec `copilot`), and `-internal <bind-ip>:4001` for the services plane |
+| `dist/gen/units/bespoke-<slug>.service` | systemd user unit per app + platformd + litestream, each sandboxed and reading an optional per-unit `~/bespoke/env.d/<slug>` for its own secrets ([ADR-0032](../adr/0032-app-unit-sandboxing.md)); the platformd unit additionally sets `BESPOKE_ROOT`, a PATH including `~/.local/bin` (so the gateway can exec `copilot`), and `-internal <bind-ip>:4001` for the services plane |
 | `dist/gen/bespoke.caddy` | edge route file: wildcard TLS, tailscale_auth, header stripping, subdomain→port map (label index computed from the domain depth) |
 | `dist/gen/litestream.yml` | replication entry per app database |
 

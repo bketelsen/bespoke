@@ -51,7 +51,11 @@ Description=Bespoke {{if .Platform}}platformd (dashboard/registry){{else}}app: {
 After=network-online.target
 
 [Service]
+# Shared platform values, then this unit's own secrets. The per-unit file is
+# optional (leading -) and is the ONLY place an app secret belongs: everything
+# in the shared file is in every app's environment (ADR-0032).
 EnvironmentFile=%h/bespoke/env
+EnvironmentFile=-%h/bespoke/env.d/{{.Slug}}
 {{if .Platform}}Environment=BESPOKE_ROOT=%h/bespoke
 # systemd user units get a bare PATH; the LLM gateway execs copilot from
 # ~/.local/bin (ADR-0009).
@@ -62,6 +66,30 @@ ExecStart=%h/bespoke/bin/{{.Slug}} -listen ${BESPOKE_BIND_IP}:{{.Port}} -interna
 Restart=on-failure
 RestartSec=2
 
+# Sandbox (ADR-0032). These bound what a compromised or hostile app can reach;
+# they do NOT isolate apps from each other's databases, which share a directory
+# and a UID. PrivatePIDs is what hides sibling processes: ProtectProc/hidepid
+# filters by UID, and every app here runs as the same user, so /proc/<pid>/environ
+# would otherwise be readable across apps.
+NoNewPrivileges=yes
+PrivatePIDs=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# Databases are created by the app; nothing else on the host should read them.
+UMask=0077
+{{if .Platform}}TasksMax=512
+{{else}}# MemoryHigh throttles, MemoryMax kills. An app that leaks gets slowed
+# long before it gets OOM-killed mid-request.
+MemoryHigh=512M
+MemoryMax=1G
+TasksMax=128
+{{end}}
 [Install]
 WantedBy=default.target
 `))
@@ -92,10 +120,29 @@ Description=Bespoke Litestream replication (ADR-0007)
 After=network-online.target
 
 [Service]
+# BESPOKE_DATA_DIR, BESPOKE_REPLICA_URL, and the object store credentials go in
+# env.d/litestream, not the shared file — otherwise every app can read and
+# delete your backups (ADR-0032).
 EnvironmentFile=%h/bespoke/env
+EnvironmentFile=-%h/bespoke/env.d/litestream
 ExecStart=/usr/local/bin/litestream replicate -config %h/bespoke/litestream.yml
 Restart=on-failure
 RestartSec=5
+
+# Sandbox (ADR-0032). Litestream reads every app database by design, so it is
+# deliberately not confined to one; what it gets is the same reduction in
+# kernel and process surface as the apps.
+NoNewPrivileges=yes
+PrivatePIDs=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+UMask=0077
 
 [Install]
 WantedBy=default.target

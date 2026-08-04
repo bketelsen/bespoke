@@ -95,6 +95,11 @@ Requirements on the **published app**:
   binary.
 - Declare the minimum platform version in the module's own `go.mod`. MVS may
   raise the installing instance's platform version.
+- Expect the unit sandbox ([ADR-0032](../adr/0032-app-unit-sandboxing.md)):
+  only `AF_INET`, `AF_INET6`, and `AF_UNIX` sockets, a private `/tmp` and PID
+  namespace, and 1 GiB of memory. `net.Interfaces()` and anything built on it
+  fails with `netlinkrib: address family not supported by protocol` — bind to
+  the address the platform passes instead of enumerating interfaces.
 
 Installing an app runs its author's code as the instance owner, alongside every
 other app's data. The platform vouches for nothing installed this way.

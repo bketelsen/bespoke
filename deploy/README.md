@@ -91,6 +91,29 @@ URL, `BESPOKE_ROOT`, and `BESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1`
 for the audio backend — adjust if Lemonade's port differs); units,
 binaries, manifests, and litestream config are synced by `bespoke deploy`.
 
+#### Secrets go in `env.d/`, not `env`
+
+Every unit reads `~/bespoke/env`, so **anything in it is in every app's
+environment** — including apps installed from someone else's module. Each unit
+additionally reads an optional `~/bespoke/env.d/<slug>` that only that unit
+sees ([ADR-0032](../docs/adr/0032-app-unit-sandboxing.md)). Deploy creates the
+directory `0700`; it is never synced from a dev machine.
+
+Keep only platform-wide values in `~/bespoke/env` (`BESPOKE_BIND_IP`,
+`BESPOKE_DOMAIN`, `BESPOKE_LLM_URL`, `BESPOKE_ROOT`, `BESPOKE_LEMONADE_URL`,
+`BESPOKE_SPOOL`). Move everything else to the unit that owns it:
+
+```sh
+# on the app host, once per secret-owning unit
+install -m 600 /dev/null ~/bespoke/env.d/mail
+echo 'BESPOKE_MAIL_KEY=…' >> ~/bespoke/env.d/mail
+$EDITOR ~/bespoke/env            # delete the line you just moved
+systemctl --user restart bespoke-mail
+```
+
+Upgrading does not move existing secrets for you. Until you move them, they
+stay readable by every app.
+
 For the LLM gateway, install the **`copilot` CLI into `~/.local/bin`** on
 selfie and sign it in (`copilot`, then authenticate) — the generated
 platformd unit puts `~/.local/bin` on PATH for exactly this. Without it
@@ -98,7 +121,8 @@ everything else works but chat/summaries are degraded, with a dashboard
 warning banner explaining why.
 
 For backups (ADR-0007), install [Litestream](https://litestream.io) to
-`/usr/local/bin/litestream`, then append to `~/bespoke/env`:
+`/usr/local/bin/litestream`, then write `~/bespoke/env.d/litestream` — **not**
+the shared file, or every app can read and delete your backups:
 
 ```sh
 BESPOKE_DATA_DIR=/home/<user>/bespoke/data

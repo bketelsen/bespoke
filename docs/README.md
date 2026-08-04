@@ -44,6 +44,7 @@ Docs are split by the question they answer:
 - [0029 — Embeddings via the LLM gateway](adr/0029-embeddings-via-llm-gateway.md)
 - [0030 — Give AppShell explicit content widths](adr/0030-appshell-explicit-content-widths.md)
 - [0031 — Install apps from third-party modules](adr/0031-third-party-app-packages.md)
+- [0032 — Split secrets per unit and sandbox app processes](adr/0032-app-unit-sandboxing.md)
 
 ### Design
 
