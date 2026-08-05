@@ -123,6 +123,7 @@ and its own module path. It depends on this public module at an explicit tag.
 | `pkg/ui` | Vendored templUI components + Bespoke wrappers (AppShell chrome, VoiceButton, Markdown, intents popover) implementing the design system |
 | `pkg/llm` | Provider-neutral gateway client: `Complete`/`CompleteJSON`/`Classify`, `WithSystem`/`WithUser`/`WithTools` — the last making chats agentic |
 | `pkg/audio` | `Transcribe` + `Speak` via the audio gateway (ADR-0014) — speech in and out for any app |
+| `pkg/version` | The running platform release from the build's module graph, plus a cached, fail-soft check for a newer one ([ADR-0034](../adr/0034-dashboard-version-footer-update-check.md)) — the dashboard footer |
 
 ## Data & backups
 
@@ -191,3 +192,8 @@ Tagged releases are selected with SVU and published with GoReleaser
 ([ADR-0027](../adr/0027-versioned-platform-private-instances.md)). Archives
 contain the bootstrap CLI for Linux and macOS; the Go module tag supplies the
 platform code used by private instances and deployments.
+
+A running instance names its pinned release in the dashboard footer and links
+the newer one when a background check finds it
+([ADR-0034](../adr/0034-dashboard-version-footer-update-check.md)); acting on
+the notice is `bespoke upgrade`.

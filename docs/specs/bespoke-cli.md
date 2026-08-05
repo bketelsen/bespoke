@@ -22,6 +22,9 @@ A development build without release metadata requires `--platform-version`.
 
 Update the instance's Bespoke requirement and tool, run `go mod tidy`, and
 refresh platform-managed agent files without changing owner-controlled files.
+The running instance names its pinned release in the dashboard footer and links
+a newer one when it exists ([ADR-0034](../adr/0034-dashboard-version-footer-update-check.md));
+acting on that notice is this command.
 
 ### `bespoke ui`
 

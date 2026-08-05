@@ -21,6 +21,7 @@ import (
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/db"
 	"github.com/bketelsen/bespoke/pkg/llm"
+	"github.com/bketelsen/bespoke/pkg/version"
 	"github.com/bketelsen/bespoke/pkg/web"
 	"github.com/bketelsen/bespoke/platform/views"
 )
@@ -49,6 +50,10 @@ func main() {
 	go gw.start()
 	agw := newAudioGateway()
 	egw := newEmbedGateway()
+
+	// Which release this instance runs, and whether a newer one exists
+	// (ADR-0034). Checks are cached, backgrounded, and fail soft.
+	releases := version.NewChecker()
 
 	web.Serve("platformd", 4000, func(mux *http.ServeMux) {
 		go serveInternal(*internal, gw, agw, egw) // after flag.Parse (inside Serve)
@@ -139,7 +144,7 @@ func main() {
 			dev := os.Getenv("BESPOKE_DEV_USER") != ""
 			user := auth.FromContext(r.Context())
 			cards := fetchCards(r.Context(), user.Login, user.Name, apps)
-			views.Dashboard(user, dev, domain, apps, cards, warnings).Render(r.Context(), w)
+			views.Dashboard(user, dev, domain, apps, cards, warnings, releases.Info()).Render(r.Context(), w)
 		})
 
 		mux.HandleFunc("GET /search", func(w http.ResponseWriter, r *http.Request) {
