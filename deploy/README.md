@@ -208,6 +208,18 @@ BESPOKE_DATA_DIR=/home/<user>/bespoke/data
 BESPOKE_REPLICA_URL=sftp://<backup-user>@<nas>:22/<path>
 ```
 
+**Changing `BESPOKE_REPLICA_URL` later** means clearing Litestream's per-database
+state, which lives in a hidden `.<db>-litestream/` directory beside each
+database and refers to the *old* target. Leave it and every shutdown hangs the
+full 90s `TimeoutStopSec` on a failing final sync and ends in SIGKILL — so each
+deploy stalls and can be killed mid-upload:
+
+```sh
+systemctl --user stop bespoke-litestream
+rm -rf ~/bespoke/data/*/.*-litestream ~/bespoke/data/.platformd.db-litestream
+systemctl --user start bespoke-litestream    # re-uploads from scratch
+```
+
 Verify with a real restore, not a directory listing:
 
 ```sh
