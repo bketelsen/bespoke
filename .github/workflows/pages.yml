@@ -1,0 +1,48 @@
+# Publishes the marketing site (site/) to GitHub Pages. The page is one
+# self-contained HTML file using the platform's own design tokens; the only
+# build step is copying the logo out of pkg/ui/assets — see scripts/build-site.sh.
+#
+# Requires Pages to be enabled for the repository with "GitHub Actions" as the
+# source (Settings → Pages → Build and deployment → Source).
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - scripts/build-site.sh
+      - pkg/ui/assets/logo.svg
+      - pkg/ui/assets/logo-mono.svg
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; queue instead of cancelling a live publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - run: scripts/build-site.sh
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

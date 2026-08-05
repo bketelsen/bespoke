@@ -46,6 +46,8 @@ live over SSE_ before the reply finishes settling:
 
 ## Start here
 
+- **The site:** <https://bketelsen.github.io/bespoke/> — what this is, the bet
+  behind it, and how to build your own.
 - **The docs:** [docs/README.md](docs/README.md) — every decision (ADRs),
   design doc, spec, and plan, cross-linked.
 - **The architecture:** [docs/design/architecture.md](docs/design/architecture.md)

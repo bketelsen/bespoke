@@ -34,6 +34,10 @@ ui:
 tools:
     scripts/setup-tools.sh
 
+# Assemble the GitHub Pages site into dist/site (CI runs this same script)
+site:
+    scripts/build-site.sh
+
 # Build, ship to selfie, restart with rollback (all apps)
 deploy *args:
     go run ./cmd/bespoke deploy --all {{ args }}

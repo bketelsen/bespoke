@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bespoke — build your own</title>
+<meta name="description" content="A platform for software that exists for exactly one owner. Describe an app to an AI agent, run it on your own hardware, behind your own tailnet. Steal the idea before you steal the code.">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+
+<meta property="og:title" content="Bespoke — build your own">
+<meta property="og:description" content="A platform for software that exists for exactly one owner. Describe an app to an agent, run it on your own hardware, behind your own tailnet.">
+<meta property="og:type" content="website">
+
+<style>
+/* ---------------------------------------------------------------------------
+   Bespoke's own design tokens, verbatim from design/input.css. The site and
+   the platform are the same theme — "tailor's chalk": warm paper neutrals,
+   deep teal primary, copper accent.
+   --------------------------------------------------------------------------- */
+:root {
+  --background: oklch(0.982 0.006 90);
+  --foreground: oklch(0.235 0.012 60);
+  --card: oklch(1 0 0);
+  --primary: oklch(0.46 0.085 205);
+  --primary-foreground: oklch(0.985 0.005 90);
+  --muted: oklch(0.945 0.01 90);
+  --muted-foreground: oklch(0.5 0.015 70);
+  --accent: oklch(0.72 0.13 55);
+  --border: oklch(0.885 0.012 85);
+  --radius: 0.5rem;
+
+  --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.215 0.012 250);
+    --foreground: oklch(0.93 0.008 90);
+    --card: oklch(0.255 0.014 250);
+    --primary: oklch(0.72 0.1 200);
+    --primary-foreground: oklch(0.17 0.01 250);
+    --muted: oklch(0.3 0.015 250);
+    --muted-foreground: oklch(0.67 0.012 90);
+    --accent: oklch(0.75 0.12 60);
+    --border: oklch(0.34 0.015 250);
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0 clamp(1.25rem, 5vw, 2rem);
+}
+
+/* --- the stitch line: a sewn seam, used as the only section divider ------- */
+.seam {
+  border: 0;
+  border-top: 1.5px dashed color-mix(in oklab, var(--accent) 55%, transparent);
+  margin: clamp(3.5rem, 9vw, 6rem) 0 clamp(2rem, 5vw, 3rem);
+}
+
+/* --- type ---------------------------------------------------------------- */
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -.015em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.35rem, 7vw, 3.6rem); line-height: 1.05; }
+h2 { font-size: clamp(1.6rem, 4.5vw, 2.1rem); line-height: 1.15; }
+h3 { font-size: 1.1rem; letter-spacing: -.005em; }
+p { margin: 0; max-width: 38em; }
+em { font-style: italic; }
+a { color: var(--primary); text-decoration-thickness: 1px; text-underline-offset: .18em; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, .btn:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin: 0 0 1rem;
+}
+.lede { font-size: clamp(1.1rem, 2.4vw, 1.3rem); color: var(--muted-foreground); }
+
+section { display: flex; flex-direction: column; gap: 1.25rem; }
+.stack { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* --- hero ---------------------------------------------------------------- */
+.hero { padding: clamp(3rem, 9vw, 6rem) 0 0; display: flex; flex-direction: column; gap: 1.75rem; }
+.hero img { width: clamp(72px, 14vw, 104px); height: auto; }
+.hero h1 span { color: var(--primary); }
+
+.cta { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.btn {
+  display: inline-block;
+  font-family: var(--sans); font-size: .95rem; font-weight: 500;
+  padding: .6rem 1.1rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  border: 1px solid var(--primary);
+  background: var(--primary); color: var(--primary-foreground);
+}
+.btn:hover { opacity: .9; }
+.btn.ghost { background: transparent; color: var(--primary); }
+.btn.ghost:hover { background: color-mix(in oklab, var(--primary) 8%, transparent); opacity: 1; }
+
+/* --- code ---------------------------------------------------------------- */
+pre {
+  font-family: var(--mono); font-size: .85rem; line-height: 1.7;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .9rem 1.05rem;
+  margin: 0;
+  overflow-x: auto;
+}
+pre .c { color: var(--muted-foreground); }
+code:not(pre code) {
+  font-family: var(--mono); font-size: .86em;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 3px; padding: .08em .35em;
+}
+
+/* --- the numbered path (a real sequence, so it's numbered) ---------------- */
+ol.path { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2rem; counter-reset: step; }
+ol.path > li { counter-increment: step; display: grid; grid-template-columns: 2.1rem 1fr; gap: 0 1rem; align-items: start; }
+ol.path > li::before {
+  content: counter(step);
+  font-family: var(--mono); font-size: .8rem;
+  color: var(--accent);
+  border: 1.5px dashed color-mix(in oklab, var(--accent) 55%, transparent);
+  border-radius: 50%;
+  width: 2.1rem; height: 2.1rem;
+  display: grid; place-items: center;
+}
+ol.path h3 { margin-top: .2rem; }
+ol.path p { color: var(--muted-foreground); font-size: .97rem; }
+ol.path .body { display: flex; flex-direction: column; gap: .7rem; }
+
+/* --- capability list ----------------------------------------------------- */
+ul.caps { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem 2rem; grid-template-columns: 1fr; }
+@media (min-width: 34rem) { ul.caps { grid-template-columns: 1fr 1fr; } }
+ul.caps li { padding: .7rem 0; border-bottom: 1px solid var(--border); font-size: .97rem; }
+ul.caps b { font-weight: 600; }
+ul.caps span { color: var(--muted-foreground); }
+
+/* --- example apps -------------------------------------------------------- */
+.apps { display: grid; gap: .75rem; grid-template-columns: 1fr; }
+@media (min-width: 38rem) { .apps { grid-template-columns: 1fr 1fr; } }
+.app {
+  display: flex; flex-direction: column; gap: .3rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  text-decoration: none;
+  color: inherit;
+}
+.app:hover { border-color: color-mix(in oklab, var(--accent) 60%, var(--border)); }
+.app b { font-family: var(--serif); font-size: 1.05rem; font-weight: 400; color: var(--primary); }
+.app span { font-size: .9rem; color: var(--muted-foreground); }
+.app code { font-size: .76rem; background: none; border: 0; padding: 0; color: var(--muted-foreground); opacity: .8; }
+
+.note {
+  border-left: 2px solid var(--accent);
+  padding: .2rem 0 .2rem 1.1rem;
+  color: var(--muted-foreground);
+  font-size: .97rem;
+}
+.note strong { color: var(--foreground); font-weight: 600; }
+
+/* --- footer -------------------------------------------------------------- */
+footer { margin: clamp(4rem, 10vw, 7rem) 0 0; padding: 2rem 0 4rem; border-top: 1px solid var(--border); }
+footer .links { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; margin-bottom: 1.5rem; font-size: .95rem; }
+footer p { font-family: var(--mono); font-size: .75rem; letter-spacing: .03em; color: var(--muted-foreground); line-height: 1.8; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <img src="logo.svg" alt="" width="104" height="104">
+    <h1>Software that exists for exactly <span>one person</span>. Yours.</h1>
+    <p class="lede">
+      Bespoke is a platform for one-off apps you describe to an AI agent and run on your
+      own hardware, at their own URLs, behind your own tailnet. It isn't a product you sign
+      up for. It's a set of conventions strong enough that an agent can build the next app
+      for you — and the whole point is that yours should be bespoke too.
+    </p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/bketelsen/bespoke/blob/main/MAKE-IT-YOUR-OWN.md">Build your own</a>
+      <a class="btn ghost" href="https://github.com/bketelsen/bespoke">Read the source</a>
+    </div>
+  </header>
+
+  <hr class="seam">
+
+  <section>
+    <p class="eyebrow">The bet</p>
+    <h2>LLMs changed the economics of one-person software.</h2>
+    <div class="stack">
+      <p>
+        Software that only one person will ever use has always been possible and almost never
+        worth it. The build cost was too high for an audience of one. That changed. The right
+        response isn't more apps — it's a framework with opinions strong enough that an agent
+        can one-shot the next one.
+      </p>
+      <p>
+        So Bespoke is mostly conventions. One auth model: Tailscale identity at the edge, which
+        means no login screen will ever exist here. One storage pattern: a SQLite file per app.
+        One design system, one deploy command, and a documentation tree written for agents as
+        much as for people. Every convention you accept is a decision your agent doesn't have
+        to make — or get wrong.
+      </p>
+      <div class="note">
+        <strong>A thing nobody built.</strong> Bespoke turned out to be multi-user. Identity comes
+        from the tailnet at the edge, and every app was born asking "whose data?" — so each user on
+        your tailnet gets their own notes, todos, and AI brief at the same URLs, with zero
+        application-specific identity code. No one wrote that feature. The conventions did.
+      </div>
+    </div>
+  </section>
+
+  <hr class="seam">
+
+  <section>
+    <p class="eyebrow">What you inherit</p>
+    <h2>The expensive things cost one line each.</h2>
+    <p>
+      An app is a manifest, a <code>main.go</code>, some handlers, and its migrations. Nothing else.
+      Everything below is already built, and your app opts in with a single call:
+    </p>
+    <ul class="caps">
+      <li><b>Chat grounded in its own data</b> <span>— agentic, with your app's tools</span></li>
+      <li><b>Voice in and out</b> <span>— local Whisper and TTS</span></li>
+      <li><b>A live dashboard card</b> <span>— your current state at a glance</span></li>
+      <li><b>Global search</b> <span>— joins the dashboard and the chat tool</span></li>
+      <li><b>Cross-app intents</b> <span>— highlight text anywhere, send it here</span></li>
+      <li><b>An MCP endpoint</b> <span>— every action, exposed to any agent</span></li>
+    </ul>
+    <p>
+      Live updates over SSE, a mobile-first component library, embedded migrations, and an LLM
+      gateway your apps call without ever knowing which model answered — those come with the shell.
+    </p>
+  </section>
+
+  <hr class="seam">
+
+  <section>
+    <p class="eyebrow">Make it yours</p>
+    <h2>Four steps to an instance that's actually yours.</h2>
+    <p>
+      This repository is the versioned platform. <em>Your</em> apps, theme, deployment identity,
+      and agent context live in a private instance repository that you create — so you can pull
+      platform updates without ever pushing your life to a public remote.
+    </p>
+
+    <ol class="path">
+      <li>
+        <div class="body">
+          <h3>Install the CLI</h3>
+          <p>macOS via Homebrew; Linux and WSL2 from the release archive or <code>go install</code>.</p>
+          <pre>brew install --cask bketelsen/tap/bespoke</pre>
+        </div>
+      </li>
+      <li>
+        <div class="body">
+          <h3>Create your instance</h3>
+          <p>
+            Scaffolds a private repository pinned to a platform release, with your module path,
+            your theme file, and the agent skills copied in.
+          </p>
+          <pre>bespoke init ~/my-instance --module github.com/you/my-instance</pre>
+        </div>
+      </li>
+      <li>
+        <div class="body">
+          <h3>Describe an app</h3>
+          <p>
+            Point your coding agent at the bundled skills and tell it what you want. It interviews
+            you into a short spec, scaffolds the app, assigns a port, models the schema, and writes
+            the handlers and views. Run everything locally with one command.
+          </p>
+          <pre>just new reading-list   <span class="c"># then: "build me a reading list that…"</span>
+just dev                <span class="c"># platformd + every app, fake identity</span></pre>
+        </div>
+      </li>
+      <li>
+        <div class="body">
+          <h3>Make it look like you, then ship it</h3>
+          <p>
+            One file owns your instance's look — <code>design/theme.css</code>. Change the colors,
+            radius, and density; the platform keeps the structural and mobile-first invariants.
+            Then generate the units, Caddy routes, and replication config, and deploy.
+          </p>
+          <pre>bespoke deploy --all</pre>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <hr class="seam">
+
+  <section>
+    <p class="eyebrow">Worked examples</p>
+    <h2>Steal these. Or better — describe your own.</h2>
+    <p>
+      These are real apps built on the platform, published as their own Go modules. They exist to be
+      read: each is a few hundred lines, and together they show every convention in use. Adopt one
+      as-is, fork it into something that fits you, or just read how it handles intents and tools and
+      then tell your agent to build the version you actually want.
+    </p>
+
+    <div class="apps">
+      <a class="app" href="https://github.com/bketelsen/bespoke-app-journal">
+        <b>Journal</b><span>One stream for every journaling moment, with search and summaries</span><code>bespoke add journal</code>
+      </a>
+      <a class="app" href="https://github.com/bketelsen/bespoke-app-bookmarks">
+        <b>Bookmarks</b><span>Quick-access saved links with titles and tags</span><code>bespoke add bookmarks</code>
+      </a>
+      <a class="app" href="https://github.com/bketelsen/bespoke-app-personal-wiki">
+        <b>Personal Wiki</b><span>A reference wiki with tags, links, and semantic search</span><code>bespoke add personal-wiki</code>
+      </a>
+      <a class="app" href="https://github.com/bketelsen/bespoke-app-calendar">
+        <b>Calendar</b><span>A private calendar for Google and iCloud</span><code>bespoke add calendar</code>
+      </a>
+      <a class="app" href="https://github.com/bketelsen/bespoke-app-mail">
+        <b>Mail</b><span>A local-first email client for Gmail and iCloud</span><code>bespoke add mail</code>
+      </a>
+      <a class="app" href="https://github.com/bketelsen/bespoke-app-gh-tracker">
+        <b>GH Tracker</b><span>Open PRs and issues across your GitHub projects</span><code>bespoke add gh-tracker</code>
+      </a>
+      <a class="app" href="https://github.com/bketelsen/bespoke-app-print-projects">
+        <b>Print Projects</b><span>A queue and history for personal 3D-print projects</span><code>bespoke add print-projects</code>
+      </a>
+      <a class="app" href="https://github.com/bketelsen/bespoke/tree/main/apps">
+        <b>Notes &amp; Todo</b><span>The showcase pair in this repo, wired to each other's intents</span><code>in apps/</code>
+      </a>
+    </div>
+
+    <pre>bespoke search wiki          <span class="c"># what's out there</span>
+bespoke add journal@v1.2.0   <span class="c"># pin it, write its manifest, recompile CSS</span></pre>
+
+    <div class="note">
+      <strong>The index vouches for nothing.</strong> Entries are added by pull request; nobody
+      reviews the code behind them. An app is a Go module compiled into your instance and run as
+      your user, beside every other app's database. Read the source before you install it, prefer
+      authors you know, and pin a version. If you want a guarantee, this isn't the place to look
+      for one.
+    </div>
+  </section>
+
+  <footer>
+    <div class="links">
+      <a href="https://github.com/bketelsen/bespoke">Repository</a>
+      <a href="https://github.com/bketelsen/bespoke/blob/main/docs/README.md">Documentation</a>
+      <a href="https://github.com/bketelsen/bespoke/tree/main/docs/adr">Decisions (ADRs)</a>
+      <a href="https://github.com/bketelsen/bespoke/blob/main/docs/design/architecture.md">Architecture</a>
+      <a href="https://github.com/bketelsen/bespoke-apps">App index</a>
+    </div>
+    <p>
+      MIT licensed. 95% of this code was written by an LLM; all of the specifications, plans,
+      visions, and decision records were written by a human. Your trust level should match that,
+      or this isn't the repo for you.
+    </p>
+  </footer>
+
+</div>
+
+</body>
+</html>
