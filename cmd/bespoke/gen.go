@@ -39,7 +39,7 @@ func generate(cfg config, apps []manifest.App) error {
 	if err := writeCaddy(cfg, apps); err != nil {
 		return err
 	}
-	if err := writeLitestream(apps); err != nil {
+	if err := writeLitestream(cfg, apps); err != nil {
 		return err
 	}
 	fmt.Println("generated: dist/gen/units/*.service dist/gen/bespoke.caddy dist/gen/litestream.yml")
@@ -265,18 +265,27 @@ dbs:
   - path: ${BESPOKE_DATA_DIR}/platformd.db
     replica:
       url: ${BESPOKE_REPLICA_URL}/platformd
-{{- range .}}
+{{- with .KeyPath}}
+      key-path: {{.}}
+{{- end}}
+{{- range .Apps}}
   - path: ${BESPOKE_DATA_DIR}/{{.Slug}}/{{.Slug}}.db
     replica:
       url: ${BESPOKE_REPLICA_URL}/{{.Slug}}
+{{- with $.KeyPath}}
+      key-path: {{.}}
+{{- end}}
 {{- end}}
 `))
 
-func writeLitestream(apps []manifest.App) error {
+func writeLitestream(cfg config, apps []manifest.App) error {
 	f, err := os.Create("dist/gen/litestream.yml")
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	return litestreamTmpl.Execute(f, apps)
+	return litestreamTmpl.Execute(f, struct {
+		Apps    []manifest.App
+		KeyPath string
+	}{apps, cfg.ReplicaKeyPath})
 }

@@ -16,6 +16,11 @@ type config struct {
 	EdgeSSH       string
 	EdgeCaddyFile string
 	GoArch        string
+	// ReplicaKeyPath is a path ON THE APP HOST to an SSH private key, for
+	// Litestream replicas that authenticate with one (sftp://). A path is not
+	// a secret, so it belongs here; the key never leaves the app host. Empty
+	// for backends whose credentials ride in the URL or LITESTREAM_* vars.
+	ReplicaKeyPath string
 }
 
 func loadConfig() (config, error) {
@@ -38,12 +43,13 @@ func loadConfig() (config, error) {
 		}
 	}
 	c := config{
-		Domain:        vals["DOMAIN"],
-		SelfieSSH:     vals["SELFIE_SSH"],
-		SelfieTSIP:    vals["SELFIE_TS_IP"],
-		EdgeSSH:       vals["EDGE_SSH"],
-		EdgeCaddyFile: vals["EDGE_CADDY_FILE"],
-		GoArch:        vals["GOARCH"],
+		Domain:         vals["DOMAIN"],
+		SelfieSSH:      vals["SELFIE_SSH"],
+		SelfieTSIP:     vals["SELFIE_TS_IP"],
+		EdgeSSH:        vals["EDGE_SSH"],
+		EdgeCaddyFile:  vals["EDGE_CADDY_FILE"],
+		GoArch:         vals["GOARCH"],
+		ReplicaKeyPath: vals["REPLICA_KEY_PATH"],
 	}
 	if c.Domain == "" || c.SelfieSSH == "" || c.SelfieTSIP == "" {
 		return c, fmt.Errorf("deploy/deploy.env: DOMAIN, SELFIE_SSH, SELFIE_TS_IP are required")

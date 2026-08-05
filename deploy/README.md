@@ -176,6 +176,33 @@ BESPOKE_REPLICA_URL=s3://<bucket>/bespoke        # R2/B2/S3 endpoint
 
 and `systemctl --user enable --now bespoke-litestream` after the first deploy.
 
+**Backing up to a NAS over SFTP.** Litestream v0.5 takes one replica per
+database, so a second copy is the storage side's job (NAS-to-NAS replication),
+not Litestream's. On the app host, generate a dedicated key and authorize it on
+the NAS:
+
+```sh
+ssh-keygen -t ed25519 -N "" -C "litestream@$(hostname)" -f ~/.ssh/id_ed25519_litestream
+cat ~/.ssh/id_ed25519_litestream.pub   # add to the NAS backup user
+```
+
+Set `REPLICA_KEY_PATH` in `deploy/deploy.env` to that path — a path is not a
+secret, and the `sftp://` URL form cannot carry it, so the generator emits
+`key-path` per database. Then in `~/bespoke/env.d/litestream`:
+
+```sh
+BESPOKE_DATA_DIR=/home/<user>/bespoke/data
+BESPOKE_REPLICA_URL=sftp://<backup-user>@<nas>:22/<path>
+```
+
+Verify with a real restore, not a directory listing:
+
+```sh
+set -a; . ~/bespoke/env; . ~/bespoke/env.d/litestream; set +a
+litestream restore -config ~/bespoke/litestream.yml -o /tmp/check.db ~/bespoke/data/notes/notes.db
+sqlite3 /tmp/check.db "pragma integrity_check; select count(*) from sqlite_master;"
+```
+
 ### 5. Passwordless sudo (both hosts)
 
 The tooling escalates only for a fixed set of commands; scoped sudoers

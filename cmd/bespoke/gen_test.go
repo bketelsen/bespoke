@@ -170,7 +170,7 @@ func TestLitestreamFollowsThePerAppLayout(t *testing.T) {
 	if err := os.MkdirAll("dist/gen", 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := writeLitestream([]manifest.App{{Slug: "notes", Port: 4101}}); err != nil {
+	if err := writeLitestream(config{}, []manifest.App{{Slug: "notes", Port: 4101}}); err != nil {
 		t.Fatal(err)
 	}
 	body, err := os.ReadFile("dist/gen/litestream.yml")
@@ -193,5 +193,41 @@ func TestLitestreamFollowsThePerAppLayout(t *testing.T) {
 	// a config that replicates nothing.
 	if strings.Contains(got, "replicas:") {
 		t.Error("litestream.yml uses the replicas array, removed in v0.5")
+	}
+}
+
+// SFTP replicas authenticate with a key, and the sftp:// URL form cannot carry
+// its path — so the generator has to emit key-path, and must omit it entirely
+// for backends that would choke on an empty value.
+func TestLitestreamEmitsKeyPathOnlyWhenConfigured(t *testing.T) {
+	dir := t.TempDir()
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(old) })
+	if err := os.MkdirAll("dist/gen", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	apps := []manifest.App{{Slug: "notes", Port: 4101}}
+
+	if err := writeLitestream(config{}, apps); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := os.ReadFile("dist/gen/litestream.yml")
+	if strings.Contains(string(body), "key-path") {
+		t.Errorf("unconfigured instance emitted key-path:\n%s", body)
+	}
+
+	if err := writeLitestream(config{ReplicaKeyPath: "/home/bjk/.ssh/id_ed25519_litestream"}, apps); err != nil {
+		t.Fatal(err)
+	}
+	body, _ = os.ReadFile("dist/gen/litestream.yml")
+	// Once per database, platformd included.
+	if got := strings.Count(string(body), "key-path: /home/bjk/.ssh/id_ed25519_litestream"); got != 2 {
+		t.Errorf("key-path emitted %d times, want 2 (platformd + notes):\n%s", got, body)
 	}
 }
