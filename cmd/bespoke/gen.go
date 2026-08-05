@@ -268,12 +268,18 @@ dbs:
 {{- with .KeyPath}}
       key-path: {{.}}
 {{- end}}
+{{- with .HostKey}}
+      host-key: {{printf "%q" .}}
+{{- end}}
 {{- range .Apps}}
   - path: ${BESPOKE_DATA_DIR}/{{.Slug}}/{{.Slug}}.db
     replica:
       url: ${BESPOKE_REPLICA_URL}/{{.Slug}}
 {{- with $.KeyPath}}
       key-path: {{.}}
+{{- end}}
+{{- with $.HostKey}}
+      host-key: {{printf "%q" .}}
 {{- end}}
 {{- end}}
 `))
@@ -287,5 +293,6 @@ func writeLitestream(cfg config, apps []manifest.App) error {
 	return litestreamTmpl.Execute(f, struct {
 		Apps    []manifest.App
 		KeyPath string
-	}{apps, cfg.ReplicaKeyPath})
+		HostKey string
+	}{apps, cfg.ReplicaKeyPath, cfg.ReplicaHostKey})
 }

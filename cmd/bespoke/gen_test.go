@@ -231,3 +231,40 @@ func TestLitestreamEmitsKeyPathOnlyWhenConfigured(t *testing.T) {
 		t.Errorf("key-path emitted %d times, want 2 (platformd + notes):\n%s", got, body)
 	}
 }
+
+// An unpinned host key means Litestream connects to whatever answers and hands
+// it every database. The pin must be the ECDSA key: Litestream's Go SSH client
+// negotiates ecdsa-sha2-nistp256, so ed25519 or RSA fails as a mismatch.
+func TestLitestreamPinsTheHostKeyWhenConfigured(t *testing.T) {
+	dir := t.TempDir()
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(old) })
+	if err := os.MkdirAll("dist/gen", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	apps := []manifest.App{{Slug: "notes", Port: 4101}}
+
+	if err := writeLitestream(config{}, apps); err != nil {
+		t.Fatal(err)
+	}
+	if body, _ := os.ReadFile("dist/gen/litestream.yml"); strings.Contains(string(body), "host-key") {
+		t.Errorf("unconfigured instance emitted host-key:\n%s", body)
+	}
+
+	const hostKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTY="
+	if err := writeLitestream(config{ReplicaHostKey: hostKey}, apps); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := os.ReadFile("dist/gen/litestream.yml")
+	// Quoted: the value contains a space, which bare YAML would split.
+	want := `host-key: "` + hostKey + `"`
+	if got := strings.Count(string(body), want); got != 2 {
+		t.Errorf("host-key emitted %d times, want 2 (platformd + notes):\n%s", got, body)
+	}
+}

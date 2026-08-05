@@ -188,7 +188,20 @@ cat ~/.ssh/id_ed25519_litestream.pub   # add to the NAS backup user
 
 Set `REPLICA_KEY_PATH` in `deploy/deploy.env` to that path — a path is not a
 secret, and the `sftp://` URL form cannot carry it, so the generator emits
-`key-path` per database. Then in `~/bespoke/env.d/litestream`:
+`key-path` per database.
+
+Pin the NAS's host key too, or Litestream logs `sftp host key not verified` and
+connects to whatever answers — handing every database to anything that can
+impersonate the NAS on your network. It must be the **ECDSA** key, because
+Litestream's Go SSH client negotiates `ecdsa-sha2-nistp256`; an ed25519 key
+here fails with `host key mismatch`:
+
+```sh
+ssh-keyscan -t ecdsa <nas> | grep -v '^#' | head -1 | cut -d' ' -f2-
+# put the result in REPLICA_HOST_KEY in deploy/deploy.env
+```
+
+Then in `~/bespoke/env.d/litestream`:
 
 ```sh
 BESPOKE_DATA_DIR=/home/<user>/bespoke/data

@@ -21,6 +21,15 @@ type config struct {
 	// a secret, so it belongs here; the key never leaves the app host. Empty
 	// for backends whose credentials ride in the URL or LITESTREAM_* vars.
 	ReplicaKeyPath string
+	// ReplicaHostKey pins the SFTP server's public host key. Without it
+	// Litestream logs "host key not verified" and connects anyway, so anything
+	// on the network can impersonate the backup target and collect every
+	// database. A public key, not a secret.
+	//
+	// It must be the host's ECDSA key: Litestream's Go SSH client negotiates
+	// ecdsa-sha2-nistp256, so an ed25519 or RSA key here fails as a mismatch.
+	//     ssh-keyscan -t ecdsa <host>
+	ReplicaHostKey string
 }
 
 func loadConfig() (config, error) {
@@ -50,6 +59,7 @@ func loadConfig() (config, error) {
 		EdgeCaddyFile:  vals["EDGE_CADDY_FILE"],
 		GoArch:         vals["GOARCH"],
 		ReplicaKeyPath: vals["REPLICA_KEY_PATH"],
+		ReplicaHostKey: vals["REPLICA_HOST_KEY"],
 	}
 	if c.Domain == "" || c.SelfieSSH == "" || c.SelfieTSIP == "" {
 		return c, fmt.Errorf("deploy/deploy.env: DOMAIN, SELFIE_SSH, SELFIE_TS_IP are required")
