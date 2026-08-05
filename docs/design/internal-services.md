@@ -36,6 +36,7 @@ app ──pkg/* helper────────► (no network at all — compose
 | Dashboard chat (all apps) | 2 | **live** | chat button on the apex dashboard | ADR-0020; aggregates every chat-enabled app's `/_chat/context`, never their databases |
 | Markdown rendering | 1 | **live** | `ui.Markdown(text)` | GFM via goldmark, `prose`-styled, raw HTML omitted (tested) |
 | App switcher | — | **live** | automatic (AppShell chrome) | ADR-0015; registry via request context, zero app code |
+| Version + update check | 1 | **live** | dashboard footer; `version.Platform()`, `version.NewChecker().Info()` | [ADR-0034](../adr/0034-dashboard-version-footer-update-check.md); release read from the module graph, newest release cached 6h from GitHub, background refresh, fail-soft; `BESPOKE_UPDATE_CHECK=off` opts out |
 | Transcription | 2 | **LIVE (real)** | `audio.New(slug).Transcribe` + `ui.VoiceButton` (WAV) | ADR-0014; whisper on Lemonade, validated end to end 2026-08-01; stub mode when `BESPOKE_LEMONADE_URL` unset |
 | Speech synthesis | 2 | **LIVE** | `audio.New(slug).Speak`; chat panels get a persisted speak-toggle for free | First consumer: the chat speak toggle (ADR-0015 chrome); kokoro-v1 via `/audio/speak`, validated in prod 2026-08-01 |
 | Cross-app intents | — | **live** | `[[intents]]` in app.toml + `web.Intent`; selection popover + `ui.IntentsFrom` | ADR-0018; journal↔todo are the reference pair |
@@ -111,6 +112,7 @@ The gateway pattern (ADR-0009/0012) means backends are invisible to apps —
 ## References
 
 - Rationale: [ADR-0012](../adr/0012-internal-services-two-tier.md),
-  [ADR-0006](../adr/0006-library-first-shared-services.md)
+  [ADR-0006](../adr/0006-library-first-shared-services.md),
+  [ADR-0034](../adr/0034-dashboard-version-footer-update-check.md)
 - Contracts: gateway wire format in [llm-gateway.md](llm-gateway.md)
 - Built in: [roadmap — Later/ideas](../plans/roadmap.md)

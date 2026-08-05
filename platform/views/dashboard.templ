@@ -7,6 +7,7 @@ import (
 	"github.com/bketelsen/bespoke/pkg/ui/components/alert"
 	"github.com/bketelsen/bespoke/pkg/ui/components/card"
 	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+	"github.com/bketelsen/bespoke/pkg/version"
 )
 
 // CardGrid is the dashboard's live region (ADR-0022): re-rendered and
@@ -40,7 +41,26 @@ templ CardGrid(dev bool, domain string, apps []manifest.App, cards map[string]st
 	</div>
 }
 
-templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, cards map[string]string, warnings []string) {
+// Footer states which Bespoke release this instance runs, and links the newer
+// one when the update check found it (ADR-0034).
+templ Footer(release version.Info) {
+	<footer class="mt-10 border-t pt-4 text-center text-xs text-muted-foreground">
+		Bespoke { release.Current }
+		if release.Outdated {
+			<span aria-hidden="true" class="mx-1">·</span>
+			<a
+				href={ templ.URL(release.URL) }
+				target="_blank"
+				rel="noreferrer"
+				class="underline underline-offset-2 transition-colors hover:text-primary"
+			>
+				{ release.Latest } available
+			</a>
+		}
+	</footer>
+}
+
+templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, cards map[string]string, warnings []string, release version.Info) {
 	@ui.AppShell(ui.ShellProps{User: user}) {
 		if len(apps) == 0 {
 			<p class="text-muted-foreground">No apps yet.</p>
@@ -72,5 +92,6 @@ templ Dashboard(user auth.User, dev bool, domain string, apps []manifest.App, ca
 				}
 			</div>
 		}
+		@Footer(release)
 	}
 }

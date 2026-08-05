@@ -46,6 +46,7 @@ Docs are split by the question they answer:
 - [0031 — Install apps from third-party modules](adr/0031-third-party-app-packages.md)
 - [0032 — Split secrets per unit and sandbox app processes](adr/0032-app-unit-sandboxing.md)
 - [0033 — Give each app its own data directory and filesystem scope](adr/0033-per-app-data-scope.md)
+- [0034 — Show the running release and check for a newer one](adr/0034-dashboard-version-footer-update-check.md)
 
 ### Design
 
