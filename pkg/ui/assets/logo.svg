@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="bspk-t bspk-d">
+  <title id="bspk-t">Bespoke</title>
+  <desc id="bspk-d">A threaded sewing needle: the shaft is the stem of a lowercase b, the thread loops out of the eye to form the bowl.</desc>
+  <style>
+    .bspk-needle { fill: #00656e }
+    .bspk-thread { stroke: #e28d4f }
+    @media (prefers-color-scheme: dark) {
+      .bspk-needle { fill: #48b7bd }
+      .bspk-thread { stroke: #e59b5b }
+    }
+  </style>
+
+  <!-- thread: rises into the eye, runs up behind the shaft, springs out as the bowl -->
+  <path class="bspk-thread" fill="none" stroke-width="3.6" stroke-linecap="round"
+        d="M 18.75 15
+           L 18.75 27.5
+           C 23.65 25.6 27.65 26 32.15 26
+           C 40.15 26 46.65 32.3 46.65 40
+           C 46.65 48.3 39.75 55 31.15 55
+           C 24.35 55 21.35 52.6 18.75 51"/>
+
+  <!-- needle: tapered shaft is the stem; the eye is a hole (even-odd) -->
+  <path class="bspk-needle" fill-rule="evenodd"
+        d="M 15.55 7.4
+           C 15.55 2.2 21.95 2.2 21.95 7.4
+           L 21.01 52.5
+           L 18.75 60.5
+           L 16.49 52.5
+           Z
+           M 18.75 8.4
+           A 1.2 1.2 0 0 1 19.95 9.6
+           L 19.95 16.4
+           A 1.2 1.2 0 0 1 17.55 16.4
+           L 17.55 9.6
+           A 1.2 1.2 0 0 1 18.75 8.4
+           Z"/>
+</svg>

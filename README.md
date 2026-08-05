@@ -1,3 +1,5 @@
+<img src="pkg/ui/assets/logo.svg" alt="" width="80" height="80">
+
 # Bespoke
 
 [![CI](https://github.com/bketelsen/bespoke/actions/workflows/ci.yml/badge.svg)](https://github.com/bketelsen/bespoke/actions/workflows/ci.yml)

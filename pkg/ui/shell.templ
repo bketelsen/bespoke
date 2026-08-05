@@ -40,6 +40,7 @@ templ AppShell(p ShellProps) {
 			} else {
 				<title>Bespoke</title>
 			}
+			<link rel="icon" href="/_bespoke/logo.svg" type="image/svg+xml"/>
 			<link rel="stylesheet" href="/_bespoke/styles.css"/>
 			// Set .dark before first paint; templUI themes key off the class.
 			<script>if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark')</script>
@@ -52,8 +53,11 @@ templ AppShell(p ShellProps) {
 						if len(shell.Apps) > 0 {
 							@appSwitcher(shell)
 						}
-						<div class="flex items-baseline gap-2">
-							<a href={ shellHome(shell) } class="font-semibold tracking-tight text-primary">Bespoke</a>
+						<div class="flex items-center gap-2">
+							<a href={ shellHome(shell) } class="flex items-center gap-1.5 font-semibold tracking-tight text-primary">
+								<img src="/_bespoke/logo.svg" alt="" class="size-5 shrink-0"/>
+								Bespoke
+							</a>
 							if p.Title != "" {
 								<span class="text-muted-foreground">/</span>
 								<span class="font-medium">{ p.Title }</span>

@@ -67,11 +67,24 @@ func cmdRm(args []string) error {
 
 	if cfg, err := loadConfig(); err == nil {
 		fmt.Println("==> stopping remote unit and archiving data")
+		// Archiving moves the app's whole data directory (ADR-0033), not just
+		// a .db file: SQLite leaves -wal/-shm beside it, Litestream leaves
+		// state, and apps like mail keep attachments there. The flat-path
+		// branch is for hosts not yet migrated to per-app directories.
 		script := fmt.Sprintf(`systemctl --user disable --now bespoke-%[1]s 2>/dev/null || true
 rm -f ~/.config/systemd/user/bespoke-%[1]s.service ~/bespoke/bin/%[1]s ~/bespoke/bin/%[1]s.prev
 rm -rf ~/bespoke/apps/%[1]s
 mkdir -p ~/bespoke/data/archive
-[ -f ~/bespoke/data/%[1]s.db ] && mv ~/bespoke/data/%[1]s.db ~/bespoke/data/archive/ || true
+if [ -d ~/bespoke/data/%[1]s ]; then
+  rm -rf ~/bespoke/data/archive/%[1]s
+  mv ~/bespoke/data/%[1]s ~/bespoke/data/archive/%[1]s
+  echo "archived data/%[1]s/ -> data/archive/%[1]s/"
+elif [ -f ~/bespoke/data/%[1]s.db ]; then
+  mv ~/bespoke/data/%[1]s.db* ~/bespoke/data/archive/ 2>/dev/null || true
+  echo "archived data/%[1]s.db -> data/archive/"
+else
+  echo "no database found for %[1]s; nothing archived" >&2
+fi
 systemctl --user daemon-reload`, slug)
 		if err := run("ssh", cfg.SelfieSSH, script); err != nil {
 			fmt.Fprintln(os.Stderr, "remote cleanup failed (continuing):", err)
