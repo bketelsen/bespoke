@@ -8,7 +8,19 @@ import (
 	"sync"
 
 	"github.com/bketelsen/bespoke/pkg/auth"
+	"github.com/bketelsen/bespoke/pkg/events"
+	"github.com/google/uuid"
 )
+
+type AutomationMode string
+
+const (
+	AutomationForbidden  AutomationMode = "forbidden"
+	AutomationReadOnly   AutomationMode = "read_only"
+	AutomationIdempotent AutomationMode = "idempotent"
+)
+
+type AutomationPolicy struct{ Mode AutomationMode }
 
 // ToolDef is a user-scoped action the app exposes to LLMs (ADR-0021):
 // agentic chat calls these through the gateway, and the platform MCP server
@@ -18,6 +30,7 @@ type ToolDef struct {
 	Name        string
 	Description string
 	Schema      map[string]any // JSON Schema for the arguments object
+	Automation  AutomationPolicy
 	Handler     func(ctx context.Context, user auth.User, args json.RawMessage) (string, error)
 }
 
@@ -27,6 +40,7 @@ type wireTool struct {
 	Description string         `json:"description"`
 	Schema      map[string]any `json:"schema"`
 	URL         string         `json:"url,omitempty"`
+	Automation  AutomationMode `json:"automation"`
 }
 
 var (
@@ -40,7 +54,11 @@ var (
 // aggregators. Call inside web.Run's register.
 func Tool(mux *http.ServeMux, def ToolDef) {
 	toolsMu.Lock()
-	toolDefs = append(toolDefs, wireTool{Name: def.Name, Description: def.Description, Schema: def.Schema})
+	mode := def.Automation.Mode
+	if mode == "" {
+		mode = AutomationForbidden
+	}
+	toolDefs = append(toolDefs, wireTool{Name: def.Name, Description: def.Description, Schema: def.Schema, Automation: mode})
 	toolsMu.Unlock()
 
 	toolsOnce.Do(func() {
@@ -54,12 +72,27 @@ func Tool(mux *http.ServeMux, def ToolDef) {
 
 	mux.HandleFunc("POST /_tools/"+def.Name, func(w http.ResponseWriter, r *http.Request) {
 		user := auth.FromContext(r.Context())
+		ctx := r.Context()
+		if key := r.Header.Get("Idempotency-Key"); key != "" {
+			if _, err := uuid.Parse(key); err != nil {
+				http.Error(w, "invalid Idempotency-Key", http.StatusBadRequest)
+				return
+			}
+			ctx = context.WithValue(ctx, idempotencyKey{}, key)
+		}
+		if cause := r.Header.Get("Bespoke-Causation-ID"); cause != "" {
+			if _, err := uuid.Parse(cause); err != nil {
+				http.Error(w, "invalid Bespoke-Causation-ID", http.StatusBadRequest)
+				return
+			}
+			ctx = events.WithCausation(ctx, cause)
+		}
 		args, err := io.ReadAll(io.LimitReader(r.Body, 64<<10))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := def.Handler(r.Context(), user, args)
+		result, err := def.Handler(ctx, user, args)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 			return
@@ -67,6 +100,13 @@ func Tool(mux *http.ServeMux, def ToolDef) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Write([]byte(result))
 	})
+}
+
+type idempotencyKey struct{}
+
+func IdempotencyKey(ctx context.Context) (string, bool) {
+	v, ok := ctx.Value(idempotencyKey{}).(string)
+	return v, ok
 }
 
 // localTools returns this app's tool definitions with callable URLs for the

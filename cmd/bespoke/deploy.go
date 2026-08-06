@@ -129,7 +129,11 @@ func cmdDeploy(args []string) error {
 		return err
 	}
 	if err := run("ssh", cfg.SelfieSSH,
-		fmt.Sprintf("test -f ~/bespoke/env || printf 'BESPOKE_BIND_IP=%%s\\nBESPOKE_DOMAIN=%%s\\nBESPOKE_LLM_URL=http://%%s:4001\\nBESPOKE_ROOT=%%s/bespoke\\nBESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1\\n' '%s' '%s' '%s' \"$HOME\" > ~/bespoke/env", cfg.SelfieTSIP, cfg.Domain, cfg.SelfieTSIP)); err != nil {
+		fmt.Sprintf("test -f ~/bespoke/env || printf 'BESPOKE_BIND_IP=%%s\\nBESPOKE_DOMAIN=%%s\\nBESPOKE_INTERNAL_URL=http://%%s:4001\\nBESPOKE_LLM_URL=http://%%s:4001\\nBESPOKE_ROOT=%%s/bespoke\\nBESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1\\n' '%s' '%s' '%s' '%s' \"$HOME\" > ~/bespoke/env", cfg.SelfieTSIP, cfg.Domain, cfg.SelfieTSIP, cfg.SelfieTSIP)); err != nil {
+		return err
+	}
+	if err := run("ssh", cfg.SelfieSSH,
+		fmt.Sprintf("grep -q '^BESPOKE_INTERNAL_URL=' ~/bespoke/env || printf 'BESPOKE_INTERNAL_URL=http://%%s:4001\\n' '%s' >> ~/bespoke/env", cfg.SelfieTSIP)); err != nil {
 		return err
 	}
 

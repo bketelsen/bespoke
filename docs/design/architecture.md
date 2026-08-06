@@ -51,6 +51,13 @@ docs; the reference deployment lives at `bespoke.ketelsen.cloud`.)
   (transcribe/speak via Lemonade,
   [ADR-0014](../adr/0014-audio-service-transcription.md)), and `/notify`
   fan-out for live updates. The registry is just the manifests, rescanned.
+- The durable event service is a separate platformd responsibility
+  from `/notify`: apps publish immutable domain events to the internal plane,
+  while authenticated AppShell routes expose the resulting notification inbox
+  and automation history. The boundary is defined by
+  [ADR-0035](../adr/0035-durable-events-notifications-automations.md) and the
+  [event notifications and automations spec](../specs/event-notifications-automations.md),
+  scheduled in [roadmap Phase 8](../plans/roadmap.md#phase-8--events-notifications-and-automations).
 - The Tailscale ACL restricting app ports to the edge host is a security
   invariant, same standing as header stripping.
 
@@ -123,6 +130,7 @@ and its own module path. It depends on this public module at an explicit tag.
 | `pkg/ui` | Vendored templUI components + Bespoke wrappers (AppShell chrome, VoiceButton, Markdown, intents popover) implementing the design system |
 | `pkg/llm` | Provider-neutral gateway client: `Complete`/`CompleteJSON`/`Classify`, `WithSystem`/`WithUser`/`WithTools` — the last making chats agentic |
 | `pkg/audio` | `Transcribe` + `Speak` via the audio gateway (ADR-0014) — speech in and out for any app |
+| `pkg/events` | Durable domain-event publication plus notification list/mutation/SSE clients (ADR-0035) |
 | `pkg/version` | The running platform release from the build's module graph, plus a cached, fail-soft check for a newer one ([ADR-0034](../adr/0034-dashboard-version-footer-update-check.md)) — the dashboard footer |
 
 ## Data & backups
@@ -160,7 +168,10 @@ and its own module path. It depends on this public module at an explicit tag.
   app's registered tools ([ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)),
   with mic input and a persisted speak toggle — and the selection popover
   offering other apps' intents
-  ([ADR-0018](../adr/0018-cross-app-intents.md)).
+  ([ADR-0018](../adr/0018-cross-app-intents.md)), plus the durable notification
+  bell, inbox, and transient toast projection. `pkg/web` mounts same-origin
+  proxies and relays platformd's notification SSE automatically
+  ([ADR-0035](../adr/0035-durable-events-notifications-automations.md)).
 - AppShell content width is explicit
   ([ADR-0030](../adr/0030-appshell-explicit-content-widths.md)): reading width
   remains the zero-value default, while wide and full widths let workspace-style

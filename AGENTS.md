@@ -64,6 +64,13 @@ them rather than improvising, whichever agent you are:
 - Render user- or LLM-authored markdown with `ui.Markdown(text)` (GFM,
   `prose`-styled, raw HTML omitted by goldmark — never enable unsafe HTML);
   never store HTML or roll your own renderer.
+- Durable domain events (ADR-0035): publish meaningful committed occurrences
+  through `events.New(slug).Publish`; include only bounded match/display data,
+  never secrets or attachment bytes. Event publication complements rather
+  than replaces `web.Changed`. Tools are unavailable to unattended rules
+  unless their `web.ToolDef` explicitly declares an automation policy;
+  idempotent mutations persist `web.IdempotencyKey(ctx)` with their result in
+  the same transaction.
 - **Mobile-first is enforced
   ([ADR-0016](docs/adr/0016-mobile-first-ui-standard.md)):** every view must
   work at 375px with a coarse pointer. No hover-only affordances (add

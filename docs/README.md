@@ -47,6 +47,7 @@ Docs are split by the question they answer:
 - [0032 — Split secrets per unit and sandbox app processes](adr/0032-app-unit-sandboxing.md)
 - [0033 — Give each app its own data directory and filesystem scope](adr/0033-per-app-data-scope.md)
 - [0034 — Show the running release and check for a newer one](adr/0034-dashboard-version-footer-update-check.md)
+- [0035 — Build notifications and automations on durable domain events](adr/0035-durable-events-notifications-automations.md)
 
 ### Design
 
@@ -62,6 +63,7 @@ Docs are split by the question they answer:
 - [App manifest (`app.toml`)](specs/app-manifest.md)
 - [App search endpoint (`GET /_search`)](specs/app-search.md)
 - [`bespoke` CLI](specs/bespoke-cli.md)
+- [Event notifications and automations](specs/event-notifications-automations.md)
 
 ### Plans
 

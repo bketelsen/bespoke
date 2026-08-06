@@ -116,9 +116,10 @@ mounted by `pkg/web` for Go apps):
 | `GET /_card` | MAY | Per-user dashboard card fragment ([ADR-0017](../adr/0017-app-provided-dashboard-cards.md)); content-only HTML, cheap queries, no LLM calls; dashboard falls back to `description` when absent |
 | `POST /_chat`, `/_chat/speak`, `/_chat/transcribe`, `GET /_chat/context` | MAY (via `web.EnableChat`, all four together) | In-app chat + TTS + mic input ([ADR-0015](../adr/0015-appshell-platform-chrome.md), [ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)); context feeds the dashboard's all-apps chat ([ADR-0020](../adr/0020-dashboard-chat-aggregated-context.md)) |
 | `GET`+`POST /_intents/<name>` | MUST for each declared `[[intents]]` (via `web.Intent`) | Cross-app intent confirm + execute ([ADR-0018](../adr/0018-cross-app-intents.md)) |
-| `GET /_tools`, `POST /_tools/<name>` | MAY (via `web.Tool`) | User-scoped LLM actions: agentic chat + the platform MCP surface ([ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)) |
+| `GET /_tools`, `POST /_tools/<name>` | MAY (via `web.Tool`) | User-scoped LLM actions: agentic chat + the platform MCP surface ([ADR-0021](../adr/0021-tools-agentic-chat-mcp.md)); definitions include automation eligibility and tool calls propagate idempotency/causation context when opted in ([ADR-0035](../adr/0035-durable-events-notifications-automations.md)) |
 | `GET /_search?q=` | MAY (via `web.Search`) | User-scoped search results feeding the dashboard search box + platform `search` tool ([ADR-0028](../adr/0028-dashboard-global-search-fan-out.md), [app-search.md](app-search.md)); cheap DB queries, no LLM calls |
 | `GET /_live` | SHOULD (via `web.Live`) | Datastar SSE patching the app's live region on `web.Changed(login)` ([ADR-0022](../adr/0022-live-updates.md)); mutations MUST call `web.Changed` |
+| `GET /_notifications`, `GET /_notifications/live`, `POST /_notifications/*` | MUST (automatic when the event service lands) | Same-origin thin proxies for the platformd-owned notification inbox and SSE stream ([ADR-0035](../adr/0035-durable-events-notifications-automations.md), [event contract](event-notifications-automations.md)) |
 
 The `_`-prefixed path namespace is reserved for the platform.
 
@@ -140,5 +141,6 @@ is the promise other apps' chrome relies on.
 
 - Rationale: [ADR-0005](../adr/0005-process-per-app.md),
   [ADR-0018](../adr/0018-cross-app-intents.md),
-  [ADR-0027](../adr/0027-versioned-platform-private-instances.md)
+  [ADR-0027](../adr/0027-versioned-platform-private-instances.md),
+  [ADR-0035](../adr/0035-durable-events-notifications-automations.md)
 - Context: [architecture](../design/architecture.md)

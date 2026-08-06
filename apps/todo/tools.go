@@ -30,6 +30,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 		Schema: obj(map[string]any{
 			"include_done": map[string]any{"type": "boolean", "description": "include completed tasks (default false)"},
 		}),
+		Automation: web.AutomationPolicy{Mode: web.AutomationReadOnly},
 		Handler: func(ctx context.Context, user auth.User, args json.RawMessage) (string, error) {
 			var a struct {
 				IncludeDone bool `json:"include_done"`
@@ -70,6 +71,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			"priority":    map[string]any{"type": "string", "enum": []string{"L", "M", "H"}, "description": "default L"},
 			"parent_id":   map[string]any{"type": "integer", "description": "make this a subtask of the given top-level task"},
 		}, "description"),
+		Automation: web.AutomationPolicy{Mode: web.AutomationIdempotent},
 		Handler: func(ctx context.Context, user auth.User, args json.RawMessage) (string, error) {
 			var a struct {
 				Description string `json:"description"`
@@ -98,15 +100,41 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 				}
 				parent = a.ParentID
 			}
-			res, err := sqldb.ExecContext(ctx,
+			key, automated := web.IdempotencyKey(ctx)
+			if automated {
+				var stored string
+				err := sqldb.QueryRowContext(ctx, "SELECT result FROM tool_idempotency WHERE login=? AND tool='create_task' AND key=?", user.Login, key).Scan(&stored)
+				if err == nil {
+					return stored, nil
+				}
+				if err != sql.ErrNoRows {
+					return "", err
+				}
+			}
+			tx, err := sqldb.BeginTx(ctx, nil)
+			if err != nil {
+				return "", err
+			}
+			defer tx.Rollback()
+			res, err := tx.ExecContext(ctx,
 				"INSERT INTO tasks (login, parent_id, description, due, priority) VALUES (?, ?, ?, NULLIF(?, ''), ?)",
 				user.Login, parent, strings.TrimSpace(a.Description), a.Due, a.Priority)
 			if err != nil {
 				return "", err
 			}
 			id, _ := res.LastInsertId()
+			result := fmt.Sprintf("Created task #%d: %s", id, a.Description)
+			if automated {
+				if _, err = tx.ExecContext(ctx, "INSERT INTO tool_idempotency(login,tool,key,result) VALUES(?,'create_task',?,?)", user.Login, key, result); err != nil {
+					return "", err
+				}
+			}
+			if err = tx.Commit(); err != nil {
+				return "", err
+			}
 			web.Changed(user.Login)
-			return fmt.Sprintf("Created task #%d: %s", id, a.Description), nil
+			publishTaskEvent(ctx, user, "todo.task_created", id, a.Description, false)
+			return result, nil
 		},
 	})
 
@@ -194,6 +222,7 @@ func registerTools(mux *http.ServeMux, sqldb *sql.DB) {
 			}
 			web.Changed(user.Login)
 			if desc != "" {
+				publishTaskEvent(ctx, user, "todo.task_completed", a.ID, desc, true)
 				return fmt.Sprintf("Completed task #%d: %s", a.ID, desc), nil
 			}
 			return fmt.Sprintf("Reopened task #%d.", a.ID), nil

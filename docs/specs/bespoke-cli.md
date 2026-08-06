@@ -129,6 +129,7 @@ guard).
    instance `assets/styles.css`, and litestream config to the app host; create
    `~/bespoke/env` if missing
    with `BESPOKE_BIND_IP`, `BESPOKE_DOMAIN`,
+   `BESPOKE_INTERNAL_URL=http://<selfie-ts-ip>:4001`,
    `BESPOKE_LLM_URL=http://<selfie-ts-ip>:4001`, `BESPOKE_ROOT`, and
    `BESPOKE_LEMONADE_URL=http://127.0.0.1:13305/api/v1`.
 4. If the host is bootstrapped for the builder plane (`/var/lib/bespoke/bin`
@@ -194,6 +195,7 @@ deletes a database anywhere. Prints the reminder to run
   [ADR-0007](../adr/0007-sqlite-per-app-litestream.md),
   [ADR-0011](../adr/0011-split-host-deployment.md),
   [ADR-0023](../adr/0023-builder-plane-unprivileged-agent-spooled-deploys.md),
-  [ADR-0027](../adr/0027-versioned-platform-private-instances.md)
+  [ADR-0027](../adr/0027-versioned-platform-private-instances.md),
+  [ADR-0035](../adr/0035-durable-events-notifications-automations.md)
 - Context: [design/architecture.md](../design/architecture.md)
 - Built in: [roadmap — Phase 4](../plans/roadmap.md)

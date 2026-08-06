@@ -28,6 +28,7 @@ type appTool struct {
 	Description string         `json:"description"`
 	Schema      map[string]any `json:"schema"`
 	URL         string
+	Automation  string `json:"automation"`
 }
 
 var (

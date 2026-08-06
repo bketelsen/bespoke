@@ -50,13 +50,15 @@ func main() {
 	go gw.start()
 	agw := newAudioGateway()
 	egw := newEmbedGateway()
+	events := newEventService(sqldb, root, domain, os.Getenv("BESPOKE_DEV_USER") != "")
 
 	// Which release this instance runs, and whether a newer one exists
 	// (ADR-0034). Checks are cached, backgrounded, and fail soft.
 	releases := version.NewChecker()
 
 	web.Serve("platformd", 4000, func(mux *http.ServeMux) {
-		go serveInternal(*internal, gw, agw, egw) // after flag.Parse (inside Serve)
+		go serveInternal(*internal, gw, agw, egw, events) // after flag.Parse (inside Serve)
+		events.registerApex(mux)
 
 		// The all-apps chat (ADR-0020): context aggregated from every
 		// chat-enabled app over the app contract — never their databases.
@@ -140,6 +142,9 @@ func main() {
 			}
 			if s := agw.warning(); s != "" {
 				warnings = append(warnings, s)
+			}
+			if err := sqldb.PingContext(r.Context()); err != nil {
+				warnings = append(warnings, "event service unavailable: "+err.Error())
 			}
 			dev := os.Getenv("BESPOKE_DEV_USER") != ""
 			user := auth.FromContext(r.Context())

@@ -26,8 +26,9 @@ app ──pkg/* helper────────► (no network at all — compose
 | Summarize / Extract | 1 | as needed | future `llm.Client` methods | Same pattern as Classify |
 | Streaming completions | 2 | deferred | future `web.NewSSE` + `/llm/stream` | When the first app needs live tokens |
 | Files/blobs | 2 | candidate | future `pkg/files` | When two apps first share uploads (ADR-0006) |
-| Notifications | 1 or 2 | candidate | future `pkg/notify` | Tier depends on delivery mechanism |
-| Scheduled jobs | — | candidate | systemd timers per app first | Escalate only if cross-app coordination appears |
+| Events, notifications, and automations | 2 (service) | **live** | `pkg/events`; automatic AppShell notification routes | Durable cross-app state, APIs, SSE, and leased worker per [ADR-0035](../adr/0035-durable-events-notifications-automations.md) and the [contract](../specs/event-notifications-automations.md); `web.Changed` remains separate |
+| Schema-validated JSON completion | 1 | **live** | event worker calls `llm.Complete`, then `jsonschema.Validate` | Draft 2020-12 validation for bounded `ai_json` automation steps; no gateway wire change |
+| Scheduled jobs | — | candidate | systemd timers per app first | Escalate only if cross-app coordination appears; Phase 8 retention is part of its cross-app worker |
 | Embeddings | 2 | **live** | `llm.Embed(ctx, texts)` / `llm.EmbedQuery(ctx, q)` + `llm.Cosine` → gateway `/llm/embed` | ADR-0029; Lemonade-backed (nomic-embed-text-v2-moe, task prefixes applied by the gateway), no stub — `llm.ErrEmbedUnavailable` without a backend; vectors + model stored per-app as SQLite BLOBs |
 | Global search | — | **live** | `web.Search(mux, provider)` → `GET /_search?q=`; dashboard box + `search` MCP/chat tool | ADR-0028; HTTP fan-out (like cards), grouped by app, never their databases; no central index |
 | Image generation | 2 | candidate | future `llm.Image` | Backend: Lemonade on selfie |
@@ -114,5 +115,5 @@ The gateway pattern (ADR-0009/0012) means backends are invisible to apps —
 - Rationale: [ADR-0012](../adr/0012-internal-services-two-tier.md),
   [ADR-0006](../adr/0006-library-first-shared-services.md),
   [ADR-0034](../adr/0034-dashboard-version-footer-update-check.md)
-- Contracts: gateway wire format in [llm-gateway.md](llm-gateway.md)
-- Built in: [roadmap — Later/ideas](../plans/roadmap.md)
+- Contracts: gateway wire format in [llm-gateway.md](llm-gateway.md); [event notifications and automations](../specs/event-notifications-automations.md)
+- Built in: [roadmap — Phase 8 and later ideas](../plans/roadmap.md#phase-8--events-notifications-and-automations)
