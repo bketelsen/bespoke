@@ -1,0 +1,69 @@
+package ui
+
+import (
+	"fmt"
+	"github.com/bketelsen/bespoke/pkg/events"
+	"github.com/bketelsen/bespoke/pkg/ui/components/icon"
+	"github.com/bketelsen/bespoke/pkg/ui/components/toast"
+)
+
+templ NotificationChrome() {
+	<div data-init="@get('/_notifications/live')">
+		<details class="relative">
+			<summary aria-label="Notifications" class="relative flex size-8 cursor-pointer list-none items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-8 [&::-webkit-details-marker]:hidden">
+				@icon.Bell(icon.Props{Class:"size-4"})
+				@NotificationCount(0)
+			</summary>
+			<div class="absolute right-0 top-10 z-50 max-h-[70dvh] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border bg-popover p-2 text-popover-foreground shadow-md">
+				<div class="mb-2 flex items-center justify-between px-2">
+					<p class="text-sm font-semibold">Notifications</p>
+					<button type="button" data-notifications-read-all class="text-xs text-muted-foreground hover:text-foreground">Mark all read</button>
+				</div>
+				@NotificationList(nil)
+			</div>
+		</details>
+		@NotificationToasts(nil)
+	</div>
+	<script type="module" src="/_bespoke/js/notifications.js"></script>
+	@toast.Script()
+}
+
+templ NotificationCount(n int) {
+	<span id="bespoke-notification-count" class={ "absolute -right-1 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 text-primary-foreground", templ.KV("hidden", n == 0) }>{ fmt.Sprint(n) }</span>
+}
+
+templ NotificationList(items []events.Notification) {
+	<div id="bespoke-notification-list" class="space-y-1">
+		if len(items) == 0 {
+			<p class="px-2 py-6 text-center text-sm text-muted-foreground">No notifications</p>
+		}
+		for _, n := range items {
+			<div class={ "rounded-md p-2 text-sm", templ.KV("bg-muted", n.ReadAt == nil) } data-notification-id={ n.ID }>
+				<div class="flex items-start gap-2">
+					<div class="min-w-0 flex-1">
+						if n.URL != "" {
+							<a href={ templ.SafeURL(n.URL) } class="font-medium text-foreground hover:text-primary">{ n.Title }</a>
+						} else {
+							<p class="font-medium">{ n.Title }</p>
+						}
+						if n.Body != "" {
+							<p class="mt-0.5 break-words text-muted-foreground">{ n.Body }</p>
+						}
+					</div>
+					<button type="button" aria-label="Dismiss" data-notification-dismiss={ n.ID } class="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground pointer-coarse:size-8">@icon.X(icon.Props{Class:"size-3"})</button>
+				</div>
+				if n.ReadAt == nil {
+					<button type="button" data-notification-read={ n.ID } class="mt-1 text-xs text-muted-foreground hover:text-foreground">Mark read</button>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ NotificationToasts(n *events.Notification) {
+	<div id="bespoke-notification-toasts">
+		if n != nil {
+			@toast.Toast(toast.Props{Title:n.Title,Description:n.Body,Variant:toast.VariantInfo,Position:toast.PositionBottomRight,Duration:5000,Dismissible:true,Icon:true})
+		}
+	</div>
+}

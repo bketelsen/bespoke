@@ -100,7 +100,7 @@ sees ([ADR-0032](../docs/adr/0032-app-unit-sandboxing.md)). Deploy creates the
 directory `0700`; it is never synced from a dev machine.
 
 Keep only platform-wide values in `~/bespoke/env` (`BESPOKE_BIND_IP`,
-`BESPOKE_DOMAIN`, `BESPOKE_LLM_URL`, `BESPOKE_ROOT`, `BESPOKE_LEMONADE_URL`,
+`BESPOKE_DOMAIN`, `BESPOKE_INTERNAL_URL`, `BESPOKE_LLM_URL`, `BESPOKE_ROOT`, `BESPOKE_LEMONADE_URL`,
 `BESPOKE_SPOOL`). Move everything else to the unit that owns it:
 
 ```sh

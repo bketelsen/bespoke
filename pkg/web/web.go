@@ -55,6 +55,7 @@ func Serve(slug string, defaultPort int, register func(mux *http.ServeMux)) {
 
 	mux := http.NewServeMux()
 	register(mux)
+	notifications(mux)
 
 	outer := http.NewServeMux()
 	outer.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {

@@ -18,7 +18,9 @@ import (
 	"github.com/bketelsen/bespoke/apps/todo/views"
 	"github.com/bketelsen/bespoke/pkg/auth"
 	"github.com/bketelsen/bespoke/pkg/db"
+	"github.com/bketelsen/bespoke/pkg/events"
 	"github.com/bketelsen/bespoke/pkg/web"
+	"github.com/google/uuid"
 )
 
 //go:embed migrations/*.sql
@@ -57,10 +59,12 @@ func main() {
 			Title:  "Create Todo",
 			Prompt: "This becomes a task (low priority, no due date — edit it after if needed).",
 			Handler: func(ctx context.Context, user auth.User, text string) (string, error) {
-				_, err := sqldb.ExecContext(ctx,
+				res, err := sqldb.ExecContext(ctx,
 					"INSERT INTO tasks (login, description) VALUES (?, ?)", user.Login, text)
 				if err == nil {
 					web.Changed(user.Login)
+					id, _ := res.LastInsertId()
+					publishTaskEvent(ctx, user, "todo.task_created", id, text, false)
 				}
 				return "/", err
 			},
@@ -79,11 +83,13 @@ func main() {
 
 		mux.HandleFunc("POST /tasks", func(w http.ResponseWriter, r *http.Request) {
 			user := auth.FromContext(r.Context())
-			if err := createTask(r, sqldb, user.Login, 0); err != nil {
+			id, desc, err := createTask(r, sqldb, user.Login, 0)
+			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			web.Changed(user.Login)
+			publishTaskEvent(r.Context(), user, "todo.task_created", id, desc, false)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 
@@ -98,11 +104,13 @@ func main() {
 				http.Error(w, "invalid parent", http.StatusBadRequest)
 				return
 			}
-			if err := createTask(r, sqldb, user.Login, parent); err != nil {
+			id, desc, err := createTask(r, sqldb, user.Login, parent)
+			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			web.Changed(user.Login)
+			publishTaskEvent(r.Context(), user, "todo.task_created", id, desc, false)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		})
 
@@ -114,6 +122,9 @@ func main() {
 				return
 			}
 			web.Changed(user.Login)
+			if completed != "" {
+				publishTaskEvent(r.Context(), user, "todo.task_completed", mustInt64(r.PathValue("id")), completed, true)
+			}
 			dest := "/"
 			if completed != "" {
 				// Event → intent (ADR-0018): the view offers "Save as Note?".
@@ -224,10 +235,10 @@ func searchTasks(ctx context.Context, sqldb *sql.DB, login, q string) ([]web.Sea
 	return out, rows.Err()
 }
 
-func createTask(r *http.Request, sqldb *sql.DB, login string, parent int64) error {
+func createTask(r *http.Request, sqldb *sql.DB, login string, parent int64) (int64, string, error) {
 	desc := strings.TrimSpace(r.FormValue("description"))
 	if desc == "" {
-		return fmt.Errorf("description required")
+		return 0, "", fmt.Errorf("description required")
 	}
 	priority := r.FormValue("priority")
 	if priority != "M" && priority != "H" {
@@ -236,17 +247,29 @@ func createTask(r *http.Request, sqldb *sql.DB, login string, parent int64) erro
 	due := strings.TrimSpace(r.FormValue("due"))
 	if due != "" {
 		if _, err := time.Parse("2006-01-02", due); err != nil {
-			return fmt.Errorf("bad due date")
+			return 0, "", fmt.Errorf("bad due date")
 		}
 	}
 	var parentID any
 	if parent != 0 {
 		parentID = parent
 	}
-	_, err := sqldb.ExecContext(r.Context(),
+	res, err := sqldb.ExecContext(r.Context(),
 		"INSERT INTO tasks (login, parent_id, description, due, priority) VALUES (?, ?, ?, NULLIF(?, ''), ?)",
 		login, parentID, desc, due, priority)
-	return err
+	if err != nil {
+		return 0, "", err
+	}
+	id, _ := res.LastInsertId()
+	return id, desc, nil
+}
+
+func mustInt64(v string) int64 { var n int64; _, _ = fmt.Sscan(v, &n); return n }
+func publishTaskEvent(ctx context.Context, user auth.User, typ string, id int64, desc string, done bool) {
+	err := events.New("todo").Publish(ctx, user, events.Event{ID: uuid.NewString(), Type: typ, SubjectID: fmt.Sprint(id), OccurredAt: time.Now().UTC(), Data: map[string]any{"id": id, "description": desc, "done": done}, Notification: &events.Notification{Title: map[bool]string{true: "Task completed", false: "Task created"}[done], Body: desc, AppSlug: "todo", Path: fmt.Sprintf("/#task-%d", id), GroupKey: "todo:tasks"}})
+	if err != nil {
+		log.Printf("todo event publish: %v", err)
+	}
 }
 
 func doneSQL(done int) string {

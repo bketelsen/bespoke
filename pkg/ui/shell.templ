@@ -65,6 +65,7 @@ templ AppShell(p ShellProps) {
 						</div>
 					</nav>
 					<div class="flex min-w-0 items-center gap-3">
+						@NotificationChrome()
 						if shell.ChatEnabled {
 							@chatButton()
 						}

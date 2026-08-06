@@ -180,11 +180,63 @@ Done when `v0.1.0` initializes a clean instance, the Homebrew cask reports the
 same version, Notes/Todo intents work in both public and generated instances,
 and the private owner instance deploys without personal app source in public HEAD.
 
+## Phase 8 — Events, notifications, and automations
+
+Implement the durable cross-app service from
+[ADR-0035](../adr/0035-durable-events-notifications-automations.md) and the
+[event notifications and automations contract](../specs/event-notifications-automations.md)
+in three reviewable increments:
+
+- Land event ingestion, idempotent storage, plane-side notification APIs,
+  authenticated AppShell proxy routes, unread count, and live toasts. Todo is
+  the reference producer, emitting events for task creation and completion.
+  Generate `BESPOKE_INTERNAL_URL` for every app unit and surface event-service
+  health in the dashboard warning strip.
+  **Increment done when:** a Todo event accepted while no browser is open later
+  appears only in that user's inbox, and an open Notes page receives the same
+  notification through its relayed SSE stream.
+- Land disabled-by-default deterministic rules, run history, dry-run
+  validation, and notification steps; then add automation eligibility and
+  idempotency to Todo's create tool, including the extended `/_tools` wire and
+  idempotency/causation context accessors.
+  **Increment done when:** two workers race the same Todo event and create one
+  run, while a dry run reports mappings without a notification or tool call.
+- Land worker-side Draft 2020-12 validation for bounded `ai_json` steps, leased
+  retries, causation-depth enforcement, cleanup, app-retirement handling, and
+  the complete isolation/restart test matrix from the spec.
+  **Increment done when:** an injected platformd restart during AI-to-Todo
+  automation resumes after lease expiry, performs one idempotent mutation, and
+  exposes the complete causation and step history to that user.
+
+Web push/PWA delivery and the persistent AppShell chat composer remain later
+extensions; neither is needed to close this phase.
+
+**Done when:** all three increment outcomes above pass together under
+`just check`.
+
+**Status (2026-08-06): ✅ implemented** — platformd owns the migrated event,
+notification, rule, run, and step tables; apps publish through `pkg/events`;
+AppShell mounts the inbox/toast chrome and same-origin SSE proxies; Todo emits
+creation/completion events and supplies the reference idempotent tool. Rules,
+dry runs, leased retries, Draft 2020-12 AI validation, causation depth,
+retention cleanup, and retirement disabling are implemented with focused
+tests. Final repository and local smoke gates are recorded in the implementing
+change.
+
 ## Later / ideas
 
 - Internal services, built on demand per the
   [catalog](../design/internal-services.md) (ADR-0012): more LLM helpers
-  (Summarize/Extract), files/blobs, notifications, search — never up front.
+  (Summarize/Extract) and files/blobs — never up front. Notifications moved to
+  [Phase 8](#phase-8--events-notifications-and-automations).
+- **PWA and web push:** install the apex dashboard, register its origin-scoped
+  push subscription, and deep-link notification clicks to app subdomains. It
+  is an optional delivery channel for Phase 8 notification records, not an
+  offline-data promise.
+- **Persistent chat composer:** prototype a one-line mobile bottom dock and a
+  desktop side pane with explicit “this app” and “all apps” context. Persisting
+  a conversation across app subdomains requires platform-owned history and a
+  separate decision.
 - Lemonade backend (local inference on selfie): embeddings, image
   generation, private/local completions behind the existing `pkg/llm` seam —
   ADR when first wired ([catalog](../design/internal-services.md#backends)).
