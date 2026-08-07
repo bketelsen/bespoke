@@ -55,6 +55,7 @@ Docs are split by the question they answer:
 - [Architecture](design/architecture.md) — topology, auth flow, repo layout, data
 - [LLM gateway](design/llm-gateway.md) — Copilot SDK integration in platformd
 - [Internal services](design/internal-services.md) — catalog of shared capabilities + how to add one
+- [Automations](design/automations.md) — creating and operating event-driven rules (JSON API, template syntax, run lifecycle)
 - [Agent layer](design/agent-layer.md) — conventions, skills, CLAUDE.md as law
 - [Builder plane](design/builder-plane.md) — unattended build/test/deploy machinery behind the builder app
 

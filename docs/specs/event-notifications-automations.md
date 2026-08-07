@@ -461,4 +461,5 @@ NOT start automation runs. This bounds cross-app action loops.
 
 - Rationale: [ADR-0035](../adr/0035-durable-events-notifications-automations.md)
 - Context: [architecture](../design/architecture.md), [internal services](../design/internal-services.md)
+- Usage: [automations](../design/automations.md) — authoring rules against this contract
 - Delivery plan: [roadmap — Phase 8](../plans/roadmap.md#phase-8--events-notifications-and-automations)
