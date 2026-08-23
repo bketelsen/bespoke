@@ -6,14 +6,14 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/Oudwins/tailwind-merge-go v0.2.3
 	github.com/a-h/templ v0.3.1020
-	github.com/github/copilot-sdk/go v1.0.9
+	github.com/github/copilot-sdk/go v1.0.11
 	github.com/google/jsonschema-go v0.4.3
 	github.com/google/uuid v1.6.0
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/starfederation/datastar-go v1.2.2
-	github.com/templui/templui v1.13.0
+	github.com/templui/templui v1.13.1
 	github.com/yuin/goldmark v1.8.5
-	modernc.org/sqlite v1.56.0
+	modernc.org/sqlite v1.57.0
 )
 
 require (
